@@ -1,0 +1,55 @@
+/* 
+    Document   : main
+    Created on : Feb 25, 2013, 8:29:36 AM
+    Author     : Curtis
+    Description:
+        Final Score MC Ban Manager main styles
+*/
+
+/*
+Form Layout Styles
+*/
+
+.form {
+    background-color: #f3f3f3;
+    border: solid 1px #a1a1a1;
+    padding: 10px;
+    width: 600px;
+    overflow: auto;
+}
+
+.form label, .form input, .form select, .form em, .form code, .form textarea {
+    display: block;
+    float: left;
+    margin-bottom: 10px;
+}
+
+.form input, .form select, .form code {
+    width: 120px;
+}
+.form input[type=checkbox] {
+    width: 60px;
+}
+.form .int {
+    width: 40px;
+}
+.form textarea {
+    width: 350px;
+    height: 80px;
+}
+
+.form label, .form em {
+    text-align: right;
+    padding-right: 20px;
+    width: 70px;
+}
+
+br {
+    clear: left;
+}
+
+.ui-autocomplete-loading {
+    /* TODO: Make this a local Resource */
+    background: white url('http://jqueryui.com/resources/demos/autocomplete/images/ui-anim_basic_16x16.gif') right center no-repeat;
+}
+
