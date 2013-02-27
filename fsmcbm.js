@@ -65,8 +65,15 @@ var info;
                 var sel = $("<select>").attr("name", name);
                 var i;
                 for(i in this.options){
-                    sel.append($("<option>").text(i));
+                    i = this.options[i];
+                    if(i.label == null){
+                        sel.append($("<option>").text(i));
+                    } else {
+                        sel.append($("<option>").attr("value", i.value).text(i.label));
+                    }
                 }
+                sel.val(value);
+                
                 html = html.add(sel);
                 
             } else if(this.type == "text" || this.type == "int"){
@@ -111,15 +118,15 @@ var info;
         },
         
         formatValue : function(value){
+            // Null should be empty strings
+            if(value == null)
+                return "";
+            
             if(this.format == "date"){
                 // Do date formating (change from yy-mm-dd hh:mm:ss to yy-mm-dd)
                 value = value.substring(0, value.indexOf(" "));
                 return value;
             }
-            
-            // Null should be empty strings
-            if(value == null)
-                return "";
             
             // No formating needed, return the value
             return value;
@@ -158,7 +165,22 @@ var bm = {
         world : info({
             name: "World",
             type: "select",
-            options:[],
+            options:[{
+                        value:"",
+                        label:""
+                    },
+                    {
+                        value:"world1",
+                        label:"Alpha"
+                    },
+                    {
+                        value:"world3",
+                        label:"Delta"
+                    },
+                    {
+                        value:"world4",
+                        label:"Gamma"
+                    }],
             after: ""
         }),
         coord_x : info({
