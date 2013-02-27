@@ -112,8 +112,8 @@ var info;
         
         formatValue : function(value){
             if(this.format == "date"){
-                // Do date formating
-                // TODO
+                // Do date formating (change from yy-mm-dd hh:mm:ss to yy-mm-dd)
+                value = value.substring(0, value.indexOf(" "));
                 return value;
             }
             
