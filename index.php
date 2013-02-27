@@ -62,6 +62,10 @@
                         
                         <label for="user-info-notes">Notes:</label>
                         <textarea id="user-info-notes" name="notes"></textarea>
+                        <br/>
+                
+                        <button id="user-info-save">Save</button>
+                        <button id="user-info-cancel">Cancel</button>
                     </div>
                     <div id="incident-info">
 

@@ -211,7 +211,7 @@ var bm = {
         appeal_response : info({
             type: "textarea",
             name: "Appeal Response",
-            showEmpty:false
+            showEmpty:false // TODO: This should only be false when there is no appeal.
         })
     },
     
@@ -258,6 +258,14 @@ var bm = {
                         jQuery.each(bm.incident, function(index, value){
                             div.append(value.toHTML(incident[index], index));
                         });
+                        
+                        // Add the save and cancel buttons
+                        div.append($("<button>").text("Save").attr("id","i-s-" + incident.id).button().click(function(){
+                            // TODO save incident button code here
+                        }));
+                        div.append($("<button>").text("Cancel").attr("id","i-c-" + incident.id).button().click(function(){
+                            // TODO cancel incident save button code here
+                        }));
                         
                         div.appendTo("#incident-info");
                     }
