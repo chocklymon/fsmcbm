@@ -29,7 +29,7 @@ var info;
     
     info.fn = DataStructure.prototype = {
 
-        getHTMLTag : function(value){
+        toHTML : function(value, name){
             /* Types:
              * - text
              * - label
@@ -37,6 +37,7 @@ var info;
              * - textarea
              * - select
              * - int
+             * - checkbox
              */
             if( !this.showEmpty ){
                 if(value == null){
@@ -57,11 +58,11 @@ var info;
             
             if(this.type == "textarea"){
                 // Text area
-                html = html.add($("<textarea>").text(value));
+                html = html.add($("<textarea>").attr("name", name).text(value));
                 
             } else if(this.type == "select"){
                 // Drop Down
-                var sel = $("<select>");
+                var sel = $("<select>").attr("name", name);
                 var i;
                 for(i in this.options){
                     sel.append($("<option>").text(i));
@@ -70,7 +71,11 @@ var info;
                 
             } else if(this.type == "text" || this.type == "int"){
                 // Text and int types
-                var input = $("<input>").val(value).attr("type","text");
+                var input = $("<input>").val(value).attr({
+                    'type' : "text",
+                    'name' : name
+                });
+                
                 if(this.type == "int"){
                     input.addClass("int");
                 }
@@ -78,11 +83,22 @@ var info;
                 
             } else if(this.type == "date"){
                 // Date field
-                html = html.add($("<input>").attr("type","text").val(value).datepicker({
+                html = html.add($("<input>").attr({
+                    'type' : "text",
+                    'name' : name
+                }).val(value).datepicker({
                    showOn: "both",
                    // TODO get my own calendar icon
                    buttonImage: "http://jqueryui.com/resources/demos/datepicker/images/calendar.gif",
-                   buttonImageOnly : true
+                   buttonImageOnly : true,
+                   dateFormat : "yy-mm-dd"
+                }));
+                
+            } else if(this.type == "checkbox"){
+                // Checkbox
+                html = html.add($("<input>").attr({
+                    'type' : 'checkbox',
+                    'name' : name
                 }));
                 
             } else {
@@ -218,7 +234,7 @@ var bm = {
                         var div = jQuery("<div>").addClass("form").attr("id", "i-" + incident.id);
                         
                         jQuery.each(bm.incident, function(index, value){
-                            div.append(value.getHTMLTag(incident[index]));
+                            div.append(value.toHTML(incident[index], index));
                         });
                         
                         div.appendTo("#incident-info");
