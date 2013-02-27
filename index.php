@@ -92,10 +92,10 @@
                 <br/>
 
                 <label for="user-add-banned">Banned:</label>
-                <input type="checkbox" id="user-add-banned" />
+                <input type="checkbox" id="user-add-banned" name="banned" />
                 <span id="user-info-permanent-box">
                     <label for="user-add-permanent">Permanent:</label>
-                    <input type="checkbox" id="user-add-permanent"/>
+                    <input type="checkbox" id="user-add-permanent" name="permanent" />
                 </span>
                 <br/>
 

@@ -284,6 +284,7 @@ var bm = {
     
     handleError : function(error){
         // TODO
+        console.error(error);
     }
 }
 
@@ -316,18 +317,17 @@ jQuery(function($){
                     "fsmcbm.php?add_user=true",
                     $("#add-user-form").serialize(),
                     function(data){
-                        
-                        if(data.error == null){
+                        if(data.error != null){
                             // Success
-                            // Close the dialog
-                            $(this).dialog("close");
-                            
+                            // TODO
                         } else {
                             // Error occured
                             bm.handleError(data.error);
                         }
                     }, 'json'
                 );
+                
+                $(this).dialog("close");
             },
             
             Cancel : function(){

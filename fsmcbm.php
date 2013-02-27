@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * Gets the connection to the mysql database.
+ * @return mysqli The MySQLi database connection.
+ */
 function getConnection(){
     $mysqli = mysqli_connect("localhost", "root", "", "fsmcbm");
     if($mysqli->connect_errno){
@@ -9,10 +13,20 @@ function getConnection(){
     return $mysqli;
 }
 
+/**
+ * Outputs an error message and stops the script.
+ * @param string $message The error message to display, defaults to "uknown"
+ */
 function error($message = "unkown"){
     exit('{"error":"' . $message . '"}');
 }
 
+/**
+ * Takes a string and truncates it, if it is over 120 characters long, replacing
+ * the characters over 120 with an ellipsis.
+ * @param string $string The string to truncate.
+ * @return string The truncated string.
+ */
 function truncate($string){
     if(strlen($string) > 120){
         return substr($string, 0, 120) . " ...";
@@ -146,6 +160,35 @@ if(isset($_GET['term'])){
      * ADD A NEW USER
      * ==============
      */
+    
+    if( !isset($_POST['username'])){
+        error("Username required");
+    }
+    
+    $conn = getConnection();
+    
+    $username = $conn->real_escape_string($_POST['username']);
+    $rank = $conn->real_escape_string($_POST['rank']);
+    $relations = $conn->real_escape_string($_POST['relations']);
+    $notes = $conn->real_escape_string($_POST['notes']);
+    
+    $banned = (isset($_POST['banned']) && $_POST['banned'] == 'on') ? '1' : '0';
+    
+    $permanent = (isset($_POST['permanent']) && $_POST['permanent'] == 'on') ? '1' : '0';
+    
+    $res = $conn->query("INSERT INTO `users` (`username`, `rank`, `relations`, `notes`, `banned`, `permanent`)
+        VALUES ('$username', '$rank', '$relations', '$notes', $banned, $permanent);");
+    
+    if($res === false){
+        error("Failed to add user " . mysqli_error($conn));
+    }
+    
+    // Return the id
+    $result = array('user_id'=>$conn->insert_id);
+    
+    $conn->close();
+    
+    echo json_encode($result);
     
 } else if(isset($_GET['get'])){
     // Page Requested
