@@ -1,12 +1,21 @@
+/* Final Score MC Ban Manager
+ * 
+ */
 
 (function($){
-
-    var info = function(options){
+    
+    /* ----------------------------- *
+     *   DATA STRUCTURE OBJECT       *
+     * ----------------------------- */
+    
+    // Convenience constructor
+    var info = function(options) {
         return new DataStructure(options);
     };
     
-    var DataStructure = function(options){
-        var datum, d;
+    // Constructor
+    var DataStructure = function(options) {
+        var datum, i;
         
         datum = $.extend({
             // Default Options
@@ -18,16 +27,24 @@
             showEmpty:true
         }, options);
         
-        for ( d in datum ) {
-            this[d] = datum[d];
+        for ( i in datum ) {
+            this[i] = datum[d];
         }
         
         return this;
     };
     
     info.fn = DataStructure.prototype = {
+        
+        // Data Structure Functions
 
-        toHTML : function(value, name){
+        /**
+         * Takes a data structre and turns into into a set of HTML tags.
+         * @parm {String} value The value of the data structure.
+         * @parm {String} name The name of the data structure.
+         * @return A jQuery object containing the HTML nodes for the data structure.
+         */
+        toHTML : function(value, name) {
             /* Types:
              * - text
              * - label
@@ -115,7 +132,7 @@
             return html.add($(this.after));
         },
         
-        formatValue : function(value){
+        formatValue : function(value) {
             // Null should be empty strings
             if(value == null)
                 return "";
@@ -130,7 +147,13 @@
             return value;
         }
     };
+    
+    
+    /* ----------------------------- *
+     *      DATA STRUCTURES          *
+     * ----------------------------- */
 
+    // Incident Data Structure
     var incident = {
         moderator : info({
             name:"Moderator",
@@ -209,7 +232,24 @@
         })
     };
     
-    function lookup(input, value, callback, emptyLabel, emptyCallback){
+    
+    /* ----------------------------- *
+     *          FUNCTIONS            *
+     * ----------------------------- */
+    
+    /**
+     * Sets up an field to be an jQuery UI AutoComplete enabled field.
+     * @param {String} input The jQuery selector to apply the autocomplete to.
+     * @param {String} value The jQuery selector for the element to set the
+     * autocompletes value to.
+     * @param {Function} callback A function to call after the a value has been
+     * selected from the autocomplete options. Can be null.
+     * @param {String} emptyLabel The option text to display when no results are
+     * found.
+     * @param {Function} emptyCallback A function to call if the no result option
+     * is selected. Can be null.
+     */
+    function lookup(input, value, callback, emptyLabel, emptyCallback) {
         $(input).autocomplete({
             source : function (request, response) {
                 $.get("fsmcbm.php",{
@@ -243,7 +283,11 @@
         });
     }
 
-    function getInformation(){
+    /**
+     *  Retrieves the user information, and then displays it into the manage
+     *  users tab.
+     */
+    function getInformation() {
         $.get(
             "fsmcbm.php",
             { 'lookup': $("#lookup-user_id").val() },
@@ -298,21 +342,38 @@
         );
     }
     
-    function handleError(error){
+    /**
+     * Handles errors.
+     * @param {String} error The error message. Optional.
+     */
+    function handleError(error) {
         // TODO
         console.error(error);
     }
     
-    function openAddUser(){
+    /**
+     * Opens the add user jQuery UI dialog.
+     */
+    function openAddUser() {
         $("#dialog-add-user").dialog("open");
     }
     
-    function addUserToIncident(){
+    /**
+     * Opens the add user dialog, and after the new user is saved, adds them to the incident.
+     */
+    function addUserToIncident() {
         openAddUser();
         // TODO have the user added to the DB, and updated into the add incident dialog
     }
+    
+    
+    /* ----------------------------- *
+     *           INITALIZE           *
+     * ----------------------------- */
 
-    $(function($){
+    // Runs on document ready.
+    $( function($) {
+        
         // Set up the tabs
         $("#tabs").tabs({
             beforeLoad: function(event, ui){
