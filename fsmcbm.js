@@ -28,7 +28,7 @@
         }, options);
         
         for ( i in datum ) {
-            this[i] = datum[d];
+            this[i] = datum[i];
         }
         
         return this;
@@ -347,8 +347,15 @@
      * @param {String} error The error message. Optional.
      */
     function handleError(error) {
-        // TODO
+        // Log the error message
         console.error(error);
+        
+        // Display the error message
+        $("#error-msg").text(error);
+        $("#error").slideDown();
+        
+        // Display for six seconds
+        setTimeout(function(){$("#error").slideUp();}, 6000);
     }
     
     /**

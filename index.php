@@ -11,6 +11,22 @@
     </head>
     <body>
         <div id="wrapper">
+            <div id="error" class="ui-widget">
+                <div class="ui-state-error ui-corner-all">
+                    <p>
+                        <span class="ui-icon ui-icon-info"></span>
+                        <strong>Error: </strong><span id="error-msg"></span>
+                    </p>
+                </div>
+            </div>
+            <div id="highlight" class="ui-widget">
+                <div class="ui-state-highlight ui-corner-all">
+                    <p>
+                        <span class="ui-icon ui-icon-alert"></span>
+                        <span id="highlight-msg"></span>
+                    </p>
+                </div>
+            </div>
             <div id="sidebar">
                 <div id="search-box" class="form">
                     <label for="lookup">Lookup:</label>

@@ -48,6 +48,10 @@ br {
     clear: left;
 }
 
+/*
+Table List Styles
+*/
+
 .list, .list tr, .list td {
     border-collapse: collapse;
     border: 1px solid #cccccc;
@@ -66,6 +70,28 @@ br {
     color: #c77405;
 }
 
+/*
+MISC
+*/
+
+#error, #highlight {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    right: 5px;
+    display: none;
+}
+#error div, #highlight div {
+    padding: 0 .7em;
+}
+#error .ui-icon, #highlight .ui-icon {
+    float: left;
+    margin-right: .3em;
+}
+
+/*
+jQuery UI Overrides/Changes
+*/
 
 .ui-autocomplete-loading {
     /* TODO: Make this a local Resource */
