@@ -99,6 +99,11 @@ if(isset($_GET['term'])){
         error("Nothing Found " . mysqli_error($conn));
     }
     
+    if($res->num_rows == 0){
+        // Nothing found
+        error("User not found.");
+    }
+    
     $result = array();
     
     while($row = $res->fetch_assoc()){
