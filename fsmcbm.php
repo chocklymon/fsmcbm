@@ -124,32 +124,26 @@ if(isset($_GET['term'])){
     
     $res->free();
     
-    /* TODO
-    // Get the name of the moderators
-    $query = "SELECT ,username FROM users WHERE id IN ";
-    $user_ids = array_unique($user_ids);
-    for($i = 0; ; $i++){
-        $query .= $user_ids[$i];
-        if($i < count($user_ids))
-            return;
-        
-        $query .= ",";
-    }
-    
-    $res = $conn->query($query);
-    
-    if($res === false){
-        error("Nothing Found " . mysqli_error($conn));
-    }
+    if(isset($result['incident'])){
+        // Get the name of the moderators
+        $res = $conn->query("SELECT id,username FROM users WHERE id IN (" . implode(",", $user_ids) . ")");
 
-    while($row = $res->fetch_assoc()){
-        $result["incident"][] = $row;
-        $user_ids[] = $row['moderator'];
+        if($res === false){
+            error("Unable to extrac moderator id's: " . mysqli_error($conn));
+        }
+
+        while($row = $res->fetch_assoc()){
+            $user_ids[$row['id']] = $row['username'];
+        }
+
+        $res->free();
+        
+        // change the moderator id to username
+        foreach($result['incident'] as &$incident){
+            $incident['moderator_id'] = $incident['moderator'];
+            $incident['moderator'] = $user_ids[$incident['moderator']];
+        }
     }
-    
-    $res->free();
-    */
-    
     
     $conn->close();
     
