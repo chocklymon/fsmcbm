@@ -1,9 +1,7 @@
 
-var info;
-
 (function($){
-    
-    info = function(options){
+
+    var info = function(options){
         return new DataStructure(options);
     };
     
@@ -132,12 +130,8 @@ var info;
             return value;
         }
     };
-}(jQuery));
 
-
-var bm = {
-    
-    incident : {
+    var incident = {
         moderator : info({
             name:"Moderator",
             type:"label"
@@ -213,12 +207,12 @@ var bm = {
             name: "Appeal Response",
             showEmpty:false // TODO: This should only be false when there is no appeal.
         })
-    },
+    };
     
-    lookup : function(input, value, callback, emptyLabel, emptyCallback){
-        jQuery(input).autocomplete({
+    function lookup(input, value, callback, emptyLabel, emptyCallback){
+        $(input).autocomplete({
             source : function (request, response) {
-                jQuery.get("fsmcbm.php",{
+                $.get("fsmcbm.php",{
                         term: request.term
                     }, function (data) {
                         if (data.length == 0) {
@@ -237,8 +231,8 @@ var bm = {
                         emptyCallback();
                     }
                 } else {
-                    jQuery(this).val(ui.item.label);
-                    jQuery(value).val(ui.item.value);
+                    $(this).val(ui.item.label);
+                    $(value).val(ui.item.value);
 
                     if(callback != null){
                         callback();
@@ -247,21 +241,21 @@ var bm = {
                 return false;
             }
         });
-    },
+    }
 
-    getInformation : function(){
-        jQuery.get(
+    function getInformation(){
+        $.get(
             "fsmcbm.php",
-            { 'lookup': jQuery("#lookup-user_id").val() },
+            { 'lookup': $("#lookup-user_id").val() },
             function(data){
                 if(data.error == null){
                     
                     // Empty out any previous incidents
-                    var incidents = jQuery("#incident-info").empty();
+                    var incidents = $("#incident-info").empty();
                     
                     // Fill in the fields
-                    jQuery.each(data.user, function(index, value){
-                        var field = jQuery("#user-info-" + index);
+                    $.each(data.user, function(index, value){
+                        var field = $("#user-info-" + index);
                         if(field.attr("type") == "checkbox"){
                             field.prop("checked", value == "1");
                         } else {
@@ -272,19 +266,19 @@ var bm = {
                     if(data.incident != null){
                         // Attach all the incidents
                         for(var i=0; i<data.incident.length; i++){
-                            var incident = data.incident[i];
+                            var datum = data.incident[i];
 
-                            var div = jQuery("<div>").addClass("form").attr("id", "i-" + incident.id);
+                            var div = $("<div>").addClass("form").attr("id", "i-" + datum.id);
 
-                            jQuery.each(bm.incident, function(index, value){
-                                div.append(value.toHTML(incident[index], index));
+                            $.each(incident, function(index, value){
+                                div.append(value.toHTML(datum[index], index));
                             });
 
                             // Add the save and cancel buttons
-                            div.append($("<button>").text("Save").attr("id","i-s-" + incident.id).button().click(function(){
+                            div.append($("<button>").text("Save").attr("id","i-s-" + datum.id).button().click(function(){
                                 // TODO save incident button code here
                             }));
-                            div.append($("<button>").text("Cancel").attr("id","i-c-" + incident.id).button().click(function(){
+                            div.append($("<button>").text("Cancel").attr("id","i-c-" + datum.id).button().click(function(){
                                 // TODO cancel incident save button code here
                             }));
 
@@ -297,102 +291,103 @@ var bm = {
                     
                 } else {
                     // Error
-                    bm.handleError(data.error);
+                    handleError(data.error);
                 }
             },
             'json'
         );
-    },
+    }
     
-    handleError : function(error){
+    function handleError(error){
         // TODO
         console.error(error);
-    },
+    }
     
-    openAddUser : function(){
+    function openAddUser(){
         $("#dialog-add-user").dialog("open");
-    },
+    }
     
-    addUserToIncident : function(){
-        bm.openAddUser();
+    function addUserToIncident(){
+        openAddUser();
         // TODO have the user added to the DB, and updated into the add incident dialog
     }
-}
 
-jQuery(function($){
-    // Set up the tabs
-    $("#tabs").tabs({
-        beforeLoad: function(event, ui){
-            // Set up error handling
-            ui.jqXHR.error(function(){
-               ui.panel.html("Couldn't load this tab."); 
-            });
-        },
-        load: function(event, ui){
-            $(ui.panel).find("tr").click(function(){
-                $("#lookup-user_id").val($(this).attr("id").substring(3));
-                bm.getInformation();
-            });
-        }
-    });
-    
-    // Make buttons jQuery UI buttons
-    $("button").button();
-    
-    // Set up the dialogs
-    $("#dialog-add-user").dialog({
-        autoOpen: false,
-        modal: true,
-        height: 400,
-        width: 510,
-        buttons: {
-            Save : function(){
-                // Save the user
-                $.post(
-                    "fsmcbm.php?add_user=true",
-                    $("#add-user-form").serialize(),
-                    function(data){
-                        if(data.error != null){
-                            // Success
-                            // TODO
-                        } else {
-                            // Error occured
-                            bm.handleError(data.error);
-                        }
-                    }, 'json'
-                );
-                
-                $(this).dialog("close");
+    $(function($){
+        // Set up the tabs
+        $("#tabs").tabs({
+            beforeLoad: function(event, ui){
+                // Set up error handling
+                ui.jqXHR.error(function(){
+                   ui.panel.html("Couldn't load this tab."); 
+                });
             },
-            
-            Cancel : function(){
-                $(this).dialog("close");
+            load: function(event, ui){
+                $(ui.panel).find("tr").click(function(){
+                    $("#lookup-user_id").val($(this).attr("id").substring(3));
+                    getInformation();
+                });
             }
-        }
-    });
-    $("#dialog-add-incident").dialog({
-        autoOpen: false,
-        modal: true,
-        buttons: {
-            Save : function(){
-                // TODO
-                // Save the incident.
-                $(this).dialog("close");
-            },
-            Cancel : function(){
-                $(this).dialog("close");
+        });
+
+        // Make buttons jQuery UI buttons
+        $("button").button();
+
+        // Set up the dialogs
+        $("#dialog-add-user").dialog({
+            autoOpen: false,
+            modal: true,
+            height: 400,
+            width: 510,
+            buttons: {
+                Save : function(){
+                    // Save the user
+                    $.post(
+                        "fsmcbm.php?add_user=true",
+                        $("#add-user-form").serialize(),
+                        function(data){
+                            if(data.error != null){
+                                // Success
+                                // TODO
+                            } else {
+                                // Error occured
+                                handleError(data.error);
+                            }
+                        }, 'json'
+                    );
+
+                    $(this).dialog("close");
+                },
+
+                Cancel : function(){
+                    $(this).dialog("close");
+                }
             }
-        }
+        });
+        $("#dialog-add-incident").dialog({
+            autoOpen: false,
+            modal: true,
+            buttons: {
+                Save : function(){
+                    // TODO
+                    // Save the incident.
+                    $(this).dialog("close");
+                },
+                Cancel : function(){
+                    $(this).dialog("close");
+                }
+            }
+        });
+
+        // Set up the autocomplete lookup fields
+        lookup("#lookup", "#lookup-user_id", getInformation, "No users found");
+        lookup("#user_name", "#user_id", null, "Not Found - Add New", addUserToIncident);
+
+        // Attach events
+        $("#add-user").click(openAddUser);
+        $("#add-incident").click(function(){
+            $("#dialog-add-incident").dialog("open");
+
+        });
     });
-    
-    // Set up the autocomplete lookup fields
-    bm.lookup("#lookup", "#lookup-user_id", bm.getInformation, "No users found");
-    bm.lookup("#user_name", "#user_id", null, "Not Found - Add New", bm.addUserToIncident);
-    
-    // Attach events
-    $("#add-user").click(bm.openAddUser);
-    $("#add-incident").click(function(){
-        $("#dialog-add-incident").dialog("open");
-        
-    });
-});
+
+})(jQuery);
