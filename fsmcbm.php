@@ -44,7 +44,7 @@ function buildTable($query){
         error("Nothing Found " . mysqli_error($conn));
     }
 
-    $result = "<table><thead><tr><th>Name</th><th>Rank</th><th>Notes</th></tr></thead><tbody>";
+    $result = "<table class='list'><thead><tr><th>Name</th><th>Rank</th><th>Notes</th></tr></thead><tbody>";
 
     while($row = $res->fetch_assoc()){
         $result .= "<tr id='id-" . $row['id'] . "'><td>"
@@ -190,6 +190,13 @@ if(isset($_GET['term'])){
     
     echo json_encode($result);
     
+} else if(isset($_GET['add_incident'])){
+    /*
+     * ADD A NEW INCIDENT
+     * ==================
+     */
+    // TODO
+    
 } else if(isset($_GET['get'])){
     // Page Requested
      
@@ -203,7 +210,7 @@ if(isset($_GET['term'])){
         
     } else if($_GET['get'] == 'watchlist'){
         
-        buildTable("SELECT * FROM users, incident WHERE users.id=incident.user_id AND users.banned = FALSE");
+        buildTable("SELECT users.id, users.username, users.rank, users.notes FROM users, incident WHERE users.id=incident.user_id AND users.banned = FALSE");
         
     }
 }

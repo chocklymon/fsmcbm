@@ -48,6 +48,25 @@ br {
     clear: left;
 }
 
+.list, .list tr, .list td {
+    border-collapse: collapse;
+    border: 1px solid #cccccc;
+}
+
+.list td {
+    padding: 4px;
+}
+
+.list tbody tr {
+    cursor: pointer;
+}
+
+.list tbody tr:hover {
+    background-color: #fdf5ce;
+    color: #c77405;
+}
+
+
 .ui-autocomplete-loading {
     /* TODO: Make this a local Resource */
     background: white url('http://jqueryui.com/resources/demos/autocomplete/images/ui-anim_basic_16x16.gif') right center no-repeat;

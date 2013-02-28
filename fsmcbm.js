@@ -235,9 +235,12 @@ var bm = {
     getInformation : function(){
         jQuery.get(
             "fsmcbm.php",
-            { 'lookup': jQuery("#user_id").val() },
+            { 'lookup': jQuery("#lookup-user_id").val() },
             function(data){
                 if(data.error == null){
+                    
+                    // Empty out any previous incidents
+                    var incidents = jQuery("#incident-info").empty();
                     
                     // Fill in the fields
                     jQuery.each(data.user, function(index, value){
@@ -249,25 +252,27 @@ var bm = {
                         }
                     });
                     
-                    for(var i=0; i<data.incident.length; i++){
-                        var incident = data.incident[i];
-                        //console.log(incident);
-                        
-                        var div = jQuery("<div>").addClass("form").attr("id", "i-" + incident.id);
-                        
-                        jQuery.each(bm.incident, function(index, value){
-                            div.append(value.toHTML(incident[index], index));
-                        });
-                        
-                        // Add the save and cancel buttons
-                        div.append($("<button>").text("Save").attr("id","i-s-" + incident.id).button().click(function(){
-                            // TODO save incident button code here
-                        }));
-                        div.append($("<button>").text("Cancel").attr("id","i-c-" + incident.id).button().click(function(){
-                            // TODO cancel incident save button code here
-                        }));
-                        
-                        div.appendTo("#incident-info");
+                    if(data.incident != null){
+                        // Attach all the incidents
+                        for(var i=0; i<data.incident.length; i++){
+                            var incident = data.incident[i];
+
+                            var div = jQuery("<div>").addClass("form").attr("id", "i-" + incident.id);
+
+                            jQuery.each(bm.incident, function(index, value){
+                                div.append(value.toHTML(incident[index], index));
+                            });
+
+                            // Add the save and cancel buttons
+                            div.append($("<button>").text("Save").attr("id","i-s-" + incident.id).button().click(function(){
+                                // TODO save incident button code here
+                            }));
+                            div.append($("<button>").text("Cancel").attr("id","i-c-" + incident.id).button().click(function(){
+                                // TODO cancel incident save button code here
+                            }));
+
+                            div.appendTo(incidents);
+                        }
                     }
                     
                     // Switch to the manage tab
@@ -289,7 +294,7 @@ var bm = {
 }
 
 jQuery(function($){
-    bm.lookup("#lookup", "#user_id", bm.getInformation);
+    bm.lookup("#lookup", "#lookup-user_id", bm.getInformation);
     
     // Set up the tabs
     $("#tabs").tabs({
@@ -297,6 +302,12 @@ jQuery(function($){
             // Set up error handling
             ui.jqXHR.error(function(){
                ui.panel.html("Couldn't load this tab."); 
+            });
+        },
+        load: function(event, ui){
+            $(ui.panel).find("tr").click(function(){
+                $("#lookup-user_id").val($(this).attr("id").substring(3));
+                bm.getInformation();
             });
         }
     });
@@ -340,7 +351,7 @@ jQuery(function($){
         modal: true,
         buttons: {
             Save : function(){
-                
+                // TODO
                 // Save the incident.
                 $(this).dialog("close");
             },
@@ -350,11 +361,14 @@ jQuery(function($){
         }
     });
     
+    bm.lookup("#user_name", "#user_id");
+    
     // Attach events
     $("#add-user").click(function(){
         $("#dialog-add-user").dialog("open");
     });
     $("#add-incident").click(function(){
         $("#dialog-add-incident").dialog("open");
+        
     });
 });

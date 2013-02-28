@@ -15,7 +15,7 @@
                 <div id="search-box" class="form">
                     <label for="lookup">Lookup:</label>
                     <input type="text" id="lookup" />
-                    <input type='hidden' id="user_id" />
+                    <input type='hidden' id="lookup-user_id" />
                     <br/>
                     <label for="search">Search:</label>
                     <input type="text" id="search" />
@@ -109,6 +109,10 @@
         </div>
         <div id="dialog-add-incident" title="Add Incident">
             <form class="form" id="add-incident-form">
+                <label for="user">Username:</label>
+                <input type="text" id="user_name" />
+                <input type='hidden' id="user_id" />
+                <br/>
                 <label>Incident Date</label>
                 <input type="text" name="incident_date" />
                 <br/>
