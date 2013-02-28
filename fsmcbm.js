@@ -170,7 +170,7 @@ var bm = {
                         label:""
                     },
                     {
-                        value:"world1",
+                        value:"world",
                         label:"Alpha"
                     },
                     {
@@ -215,18 +215,35 @@ var bm = {
         })
     },
     
-    lookup : function(input, value, callback){
+    lookup : function(input, value, callback, emptyLabel, emptyCallback){
         jQuery(input).autocomplete({
-            source : 'fsmcbm.php',
+            source : function (request, response) {
+                jQuery.get("fsmcbm.php",{
+                        term: request.term
+                    }, function (data) {
+                        if (data.length == 0) {
+                            data.push({
+                                'value': 0,
+                                'label': emptyLabel
+                            });
+                        }
+                        response(data);
+                    }, 'json');
+            },
             minLength : 2,
             select : function( event, ui ){
-                jQuery(this).val(ui.item.label);
-                jQuery(value).val(ui.item.value);
+                if(ui.item.value == 0){
+                    if(emptyCallback != null){
+                        emptyCallback();
+                    }
+                } else {
+                    jQuery(this).val(ui.item.label);
+                    jQuery(value).val(ui.item.value);
 
-                if(callback != null){
-                    callback();
+                    if(callback != null){
+                        callback();
+                    }
                 }
-
                 return false;
             }
         });
@@ -290,12 +307,19 @@ var bm = {
     handleError : function(error){
         // TODO
         console.error(error);
+    },
+    
+    openAddUser : function(){
+        $("#dialog-add-user").dialog("open");
+    },
+    
+    addUserToIncident : function(){
+        bm.openAddUser();
+        // TODO have the user added to the DB, and updated into the add incident dialog
     }
 }
 
 jQuery(function($){
-    bm.lookup("#lookup", "#lookup-user_id", bm.getInformation);
-    
     // Set up the tabs
     $("#tabs").tabs({
         beforeLoad: function(event, ui){
@@ -312,7 +336,7 @@ jQuery(function($){
         }
     });
     
-    // Make buttons buttons
+    // Make buttons jQuery UI buttons
     $("button").button();
     
     // Set up the dialogs
@@ -361,12 +385,12 @@ jQuery(function($){
         }
     });
     
-    bm.lookup("#user_name", "#user_id");
+    // Set up the autocomplete lookup fields
+    bm.lookup("#lookup", "#lookup-user_id", bm.getInformation, "No users found");
+    bm.lookup("#user_name", "#user_id", null, "Not Found - Add New", bm.addUserToIncident);
     
     // Attach events
-    $("#add-user").click(function(){
-        $("#dialog-add-user").dialog("open");
-    });
+    $("#add-user").click(bm.openAddUser);
     $("#add-incident").click(function(){
         $("#dialog-add-incident").dialog("open");
         
