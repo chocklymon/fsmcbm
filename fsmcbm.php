@@ -61,6 +61,15 @@ function buildTable($query){
     echo $result . "</tbody></table>";
 }
 
+function sanitizeNum($num){
+    $num = preg_replace('#\D#', '', $num);
+    if(strlen($num) == 0){
+        return null;
+    } else {
+        return $num*1;
+    }
+}
+
 if(isset($_GET['term'])){
     /*
      * AUTO COMPLETE USER NAMES
@@ -194,6 +203,34 @@ if(isset($_GET['term'])){
      * ADD A NEW INCIDENT
      * ==================
      */
+    
+    $conn = getConnection();
+    
+    // TODO get moderator ID
+    
+    $user_id = $conn->real_escape_string($_POST['user_id']);
+    $today = date('Y-m-d H:i:s');
+    $incident_date = $conn->real_escape_string($_POST['incident_date']);
+    $notes = $conn->real_escape_string($_POST['notes']);
+    $action_taken = $conn->real_escape_string($_POST['action_taken']);
+    $world = $conn->real_escape_string($_POST['world']);
+    $coord_x = sanitizeNum($_POST['coord_x']);
+    $coord_y = sanitizeNum($_POST['coord_y']);
+    $coord_z = sanitizeNum($_POST['coord_z']);
+    
+    $res = $conn->query("INSERT INTO `incident` (`user_id`, `created_date`, `incident_date`, `notes`, `action_taken`, `world`, `coord_x`, `coord_y`, `coord_z`)
+        VALUES ('$user_id', '$today', '$incident_date', '$notes', '$action_taken', '$world', $coord_x, $coord_y, $coord_z);");
+    
+    if($res === false){
+        error("Failed to add user " . mysqli_error($conn));
+    }
+    
+    // Return the id
+    $result = array('incident_id'=>$conn->insert_id);
+    
+    $conn->close();
+    
+    echo json_encode($result);
     // TODO
     
 } else if(isset($_GET['get'])){

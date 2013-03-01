@@ -127,7 +127,7 @@
             <form class="form" id="add-incident-form">
                 <label for="user">Username:</label>
                 <input type="text" id="user_name" />
-                <input type='hidden' id="user_id" />
+                <input type='hidden' id="user_id" name="user_id" />
                 <br/>
                 <label>Incident Date</label>
                 <input type="text" name="incident_date" />

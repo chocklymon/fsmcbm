@@ -421,6 +421,7 @@
             width: 510,
             buttons: {
                 Save : function(){
+                    // TODO add verification
                     // Save the user
                     $.post(
                         "fsmcbm.php?add_user=true",
@@ -449,8 +450,22 @@
             modal: true,
             buttons: {
                 Save : function(){
-                    // TODO
+                    // TODO add verification
                     // Save the incident.
+                    $.post(
+                        "fsmcbm.php?add_incident=true",
+                        $("#add-incident-form").serialize(),
+                        function(data){
+                            if(data.error == null){
+                                // Success
+                                displayMessage("Incident added.");
+                            } else {
+                                // Error occured
+                                handleError(data.error);
+                            }
+                        }, 'json'
+                    );
+                    
                     $(this).dialog("close");
                 },
                 Cancel : function(){
