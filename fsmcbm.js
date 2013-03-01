@@ -170,6 +170,9 @@
             format:"date",
             name:"Incident Date"
         }),
+        incident_type : info({
+            name: "Incident Type"
+        }),
         notes : info({
             name: "Notes",
             type: "textarea"

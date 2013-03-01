@@ -211,6 +211,7 @@ if(isset($_GET['term'])){
     $user_id = $conn->real_escape_string($_POST['user_id']);
     $today = date('Y-m-d H:i:s');
     $incident_date = $conn->real_escape_string($_POST['incident_date']);
+    $incident_type = $conn->real_escape_string($_POST['incident_type']);
     $notes = $conn->real_escape_string($_POST['notes']);
     $action_taken = $conn->real_escape_string($_POST['action_taken']);
     $world = $conn->real_escape_string($_POST['world']);
@@ -218,8 +219,8 @@ if(isset($_GET['term'])){
     $coord_y = sanitizeNum($_POST['coord_y']);
     $coord_z = sanitizeNum($_POST['coord_z']);
     
-    $res = $conn->query("INSERT INTO `incident` (`user_id`, `created_date`, `incident_date`, `notes`, `action_taken`, `world`, `coord_x`, `coord_y`, `coord_z`)
-        VALUES ('$user_id', '$today', '$incident_date', '$notes', '$action_taken', '$world', $coord_x, $coord_y, $coord_z);");
+    $res = $conn->query("INSERT INTO `incident` (`user_id`, `created_date`, `incident_date`, `incident_type`, `notes`, `action_taken`, `world`, `coord_x`, `coord_y`, `coord_z`)
+        VALUES ('$user_id', '$today', '$incident_date', '$incident_type', '$notes', '$action_taken', '$world', $coord_x, $coord_y, $coord_z);");
     
     if($res === false){
         error("Failed to add user " . mysqli_error($conn));

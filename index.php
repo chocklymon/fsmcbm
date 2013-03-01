@@ -132,6 +132,9 @@
                 <label>Incident Date</label>
                 <input type="text" name="incident_date" />
                 <br/>
+                <label>Incident Type</label>
+                <input type="text" name="incident_type" />
+                <br/>
                 <label>Notes</label>
                 <textarea name="notes"></textarea>
                 <br/>
