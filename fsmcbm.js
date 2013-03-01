@@ -238,6 +238,19 @@
      * ----------------------------- */
     
     /**
+     * Displays a message to a user in a jQuery UI highlight box.
+     * @param {String} message The message to display.
+     */
+    function displayMessage(message) {
+        // Display the message
+        $("#highlight-msg").text(message);
+        $("#highlight").slideDown();
+        
+        // Display for four seconds
+        setTimeout(function(){$("#highlight").slideUp();}, 4000);
+    }
+    
+    /**
      * Sets up an field to be an jQuery UI AutoComplete enabled field.
      * @param {String} input The jQuery selector to apply the autocomplete to.
      * @param {String} value The jQuery selector for the element to set the
@@ -413,9 +426,9 @@
                         "fsmcbm.php?add_user=true",
                         $("#add-user-form").serialize(),
                         function(data){
-                            if(data.error != null){
+                            if(data.error == null){
                                 // Success
-                                // TODO
+                                displayMessage("User added succesfully.");
                             } else {
                                 // Error occured
                                 handleError(data.error);
