@@ -54,7 +54,17 @@
              * - int
              * - checkbox
              */
-            if( !this.showEmpty ){
+            
+            // See if this field should be shown when empty
+            var showEmpty;
+            
+            if(typeof(this.showEmpty) === 'function') {
+                showEmpty = this.showEmpty();
+            } else {
+                showEmpty = this.showEmpty;
+            }
+            
+            if( ! showEmpty ){
                 if(value == null){
                     // Don't show empty fields
                     return "";
@@ -341,7 +351,7 @@
                             div.append($("<button>").text("Cancel").attr("id","i-c-" + datum.id).button().click(function(){
                                 // TODO cancel incident save button code here
                             }));
-
+                                
                             div.appendTo(incidents);
                         }
                     }
