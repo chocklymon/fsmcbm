@@ -389,6 +389,11 @@
         $("#dialog-add-user").dialog("open");
     }
     
+    function rowLookup(){
+        $("#lookup-user_id").val($(this).attr("id").substring(3));
+        getInformation();
+    }
+    
     /**
      * Opens the add user dialog, and after the new user is saved, adds them to the incident.
      */
@@ -414,11 +419,9 @@
                 });
             },
             load: function(event, ui){
-                $(ui.panel).find("tr").click(function(){
-                    $("#lookup-user_id").val($(this).attr("id").substring(3));
-                    getInformation();
-                });
-            }
+                $(ui.panel).find("tr").click(rowLookup);
+            },
+            disabled: [3]// Search tab is disabled by default
         });
 
         // Make buttons jQuery UI buttons
@@ -489,12 +492,44 @@
         lookup("#lookup", "#lookup-user_id", getInformation, "No users found");
         lookup("#user_name", "#user_id", null, "Not Found - Add New", addUserToIncident);
 
-        // Attach events
+        // Attach events \\
+        
+        // Add user button
         $("#add-user").click(openAddUser);
+        
+        // Add incident button
         $("#add-incident").click(function(){
             $("#dialog-add-incident").dialog("open");
-
         });
+        
+        // Search box
+        $("#search").change(function(){
+            $.get("fsmcbm.php",
+                { search : $(this).val() },
+                function(data) {
+                    // Check for error with the search
+                    try {
+                        $.parseJSON(data);
+                        if(data.error != null){
+                            handleError(data.error);
+                            return;
+                        }
+                    // Catch and ignore any errors thrown by parseJSON (since it HTML is returned it will error out).
+                    } catch(ignore){}
+                    
+                    // Set the tab contents
+                    $("#search-tab").html(data);
+                    
+                    // Attach the row lookup event
+                    $("#search-tab tr").click(rowLookup)
+                    
+                    // Re-enable the search tab, and switch to it.
+                    $("#tabs").tabs("enable", 3).tabs("option", "active", 3);
+                },
+                'html'
+            );
+        });
+        
     });
 
 })(jQuery);

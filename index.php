@@ -46,6 +46,7 @@
                     <li><a href="#manage">Manage</a></li>
                     <li><a href="fsmcbm.php?get=bans">Bans</a></li>
                     <li><a href="fsmcbm.php?get=watchlist">Watch-List</a></li>
+                    <li><a href="#search-tab">Search</a></li>
                 </ul>
                 <div id="manage">
                     <div id="user-info" class="form">
@@ -86,6 +87,9 @@
                     <div id="incident-info">
 
                     </div>
+                </div>
+                <div id="search-tab">
+                    
                 </div>
             </div>
         </div>
