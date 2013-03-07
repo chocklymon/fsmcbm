@@ -73,15 +73,17 @@
             
             value = this.formatValue(value);
             
-            if(this.type == "label"){
-                // Non editable label
-                return "<em>" + this.name + "</em><code>" + value + "</code>" + this.after;
-                
-            }
-            
             html = $("<label>").text(this.name).attr("for", id);
             
-            if(this.type == "textarea"){
+            if(this.type == "label"){
+                // Non editable label
+                html = html.add($("<input>").val(value).attr({
+                    'type' : "text",
+                    'name' : name,
+                    'id'  : id
+                }).prop('disabled', true));
+                
+            } else if(this.type == "textarea"){
                 // Text area
                 html = html.add($("<textarea>").attr({
                     "name": name,
