@@ -20,7 +20,7 @@
         datum = $.extend({
             // Default Options
             type:"text",
-            format:"none",
+            disabled: false,
             name:null,
             after:"<br/>",
             options:[],
@@ -48,14 +48,13 @@
         toHTML : function(value, name, idNum) {
             /* Types:
              * - text
-             * - label
              * - date
              * - textarea
              * - select
              * - int
              * - checkbox
              */
-            var showEmpty, html, id = name + "_" + idNum;
+            var showEmpty, label, field, id = name + "_" + idNum;
             
             // See if this field should be shown when empty
             if(typeof(this.showEmpty) === 'function') {
@@ -73,77 +72,40 @@
             
             value = this.formatValue(value);
             
-            html = $("<label>").text(this.name).attr("for", id);
+            label = $("<label>").text(this.name).attr("for", id);
             
-            if(this.type == "label"){
-                // Non editable label
-                html = html.add($("<input>").val(value).attr({
-                    'type' : "text",
-                    'name' : name,
-                    'id'  : id
-                }).prop('disabled', true));
-                
-            } else if(this.type == "textarea"){
+            if(this.type == "textarea"){
                 // Text area
-                html = html.add($("<textarea>").attr({
-                    "name": name,
-                    "id"  : id
-                }).text(value));
+                field = $("<textarea>").text(value);
                 
             } else if(this.type == "select"){
                 // Drop Down
-                var sel = $("<select>").attr({
-                    "name": name,
-                    "id"  : id
-                });
+                field = $("<select>")
                 
                 var i;
                 for(i in this.options){
                     i = this.options[i];
                     if(i.label == null){
-                        sel.append($("<option>").text(i));
+                        field.append($("<option>").text(i));
                     } else {
-                        sel.append($("<option>").attr("value", i.value).text(i.label));
+                        field.append($("<option>").attr("value", i.value).text(i.label));
                     }
                 }
-                sel.val(value);
+                field.val(value);
                 
-                html = html.add(sel);
-                
-            } else if(this.type == "text" || this.type == "int"){
-                // Text and int types
-                var input = $("<input>").val(value).attr({
-                    'type' : "text",
-                    'name' : name,
-                    'id'  : id
-                });
+            } else if(this.type == "text" || this.type == "int" || this.type == "date"){
+                // Text, date, and int types
+                field = $("<input>").attr('type', 'text').val(value);
                 
                 if(this.type == "int"){
-                    input.addClass("int");
+                    field.addClass("int");
                 }
-                html = html.add(input);
-                
-            } else if(this.type == "date"){
-                // Date field
-                html = html.add($("<input>").attr({
-                    'type' : "text",
-                    'name' : name,
-                    'id'  : id
-                }).val(value).datepicker({
-                   showOn: "both",
-                   // TODO get my own calendar icon
-                   buttonImage: "http://jqueryui.com/resources/demos/datepicker/images/calendar.gif",
-                   buttonImageOnly : true,
-                   dateFormat : "yy-mm-dd"
-                }));
                 
             } else if(this.type == "checkbox"){
                 // Checkbox
-                html = html.add($("<input>").attr({
-                    'type' : 'checkbox',
-                    'name' : name,
-                    'id'  : id
-                }));
+                field = $("<input>").attr({
+                    'type' : 'checkbox'
+                });
                 
             } else {
                 // Unknown
@@ -151,7 +113,29 @@
                 return "";
             }
             
-            return html.add($(this.after));
+            // Add common attributes to the field
+            field.attr({
+                "name": name,
+                "id"  : id
+            });
+            
+            // Attach the date picker to dates
+            if( this.disabled ) {
+                // Disabled field
+                field.prop('disabled', true);
+                
+                // Date check part of this if else so that disabled fields don't have the datpicker attached.
+            } else if(this.type == "date") {
+                field.datepicker({
+                   showOn: "both",
+                   // TODO get my own calendar icon
+                   buttonImage: "http://jqueryui.com/resources/demos/datepicker/images/calendar.gif",
+                   buttonImageOnly : true,
+                   dateFormat : "yy-mm-dd"
+                });
+            }
+            
+            return label.add(field).add(this.after);
         },
         
         formatValue : function(value) {
@@ -159,7 +143,7 @@
             if(value == null)
                 return "";
             
-            if(this.format == "date"){
+            if(this.type == "date"){
                 // Do date formating (change from yy-mm-dd hh:mm:ss to yy-mm-dd)
                 value = value.substring(0, value.indexOf(" "));
                 return value;
@@ -179,17 +163,16 @@
     var incident = {
         moderator : info({
             name:"Moderator",
-            type:"label"
+            disabled: true
         }),
         created_date : info({
-            type:"label",
-            format:"date",
+            type:"date",
+            disabled: true,
             name:"Created Date",
             after:""
         }),
         incident_date : info({
             type:"date",
-            format:"date",
             name:"Incident Date"
         }),
         incident_type : info({
@@ -240,14 +223,15 @@
             name: "Z"
         }),
         appeal_date : info({
-            type:  "label",
-            format:"date",
+            type    : "date",
+            disabled: true,
             name:  "Appeal Date",
             showEmpty:false
         }),
         appeal : info({
             name: "Appeal",
-            type: "label",
+            type: "textarea",
+            disabled: true,
             showEmpty:false
         }),
         appeal_response : info({
