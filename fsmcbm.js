@@ -253,7 +253,9 @@
         appeal_response : info({
             type: "textarea",
             name: "Appeal Response",
-            showEmpty:false // TODO: This should only be false when there is no appeal.
+            showEmpty: function(idNum){
+                return $("#appeal_" + idNum).length > 0;
+            }
         })
     };
     
