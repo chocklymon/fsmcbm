@@ -42,9 +42,10 @@
          * Takes a data structre and turns into into a set of HTML tags.
          * @parm {String} value The value of the data structure.
          * @parm {String} name The name of the data structure.
+         * @parm {int} idNum An ID number to attach to the html tags.
          * @return A jQuery object containing the HTML nodes for the data structure.
          */
-        toHTML : function(value, name) {
+        toHTML : function(value, name, idNum) {
             /* Types:
              * - text
              * - label
@@ -54,12 +55,11 @@
              * - int
              * - checkbox
              */
+            var showEmpty, html, id = name + "_" + idNum;
             
             // See if this field should be shown when empty
-            var showEmpty;
-            
             if(typeof(this.showEmpty) === 'function') {
-                showEmpty = this.showEmpty();
+                showEmpty = this.showEmpty(idNum);
             } else {
                 showEmpty = this.showEmpty;
             }
@@ -79,15 +79,22 @@
                 
             }
             
-            var html = $("<label>").text(this.name);
+            html = $("<label>").text(this.name).attr("for", id);
             
             if(this.type == "textarea"){
                 // Text area
-                html = html.add($("<textarea>").attr("name", name).text(value));
+                html = html.add($("<textarea>").attr({
+                    "name": name,
+                    "id"  : id
+                }).text(value));
                 
             } else if(this.type == "select"){
                 // Drop Down
-                var sel = $("<select>").attr("name", name);
+                var sel = $("<select>").attr({
+                    "name": name,
+                    "id"  : id
+                });
+                
                 var i;
                 for(i in this.options){
                     i = this.options[i];
@@ -105,7 +112,8 @@
                 // Text and int types
                 var input = $("<input>").val(value).attr({
                     'type' : "text",
-                    'name' : name
+                    'name' : name,
+                    'id'  : id
                 });
                 
                 if(this.type == "int"){
@@ -117,7 +125,8 @@
                 // Date field
                 html = html.add($("<input>").attr({
                     'type' : "text",
-                    'name' : name
+                    'name' : name,
+                    'id'  : id
                 }).val(value).datepicker({
                    showOn: "both",
                    // TODO get my own calendar icon
@@ -130,7 +139,8 @@
                 // Checkbox
                 html = html.add($("<input>").attr({
                     'type' : 'checkbox',
-                    'name' : name
+                    'name' : name,
+                    'id'  : id
                 }));
                 
             } else {
@@ -341,7 +351,7 @@
                             var div = $("<div>").addClass("form").attr("id", "i-" + datum.id);
 
                             $.each(incident, function(index, value){
-                                div.append(value.toHTML(datum[index], index));
+                                div.append(value.toHTML(datum[index], index, datum.id));
                             });
 
                             // Add the save and cancel buttons
