@@ -1,7 +1,7 @@
 /* Final Score MC Ban Manager
  * 
  */
-
+// TODO add datepicker to incident date field in add incident
 (function($){
     
     // General Variables
@@ -277,6 +277,7 @@
      */
     function attachNewUserToIncident() {
         attachNewUser = true;
+        $("#user-add-username").val($("#user_name").val());
         openAddUser();
     }
     
@@ -481,7 +482,7 @@
                                 
                                 // See if the user needs to be attached to an incident
                                 if(attachNewUser){
-                                    $("#user_name").val($("#user-add-username"));
+                                    $("#user_name").val($("#user-add-username").val());
                                     $("#user_id").val(data.user_id);
                                     attachNewUser = false;
                                 }
