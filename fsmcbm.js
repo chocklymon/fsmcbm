@@ -4,17 +4,33 @@
 
 (function($){
     
+    // General Variables
+    var info,
+        DataStructure,
+        incident,
+        attachNewUser = false;
+        
     /* ----------------------------- *
      *   DATA STRUCTURE OBJECT       *
      * ----------------------------- */
     
-    // Convenience constructor
-    var info = function(options) {
+    /**
+     * Convenience constructor for a DataStructure.
+     * @param {Object} options The options/settings for the DataStructure.
+     * Options:
+     * type {String} Type of the DataStructure valid type strings: text, date, textarea, select, int, checkbox. Default is text.
+     * disabled {boolean} Whether this field should be disabled. Default is false.
+     * name {String} The name of the Data Stucture. Used when ouptuing it's form label.
+     * after {Mixed} The element to insert after the DataStructure when it is generated. Default is "<br/>"
+     * options {Array} An array of Strings or objects to use as the options when the type is select. Objects need label and value properties.
+     * showEmpty {Mixed} Indicates if this DataStructure should be generated when it has no value. Accepts boolean or a function that returns true. The function is passed the id number of the html field.
+     */
+    info = function(options) {
         return new DataStructure(options);
     };
     
-    // Constructor
-    var DataStructure = function(options) {
+    // DataStructure Constructor
+    DataStructure = function(options) {
         var datum, i;
         
         datum = $.extend({
@@ -27,6 +43,7 @@
             showEmpty:true
         }, options);
         
+        // Attach each option to the data structure
         for ( i in datum ) {
             this[i] = datum[i];
         }
@@ -34,6 +51,7 @@
         return this;
     };
     
+    // Define the data structure API
     info.fn = DataStructure.prototype = {
         
         // Data Structure Functions
@@ -155,12 +173,16 @@
     };
     
     
+    
     /* ----------------------------- *
      *      DATA STRUCTURES          *
      * ----------------------------- */
-
-    // Incident Data Structure
-    var incident = {
+    
+    
+    /**
+     * Contains the Data Structures for incidents.
+     */
+    incident = {
         moderator : info({
             name:"Moderator",
             disabled: true
@@ -244,9 +266,20 @@
     };
     
     
+    
     /* ----------------------------- *
      *          FUNCTIONS            *
      * ----------------------------- */
+    
+    
+    /**
+     * Opens the add user dialog, and after the new user is saved, adds them to the incident.
+     */
+    function attachNewUserToIncident() {
+        attachNewUser = true;
+        openAddUser();
+    }
+    
     
     /**
      * Displays a message to a user in a jQuery UI highlight box.
@@ -261,52 +294,7 @@
         setTimeout(function(){$("#highlight").slideUp();}, 4000);
     }
     
-    /**
-     * Sets up an field to be an jQuery UI AutoComplete enabled field.
-     * @param {String} input The jQuery selector to apply the autocomplete to.
-     * @param {String} value The jQuery selector for the element to set the
-     * autocompletes value to.
-     * @param {Function} callback A function to call after the a value has been
-     * selected from the autocomplete options. Can be null.
-     * @param {String} emptyLabel The option text to display when no results are
-     * found.
-     * @param {Function} emptyCallback A function to call if the no result option
-     * is selected. Can be null.
-     */
-    function lookup(input, value, callback, emptyLabel, emptyCallback) {
-        $(input).autocomplete({
-            source : function (request, response) {
-                $.get("fsmcbm.php",{
-                        term: request.term
-                    }, function (data) {
-                        if (data.length == 0) {
-                            data.push({
-                                'value': 0,
-                                'label': emptyLabel
-                            });
-                        }
-                        response(data);
-                    }, 'json');
-            },
-            minLength : 2,
-            select : function( event, ui ){
-                if(ui.item.value == 0){
-                    if(emptyCallback != null){
-                        emptyCallback();
-                    }
-                } else {
-                    $(this).val(ui.item.label);
-                    $(value).val(ui.item.value);
-
-                    if(callback != null){
-                        callback();
-                    }
-                }
-                return false;
-            }
-        });
-    }
-
+    
     /**
      *  Retrieves the user information, and then displays it into the manage
      *  users tab.
@@ -366,6 +354,7 @@
         );
     }
     
+
     /**
      * Handles errors.
      * @param {String} error The error message. Optional.
@@ -382,6 +371,54 @@
         setTimeout(function(){$("#error").slideUp();}, 6000);
     }
     
+    
+    /**
+     * Sets up an field to be an jQuery UI AutoComplete enabled field.
+     * @param {String} input The jQuery selector to apply the autocomplete to.
+     * @param {String} value The jQuery selector for the element to set the
+     * autocompletes value to.
+     * @param {Function} callback A function to call after the a value has been
+     * selected from the autocomplete options. Can be null.
+     * @param {String} emptyLabel The option text to display when no results are
+     * found.
+     * @param {Function} emptyCallback A function to call if the no result option
+     * is selected. Can be null.
+     */
+    function lookup(input, value, callback, emptyLabel, emptyCallback) {
+        $(input).autocomplete({
+            source : function (request, response) {
+                $.get("fsmcbm.php",{
+                        term: request.term
+                    }, function (data) {
+                        if (data.length == 0) {
+                            data.push({
+                                'value': 0,
+                                'label': emptyLabel
+                            });
+                        }
+                        response(data);
+                    }, 'json');
+            },
+            minLength : 2,
+            select : function( event, ui ){
+                if(ui.item.value == 0){
+                    if(emptyCallback != null){
+                        emptyCallback();
+                    }
+                } else {
+                    $(this).val(ui.item.label);
+                    $(value).val(ui.item.value);
+
+                    if(callback != null){
+                        callback();
+                    }
+                }
+                return false;
+            }
+        });
+    }
+    
+    
     /**
      * Opens the add user jQuery UI dialog.
      */
@@ -389,18 +426,15 @@
         $("#dialog-add-user").dialog("open");
     }
     
+    
+    /**
+     * Performs a lookup on a user based on which table row was clicked.
+     */
     function rowLookup(){
         $("#lookup-user_id").val($(this).attr("id").substring(3));
         getInformation();
     }
     
-    /**
-     * Opens the add user dialog, and after the new user is saved, adds them to the incident.
-     */
-    function addUserToIncident() {
-        openAddUser();
-        // TODO have the user added to the DB, and updated into the add incident dialog
-    }
     
     
     /* ----------------------------- *
@@ -444,6 +478,14 @@
                             if(data.error == null){
                                 // Success
                                 displayMessage("User added succesfully.");
+                                
+                                // See if the user needs to be attached to an incident
+                                if(attachNewUser){
+                                    $("#user_name").val($("#user-add-username"));
+                                    $("#user_id").val(data.user_id);
+                                    attachNewUser = false;
+                                }
+                                
                             } else {
                                 // Error occured
                                 handleError(data.error);
@@ -490,7 +532,7 @@
 
         // Set up the autocomplete lookup fields
         lookup("#lookup", "#lookup-user_id", getInformation, "No users found");
-        lookup("#user_name", "#user_id", null, "Not Found - Add New", addUserToIncident);
+        lookup("#user_name", "#user_id", null, "Not Found - Add New", attachNewUserToIncident);
 
         // Attach events \\
         

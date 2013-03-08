@@ -96,11 +96,11 @@
         <!-- Dialogs -->
         <div id="dialog-add-user" title="Add User">
             <form id="add-user-form" class="form">
-                <label for="user-info-username">Username:</label>
+                <label for="user-add-username">Username:</label>
                 <input type="text" value="" id="user-add-username" name="username">
                 <br/>
 
-                <label for="user-info-rank">Rank:</label>
+                <label for="user-add-rank">Rank:</label>
                 <select id="user-add-rank" name="rank">
                     <option>Everyone</option>
                     <option>Regular</option>
@@ -113,18 +113,18 @@
 
                 <label for="user-add-banned">Banned:</label>
                 <input type="checkbox" id="user-add-banned" name="banned" />
-                <span id="user-info-permanent-box">
+                <span id="user-add-permanent-box">
                     <label for="user-add-permanent">Permanent:</label>
                     <input type="checkbox" id="user-add-permanent" name="permanent" />
                 </span>
                 <br/>
 
                 <label for="user-add-relations">Relations:</label>
-                <textarea id="user-info-relations" name="relations"></textarea>
+                <textarea id="user-add-relations" name="relations"></textarea>
                 <br/>
 
                 <label for="user-add-notes">Notes:</label>
-                <textarea id="user-info-notes" name="notes"></textarea>
+                <textarea id="user-add-notes" name="notes"></textarea>
             </form>
         </div>
         <div id="dialog-add-incident" title="Add Incident">
