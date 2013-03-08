@@ -58,6 +58,7 @@
                         <select id="user-info-rank" name="rank">
                             <option>Everyone</option>
                             <option>Regular</option>
+                            <option>Donor</option>
                             <option>Builder</option>
                             <option>Engineer</option>
                             <option>Moderator</option>
@@ -104,6 +105,7 @@
                 <select id="user-add-rank" name="rank">
                     <option>Everyone</option>
                     <option>Regular</option>
+                    <option>Donor</option>
                     <option>Builder</option>
                     <option>Engineer</option>
                     <option>Moderator</option>
