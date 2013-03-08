@@ -326,6 +326,7 @@
                             var datum = data.incident[i];
 
                             var div = $("<div>").addClass("form").attr("id", "i-" + datum.id);
+                            div.appendTo(incidents);
 
                             $.each(incident, function(index, value){
                                 div.append(value.toHTML(datum[index], index, datum.id));
@@ -338,8 +339,6 @@
                             div.append($("<button>").text("Cancel").attr("id","i-c-" + datum.id).button().click(function(){
                                 // TODO cancel incident save button code here
                             }));
-                                
-                            div.appendTo(incidents);
                         }
                     }
                     
