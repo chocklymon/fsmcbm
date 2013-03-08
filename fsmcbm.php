@@ -254,18 +254,21 @@ if(isset($_GET['term'])){
     // TODO sanitize this
     $search = $_GET['search'];
     
-    // TODO refine this search (make a distinct union of users and incidents?)
-    buildTable("SELECT DISTINCT u.id, u.username, u.rank, u.notes
+    buildTable(
+       "SELECT DISTINCT u.id, u.username, u.rank, u.notes
         FROM users AS u, incident AS i
         WHERE u.id = i.user_id
-            AND (u.username LIKE '%$search%'
-            OR u.relations LIKE '%$search%'
-            OR u.notes LIKE '%$search%'
-            OR i.notes LIKE '%$search%'
+            AND (i.notes LIKE '%$search%'
             OR i.incident_type LIKE '%$search%'
             OR i.action_taken LIKE '%$search%'
             OR i.appeal LIKE '%$search%'
-            OR i.appeal_response LIKE '%$search%')");
+            OR i.appeal_response LIKE '%$search%')
+        UNION
+        SELECT DISTINCT u.id, u.username, u.rank, u.notes
+        FROM users AS u
+        WHERE u.username LIKE '%$search%'
+            OR u.relations LIKE '%$search%'
+            OR u.notes LIKE '%$search%'");
 }
 
 ?>
