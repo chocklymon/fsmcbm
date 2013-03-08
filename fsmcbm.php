@@ -77,7 +77,7 @@ if(isset($_GET['term'])){
      */
     
     $conn = getConnection();
-    
+    // TODO sanitize input
     $res = $conn->query("SELECT id,username FROM users WHERE username LIKE \"{$_GET['term']}%\"");
     
     if($res === false){
@@ -101,6 +101,7 @@ if(isset($_GET['term'])){
      */
     $conn = getConnection();
     
+    // TODO santitize the input
     // Get the user
     $res = $conn->query("SELECT * FROM users WHERE id = {$_GET['lookup']}");
     
@@ -219,8 +220,10 @@ if(isset($_GET['term'])){
     $coord_y = sanitizeNum($_POST['coord_y']);
     $coord_z = sanitizeNum($_POST['coord_z']);
     
-    $res = $conn->query("INSERT INTO `incident` (`user_id`, `created_date`, `incident_date`, `incident_type`, `notes`, `action_taken`, `world`, `coord_x`, `coord_y`, `coord_z`)
-        VALUES ('$user_id', '$today', '$incident_date', '$incident_type', '$notes', '$action_taken', '$world', $coord_x, $coord_y, $coord_z);");
+    $query = "INSERT INTO `incident` (`user_id`, `created_date`, `incident_date`, `incident_type`, `notes`, `action_taken`, `world`, `coord_x`, `coord_y`, `coord_z`)
+        VALUES ('$user_id', '$today', '$incident_date', '$incident_type', '$notes', '$action_taken', '$world', '$coord_x', '$coord_y', '$coord_z')";
+    
+    $res = $conn->query($query);
     
     if($res === false){
         error("Failed to add user " . mysqli_error($conn));
