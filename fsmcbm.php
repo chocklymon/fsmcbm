@@ -70,6 +70,8 @@ function sanitizeNum($num){
     }
 }
 
+// TODO add field verification (make sure that required data is there).
+
 if(isset($_GET['term'])){
     /*
      * AUTO COMPLETE USER NAMES

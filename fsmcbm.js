@@ -2,6 +2,7 @@
  * 
  */
 // TODO add datepicker to incident date field in add incident
+// TODO add field verification
 (function($){
     
     // General Variables
@@ -335,6 +336,9 @@
                             // Add the save and cancel buttons
                             div.append($("<button>").text("Save").attr("id","i-s-" + datum.id).button().click(function(){
                                 // TODO save incident button code here
+                                // Get the ID
+                                var id = $(this).attr('id').substring(4);
+                                console.log(id);
                             }));
                             div.append($("<button>").text("Cancel").attr("id","i-c-" + datum.id).button().click(function(){
                                 // TODO cancel incident save button code here
@@ -542,6 +546,43 @@
         // Add incident button
         $("#add-incident").click(function(){
             $("#dialog-add-incident").dialog("open");
+        });
+        
+        // Save user information button
+        $("#user-info-save").click(function(){
+            
+            // Verify that there is a user
+            var user_id = $("#lookup-user_id").val();
+            if(user_id == null || user_id == ""){
+                displayMessage("Please select a user.");
+                return;
+            }
+            
+            // Serialize the user information
+            
+            var data = {};
+            
+            data.id = user_id;
+            data.rank = $("#user-info-rank").val();
+            data.banned = $("#user-info-banned").is(":checked");
+            data.permanent = $("#user-info-permanent").is(":checked");
+            data.relations = $("#user-info-relations").val();
+            data.notes = $("#user-info-notes").val();
+            
+            // Send in the changes
+            $.post("fsmcbm.php?update=user", data, function(data){
+                if(data.error == null){
+                    displayMessage("User updated.");
+                } else {
+                    handleError(data.error);
+                }
+            }, 'json');
+            
+        });
+        
+        // User information cancel button
+        $("#user-info-cancel").click(function(){
+            // TODO
         });
         
         // Search box
