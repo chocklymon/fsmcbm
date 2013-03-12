@@ -35,9 +35,8 @@ function truncate($string){
     }
 }
 
-function buildTable($query){
-    $conn = getConnection();
-
+function buildTable($query, &$conn){
+    
     $res = $conn->query($query);
 
     if($res === false){
@@ -61,14 +60,23 @@ function buildTable($query){
     echo $result . "</tbody></table>";
 }
 
-function sanitizeNum($num){
-    $num = preg_replace('#\D#', '', $num);
-    if(strlen($num) == 0){
-        return null;
+function sanitize($input, &$mysqli_conn, $number = false) {
+    
+    if($number) {
+        // Sanitize as a number
+        $num = preg_replace('#\D#', '', $input);
+        if(strlen($num) == 0){
+            return null;
+        } else {
+            return $num*1;
+        }
     } else {
-        return $num*1;
+        // Sanitize as a string
+        return $mysqli_conn->real_escape_string($input);
     }
+    
 }
+
 
 // TODO add field verification (make sure that required data is there).
 
@@ -79,8 +87,10 @@ if(isset($_GET['term'])){
      */
     
     $conn = getConnection();
-    // TODO sanitize input
-    $res = $conn->query("SELECT id,username FROM users WHERE username LIKE \"{$_GET['term']}%\"");
+    
+    $term = sanitize( $_GET['term'], $conn );
+    
+    $res = $conn->query("SELECT id,username FROM users WHERE username LIKE '$term%'");
     
     if($res === false){
         error("Nothing Found " . mysqli_error($conn));
@@ -103,9 +113,10 @@ if(isset($_GET['term'])){
      */
     $conn = getConnection();
     
-    // TODO santitize the input
+    $lookup = sanitize($_GET['lookup'], $conn, true);
+    
     // Get the user
-    $res = $conn->query("SELECT * FROM users WHERE id = {$_GET['lookup']}");
+    $res = $conn->query("SELECT * FROM users WHERE id = $lookup");
     
     if($res === false){
         error("Nothing Found " . mysqli_error($conn));
@@ -126,7 +137,7 @@ if(isset($_GET['term'])){
     
     
     // Get the incidents
-    $res = $conn->query("SELECT * FROM incident WHERE user_id = {$_GET['lookup']}");
+    $res = $conn->query("SELECT * FROM incident WHERE user_id = $lookup");
     
     if($res === false){
         error("Nothing Found " . mysqli_error($conn));
@@ -146,7 +157,7 @@ if(isset($_GET['term'])){
         $res = $conn->query("SELECT id,username FROM users WHERE id IN (" . implode(",", $user_ids) . ")");
 
         if($res === false){
-            error("Unable to extrac moderator id's: " . mysqli_error($conn));
+            error("Unable to extract moderator id's: " . mysqli_error($conn));
         }
 
         while($row = $res->fetch_assoc()){
@@ -178,10 +189,10 @@ if(isset($_GET['term'])){
     
     $conn = getConnection();
     
-    $username = $conn->real_escape_string($_POST['username']);
-    $rank = $conn->real_escape_string($_POST['rank']);
-    $relations = $conn->real_escape_string($_POST['relations']);
-    $notes = $conn->real_escape_string($_POST['notes']);
+    $username = sanitize($_POST['username'], $conn);
+    $rank = sanitize($_POST['rank'], $conn);
+    $relations = sanitize($_POST['relations'], $conn);
+    $notes = sanitize($_POST['notes'], $conn);
     
     $banned = (isset($_POST['banned']) && $_POST['banned'] == 'on') ? '1' : '0';
     
@@ -211,16 +222,16 @@ if(isset($_GET['term'])){
     
     // TODO get moderator ID
     
-    $user_id = $conn->real_escape_string($_POST['user_id']);
-    $today = date('Y-m-d H:i:s');
-    $incident_date = $conn->real_escape_string($_POST['incident_date']);
-    $incident_type = $conn->real_escape_string($_POST['incident_type']);
-    $notes = $conn->real_escape_string($_POST['notes']);
-    $action_taken = $conn->real_escape_string($_POST['action_taken']);
-    $world = $conn->real_escape_string($_POST['world']);
-    $coord_x = sanitizeNum($_POST['coord_x']);
-    $coord_y = sanitizeNum($_POST['coord_y']);
-    $coord_z = sanitizeNum($_POST['coord_z']);
+    $user_id = sanitize($_POST['user_id'], $conn);
+    $today   = date('Y-m-d H:i:s');
+    $incident_date = sanitize($_POST['incident_date'], $conn);
+    $incident_type = sanitize($_POST['incident_type'], $conn);
+    $notes   = sanitize($_POST['notes'], $conn);
+    $action_taken = sanitize($_POST['action_taken'], $conn);
+    $world   = sanitize($_POST['world'], $conn);
+    $coord_x = sanitize($_POST['coord_x'], $conn, true);
+    $coord_y = sanitize($_POST['coord_y'], $conn, true);
+    $coord_z = sanitize($_POST['coord_z'], $conn, true);
     
     $query = "INSERT INTO `incident` (`user_id`, `created_date`, `incident_date`, `incident_type`, `notes`, `action_taken`, `world`, `coord_x`, `coord_y`, `coord_z`)
         VALUES ('$user_id', '$today', '$incident_date', '$incident_type', '$notes', '$action_taken', '$world', '$coord_x', '$coord_y', '$coord_z')";
@@ -232,12 +243,11 @@ if(isset($_GET['term'])){
     }
     
     // Return the id
-    $result = array('incident_id'=>$conn->insert_id);
+    $result = array('incident_id' => $conn->insert_id);
     
     $conn->close();
     
     echo json_encode($result);
-    // TODO
     
 } else if(isset($_GET['get'])){
     // Page Requested
@@ -247,17 +257,24 @@ if(isset($_GET['term'])){
          * PULL ALL THE BANNED USERS
          * =========================
          */
+        
+        $conn = getConnection();
 
-        buildTable("SELECT * FROM users WHERE banned = TRUE");
+        buildTable("SELECT * FROM users WHERE banned = TRUE", $conn);
         
     } else if($_GET['get'] == 'watchlist'){
         
-        buildTable("SELECT users.id, users.username, users.rank, users.notes FROM users, incident WHERE users.id=incident.user_id AND users.banned = FALSE");
+        $conn = getConnection();
+        
+        buildTable("SELECT users.id, users.username, users.rank, users.notes FROM users, incident WHERE users.id=incident.user_id AND users.banned = FALSE",
+                $conn);
         
     }
 } else if(isset($_GET['search'])){
-    // TODO sanitize this
-    $search = $_GET['search'];
+    
+    $conn = getConnection();
+    
+    $search = sanitize($_GET['search'], $conn);
     
     buildTable(
        "SELECT DISTINCT u.id, u.username, u.rank, u.notes
@@ -273,7 +290,8 @@ if(isset($_GET['term'])){
         FROM users AS u
         WHERE u.username LIKE '%$search%'
             OR u.relations LIKE '%$search%'
-            OR u.notes LIKE '%$search%'");
+            OR u.notes LIKE '%$search%'",
+            $conn);
 }
 
 ?>
