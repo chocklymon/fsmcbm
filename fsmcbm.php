@@ -222,7 +222,7 @@ if(isset($_GET['term'])){
     
     // TODO get moderator ID
     
-    $user_id = sanitize($_POST['user_id'], $conn);
+    $user_id = sanitize($_POST['user_id'], $conn, true);
     $today   = date('Y-m-d H:i:s');
     $incident_date = sanitize($_POST['incident_date'], $conn);
     $incident_type = sanitize($_POST['incident_type'], $conn);
@@ -292,6 +292,45 @@ if(isset($_GET['term'])){
             OR u.relations LIKE '%$search%'
             OR u.notes LIKE '%$search%'",
             $conn);
+} else if(isset($_GET['update'])) {
+    if($_GET['update'] == "user") {
+        // TODO
+        
+    } else if($_GET['update'] == "incident") {
+        
+        $conn = getConnection();
+        
+        $id = sanitize($_POST['id'], $conn, true);
+        $incident_date = sanitize($_POST['incident_date'], $conn);
+        $incident_type = sanitize($_POST['incident_type'], $conn);
+        $notes   = sanitize($_POST['notes'], $conn);
+        $action_taken = sanitize($_POST['action_taken'], $conn);
+        $world   = sanitize($_POST['world'], $conn);
+        $coord_x = sanitize($_POST['coord_x'], $conn, true);
+        $coord_y = sanitize($_POST['coord_y'], $conn, true);
+        $coord_z = sanitize($_POST['coord_z'], $conn, true);
+        $appeal_response = sanitize($_POST['appeal_response'], $conn);
+        
+        $query = "UPDATE `incident` SET
+            `incident_date` = '$incident_date',
+            `incident_type` = '$incident_type',
+            `notes` = '$notes',
+            `action_taken` = '$action_taken',
+            `world` = '$world',
+            `coord_x` = '$coord_x',
+            `coord_y` = '$coord_y',
+            `coord_z` = '$coord_z',
+            `appeal_response` = '$appeal_response'
+            WHERE  `incident`.`id` = $id";
+        
+        $res = $conn->query($query);
+        
+        if($res === false){
+            error("Failed to update incident." . mysqli_error($conn));
+        }
+        
+        echo json_encode( array("success" => true ));
+    }
 }
 
 ?>

@@ -337,8 +337,31 @@
                             div.append($("<button>").text("Save").attr("id","i-s-" + datum.id).button().click(function(){
                                 // TODO save incident button code here
                                 // Get the ID
-                                var id = $(this).attr('id').substring(4);
-                                console.log(id);
+                                var id = $(this).button("option", "disabled", true).attr('id').substring(4);
+                                
+                                // Save the fields
+                                var datum = {
+                                    "id" : id
+                                };
+                                
+                                $.each(incident, function(index, value){
+                                    datum[index] = $("#" + index + "_" + id).val();
+                                });
+                                
+                                $.post("fsmcbm.php?update=incident",
+                                    datum,
+                                    function(data){
+                                        // Re-enable the button
+                                        $("#i-s-" + id).button("option", "disabled", false);
+                                        if(data.error == null){
+                                            // Success
+                                            displayMessage("Incident updated.");
+                                        } else {
+                                            // Error occured
+                                            handleError(data.error);
+                                        }
+                                    },
+                                    'json');
                             }));
                             div.append($("<button>").text("Cancel").attr("id","i-c-" + datum.id).button().click(function(){
                                 // TODO cancel incident save button code here
