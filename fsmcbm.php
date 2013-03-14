@@ -186,21 +186,31 @@ function buildTable($query, &$conn){
     if($res === false){
         error("Nothing Found.");
     }
-    // TODO deal with no results
-    $result = "<table class='list'><thead><tr><th>Name</th><th>Rank</th><th>Notes</th></tr></thead><tbody>";
+    
+    if($res->num_rows == 0){
+        // Nothing found
+        $result = "<div>Nothing Found</div>";
+        
+    } else {
+    
+        // Place the results into the table
+        $result = "<table class='list'><thead><tr><th>Name</th><th>Rank</th><th>Notes</th></tr></thead><tbody>";
 
-    while($row = $res->fetch_assoc()){
-        $result .= "<tr id='id-" . $row['id'] . "'><td>"
-                . $row['username'] . "</td><td>"
-                . $row['rank'] . "</td><td>"
-                . truncate($row['notes']) . "</td></tr>";
+        while($row = $res->fetch_assoc()){
+            $result .= "<tr id='id-" . $row['id'] . "'><td>"
+                    . $row['username'] . "</td><td>"
+                    . $row['rank'] . "</td><td>"
+                    . truncate($row['notes']) . "</td></tr>";
+        }
+        
+        $result .= "</tbody></table>";
     }
 
     $res->free();
 
     $conn->close();
 
-    echo $result . "</tbody></table>";
+    echo $result;
 }
 
 
