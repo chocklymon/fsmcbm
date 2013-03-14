@@ -296,6 +296,32 @@ if(isset($_GET['term'])){
     if($_GET['update'] == "user") {
         // TODO
         
+        $conn = getConnection();
+        
+        $id = sanitize($_POST['id'], $conn, true);
+        $rank = sanitize($_POST['rank'], $conn);
+        $banned = $_POST['banned'] ? 0 : 1;
+        $permanent = $_POST['permanent'] ? 0 : 1;
+        $relations = sanitize($_POST['relations'], $conn);
+        $notes = sanitize($_POST['notes'], $conn);
+        
+        $query = "UPDATE  `fsmcbm`.`users` SET
+                    `rank` =  '$rank',
+                    `relations` =  '$relations',
+                    `notes` =  '$notes',
+                    `banned` =  '$banned',
+                    `permanent` =  '$permanent'
+                    WHERE  `users`.`id` = $id";
+        
+        $res = $conn->query($query);
+        
+        if($res === false){
+            error("Failed to update user." . mysqli_error($conn));
+        }
+        
+        echo json_encode( array("success" => true ));
+
+        
     } else if($_GET['update'] == "incident") {
         
         $conn = getConnection();
