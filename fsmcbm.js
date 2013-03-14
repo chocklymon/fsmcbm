@@ -609,31 +609,36 @@
         });
         
         // Search box
-        $("#search").change(function(){
-            $.get("fsmcbm.php",
-                { search : $(this).val() },
-                function(data) {
-                    // Check for error with the search
-                    try {
-                        $.parseJSON(data);
-                        if(data.error != null){
-                            handleError(data.error);
-                            return;
-                        }
-                    // Catch and ignore any errors thrown by parseJSON (since it HTML is returned it will error out).
-                    } catch(ignore){}
-                    
-                    // Set the tab contents
-                    $("#search-tab").html(data);
-                    
-                    // Attach the row lookup event
-                    $("#search-tab tr").click(rowLookup)
-                    
-                    // Re-enable the search tab, and switch to it.
-                    $("#tabs").tabs("enable", 3).tabs("option", "active", 3);
-                },
-                'html'
-            );
+        $("#search").change(function(){// TODO change from the onChange event (only trigger when enter is pressed)
+            if( $(this).val().length < 2) {
+                
+                displayMessage("Search must be two or more characters long.");
+                
+            } else {
+                $.get("fsmcbm.php",
+                    { search : $(this).val() },
+                    function(data) {
+                        // Check for error with the search
+                        try {
+                            $.parseJSON(data);
+                            if(data.error != null){
+                                handleError(data.error);
+                                return;
+                            }
+                        // Catch and ignore any errors thrown by parseJSON (since it HTML is returned it will error out).
+                        } catch(ignore){}
+
+                        // Set the tab contents
+                        $("#search-tab").html(data);
+
+                        // Attach the row lookup event
+                        $("#search-tab tr").click(rowLookup)
+
+                        // Re-enable the search tab, and switch to it.
+                        $("#tabs").tabs("enable", 3).tabs("option", "active", 3);
+                    },
+                    'html' );
+            }
         });
         
     });
