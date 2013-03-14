@@ -1,91 +1,140 @@
 <?php
-
-/**
- * Gets the connection to the mysql database.
- * @return mysqli The MySQLi database connection.
- */
-function getConnection(){
-    $mysqli = mysqli_connect("localhost", "root", "", "fsmcbm");
-    if($mysqli->connect_errno){
-        error("DB Connection Issue");
-    }
-    
-    return $mysqli;
-}
-
-/**
- * Outputs an error message and stops the script.
- * @param string $message The error message to display, defaults to "uknown"
- */
-function error($message = "unkown"){
-    exit('{"error":"' . $message . '"}');
-}
-
-/**
- * Takes a string and truncates it, if it is over 120 characters long, replacing
- * the characters over 120 with an ellipsis.
- * @param string $string The string to truncate.
- * @return string The truncated string.
- */
-function truncate($string){
-    if(strlen($string) > 120){
-        return substr($string, 0, 120) . " ...";
-    } else {
-        return $string;
-    }
-}
-
-function buildTable($query, &$conn){
-    
-    $res = $conn->query($query);
-
-    if($res === false){
-        error("Nothing Found " . mysqli_error($conn));
-    }
-
-    $result = "<table class='list'><thead><tr><th>Name</th><th>Rank</th><th>Notes</th></tr></thead><tbody>";
-
-    while($row = $res->fetch_assoc()){
-        $result .= "<tr id='id-" . $row['id'] . "'><td>"
-                . $row['username'] . "</td><td>"
-                . $row['rank'] . "</td><td>"
-                . truncate($row['notes']) . "</td></tr>";
-    }
-
-    $res->free();
-
-
-    $conn->close();
-
-    echo $result . "</tbody></table>";
-}
-
-function sanitize($input, &$mysqli_conn, $number = false) {
-    
-    if($number) {
-        // Sanitize as a number
-        $num = preg_replace('#\D#', '', $input);
-        if(strlen($num) == 0){
-            return null;
-        } else {
-            return $num*1;
-        }
-    } else {
-        // Sanitize as a string
-        return $mysqli_conn->real_escape_string($input);
-    }
-    
-}
-
-
 // TODO add field verification (make sure that required data is there).
 
+// Detect what action to perform
 if(isset($_GET['term'])){
-    /*
-     * AUTO COMPLETE USER NAMES
-     * ========================
-     */
     
+    autoComplete();
+    
+} else if(isset($_GET['lookup'])){
+    
+    retrieveUserData();
+    
+} else if(isset($_GET['add_user'])){
+    
+    addUser();
+    
+} else if(isset($_GET['add_incident'])){
+    
+    addIncident();
+    
+} else if(isset($_GET['get'])){
+    // Tab contents requested
+    
+    if($_GET['get'] == 'bans'){
+        
+        getBans();
+        
+    } else if($_GET['get'] == 'watchlist'){
+        
+        getWatchlist();
+        
+    }
+} else if(isset($_GET['search'])){
+    
+    search();
+    
+} else if(isset($_GET['update'])) {
+    // Update requested
+    
+    if($_GET['update'] == "user") {
+        
+        updateUser();
+        
+    } else if($_GET['update'] == "incident") {
+        
+        updateIncident();
+    }
+}
+
+
+
+/* =============================
+ *           FUNCTIONS
+ * =============================
+ */
+
+
+/**
+ * Adds a new incident to the database.
+ * Uses the data posted into the page to create the incident.
+ */
+function addIncident() {
+    
+    $conn = getConnection();
+    
+    // TODO get moderator ID
+    
+    $user_id = sanitize($_POST['user_id'], $conn, true);
+    $today   = date('Y-m-d H:i:s');
+    $incident_date = sanitize($_POST['incident_date'], $conn);
+    $incident_type = sanitize($_POST['incident_type'], $conn);
+    $notes   = sanitize($_POST['notes'], $conn);
+    $action_taken = sanitize($_POST['action_taken'], $conn);
+    $world   = sanitize($_POST['world'], $conn);
+    $coord_x = sanitize($_POST['coord_x'], $conn, true);
+    $coord_y = sanitize($_POST['coord_y'], $conn, true);
+    $coord_z = sanitize($_POST['coord_z'], $conn, true);
+    
+    $query = "INSERT INTO `incident` (`user_id`, `created_date`, `incident_date`, `incident_type`, `notes`, `action_taken`, `world`, `coord_x`, `coord_y`, `coord_z`)
+        VALUES ('$user_id', '$today', '$incident_date', '$incident_type', '$notes', '$action_taken', '$world', '$coord_x', '$coord_y', '$coord_z')";
+    
+    $res = $conn->query($query);
+    
+    if($res === false){
+        error("Failed to add user " . mysqli_error($conn));
+    }
+    
+    // Return the id
+    $result = array('incident_id' => $conn->insert_id);
+    
+    $conn->close();
+    
+    echo json_encode($result);
+}
+
+
+/**
+ * Adds a new user to the database.
+ * User information is gathered from the data posted into this page.
+ */
+function addUser() {
+    if( !isset($_POST['username'])){
+        error("Username required");
+    }
+    
+    $conn = getConnection();
+    
+    $username = sanitize($_POST['username'], $conn);
+    $rank = sanitize($_POST['rank'], $conn);
+    $relations = sanitize($_POST['relations'], $conn);
+    $notes = sanitize($_POST['notes'], $conn);
+    
+    $banned = (isset($_POST['banned']) && $_POST['banned'] == 'on') ? '1' : '0';
+    
+    $permanent = (isset($_POST['permanent']) && $_POST['permanent'] == 'on') ? '1' : '0';
+    
+    $res = $conn->query("INSERT INTO `users` (`username`, `rank`, `relations`, `notes`, `banned`, `permanent`)
+        VALUES ('$username', '$rank', '$relations', '$notes', $banned, $permanent);");
+    
+    if($res === false){
+        error("Failed to add user " . mysqli_error($conn));
+    }
+    
+    // Return the id
+    $result = array('user_id'=>$conn->insert_id);
+    
+    $conn->close();
+    
+    echo json_encode($result);
+    
+}
+
+
+/**
+ * Finds possible user names to autocomplete a term provided to this page.
+ */
+function autoComplete() {
     $conn = getConnection();
     
     $term = sanitize( $_GET['term'], $conn );
@@ -105,12 +154,61 @@ if(isset($_GET['term'])){
     $conn->close();
     
     echo json_encode($result);
+}
+
+
+/**
+ * Retrieves a list of all banned users.
+ */
+function getBans() {
+    $conn = getConnection();
     
-} else if(isset($_GET['lookup'])){
-    /*
-     * PULL A USERS INFORMATION
-     * ========================
-     */
+    buildTable("SELECT * FROM users WHERE banned = TRUE", $conn);
+}
+
+
+/**
+ * Gets the connection to the mysql database.
+ * @return mysqli The MySQLi database connection.
+ */
+function getConnection(){
+    $mysqli = mysqli_connect("localhost", "root", "", "fsmcbm");
+    if($mysqli->connect_errno){
+        error("DB Connection Issue");
+    }
+    
+    return $mysqli;
+}
+
+
+/**
+ * Gets all the users on the watchlist.
+ * The watchlist is defined as a user that isn't banned, but has an incident
+ * attached to them.
+ */
+function getWatchlist() {
+    $conn = getConnection();
+        
+    buildTable("SELECT users.id, users.username, users.rank, users.notes FROM users, incident WHERE users.id=incident.user_id AND users.banned = FALSE",
+            $conn);
+}
+
+
+/**
+ * Outputs an error message and stops the script.
+ * @param string $message The error message to display, defaults to "uknown"
+ */
+function error($message = "unkown"){
+    exit('{"error":"' . $message . '"}');
+}
+
+
+/**
+ * Retrieves the information for a user.
+ * This includes all the users incidents (if any) and their user information.
+ */
+function retrieveUserData() {
+    
     $conn = getConnection();
     
     $lookup = sanitize($_GET['lookup'], $conn, true);
@@ -177,101 +275,13 @@ if(isset($_GET['term'])){
     
     echo json_encode($result);
     
-} else if(isset($_GET['add_user'])){
-    /*
-     * ADD A NEW USER
-     * ==============
-     */
-    
-    if( !isset($_POST['username'])){
-        error("Username required");
-    }
-    
-    $conn = getConnection();
-    
-    $username = sanitize($_POST['username'], $conn);
-    $rank = sanitize($_POST['rank'], $conn);
-    $relations = sanitize($_POST['relations'], $conn);
-    $notes = sanitize($_POST['notes'], $conn);
-    
-    $banned = (isset($_POST['banned']) && $_POST['banned'] == 'on') ? '1' : '0';
-    
-    $permanent = (isset($_POST['permanent']) && $_POST['permanent'] == 'on') ? '1' : '0';
-    
-    $res = $conn->query("INSERT INTO `users` (`username`, `rank`, `relations`, `notes`, `banned`, `permanent`)
-        VALUES ('$username', '$rank', '$relations', '$notes', $banned, $permanent);");
-    
-    if($res === false){
-        error("Failed to add user " . mysqli_error($conn));
-    }
-    
-    // Return the id
-    $result = array('user_id'=>$conn->insert_id);
-    
-    $conn->close();
-    
-    echo json_encode($result);
-    
-} else if(isset($_GET['add_incident'])){
-    /*
-     * ADD A NEW INCIDENT
-     * ==================
-     */
-    
-    $conn = getConnection();
-    
-    // TODO get moderator ID
-    
-    $user_id = sanitize($_POST['user_id'], $conn, true);
-    $today   = date('Y-m-d H:i:s');
-    $incident_date = sanitize($_POST['incident_date'], $conn);
-    $incident_type = sanitize($_POST['incident_type'], $conn);
-    $notes   = sanitize($_POST['notes'], $conn);
-    $action_taken = sanitize($_POST['action_taken'], $conn);
-    $world   = sanitize($_POST['world'], $conn);
-    $coord_x = sanitize($_POST['coord_x'], $conn, true);
-    $coord_y = sanitize($_POST['coord_y'], $conn, true);
-    $coord_z = sanitize($_POST['coord_z'], $conn, true);
-    
-    $query = "INSERT INTO `incident` (`user_id`, `created_date`, `incident_date`, `incident_type`, `notes`, `action_taken`, `world`, `coord_x`, `coord_y`, `coord_z`)
-        VALUES ('$user_id', '$today', '$incident_date', '$incident_type', '$notes', '$action_taken', '$world', '$coord_x', '$coord_y', '$coord_z')";
-    
-    $res = $conn->query($query);
-    
-    if($res === false){
-        error("Failed to add user " . mysqli_error($conn));
-    }
-    
-    // Return the id
-    $result = array('incident_id' => $conn->insert_id);
-    
-    $conn->close();
-    
-    echo json_encode($result);
-    
-} else if(isset($_GET['get'])){
-    // Page Requested
-     
-    if($_GET['get'] == 'bans'){
-        /*
-         * PULL ALL THE BANNED USERS
-         * =========================
-         */
-        
-        $conn = getConnection();
+}
 
-        buildTable("SELECT * FROM users WHERE banned = TRUE", $conn);
-        
-    } else if($_GET['get'] == 'watchlist'){
-        
-        $conn = getConnection();
-        
-        buildTable("SELECT users.id, users.username, users.rank, users.notes FROM users, incident WHERE users.id=incident.user_id AND users.banned = FALSE",
-                $conn);
-        
-    }
-} else if(isset($_GET['search'])){
-    
+
+/**
+ * Searches the text fields in the database for the provided search keyword.
+ */
+function search() {
     $conn = getConnection();
     
     $search = sanitize($_GET['search'], $conn);
@@ -292,71 +302,152 @@ if(isset($_GET['term'])){
             OR u.relations LIKE '%$search%'
             OR u.notes LIKE '%$search%'",
             $conn);
-} else if(isset($_GET['update'])) {
-    if($_GET['update'] == "user") {
-        // TODO
-        
-        $conn = getConnection();
-        
-        $id = sanitize($_POST['id'], $conn, true);
-        $rank = sanitize($_POST['rank'], $conn);
-        $banned = $_POST['banned'] ? 0 : 1;
-        $permanent = $_POST['permanent'] ? 0 : 1;
-        $relations = sanitize($_POST['relations'], $conn);
-        $notes = sanitize($_POST['notes'], $conn);
-        
-        $query = "UPDATE  `fsmcbm`.`users` SET
-                    `rank` =  '$rank',
-                    `relations` =  '$relations',
-                    `notes` =  '$notes',
-                    `banned` =  '$banned',
-                    `permanent` =  '$permanent'
-                    WHERE  `users`.`id` = $id";
-        
-        $res = $conn->query($query);
-        
-        if($res === false){
-            error("Failed to update user." . mysqli_error($conn));
-        }
-        
-        echo json_encode( array("success" => true ));
+}
 
-        
-    } else if($_GET['update'] == "incident") {
-        
-        $conn = getConnection();
-        
-        $id = sanitize($_POST['id'], $conn, true);
-        $incident_date = sanitize($_POST['incident_date'], $conn);
-        $incident_type = sanitize($_POST['incident_type'], $conn);
-        $notes   = sanitize($_POST['notes'], $conn);
-        $action_taken = sanitize($_POST['action_taken'], $conn);
-        $world   = sanitize($_POST['world'], $conn);
-        $coord_x = sanitize($_POST['coord_x'], $conn, true);
-        $coord_y = sanitize($_POST['coord_y'], $conn, true);
-        $coord_z = sanitize($_POST['coord_z'], $conn, true);
-        $appeal_response = sanitize($_POST['appeal_response'], $conn);
-        
-        $query = "UPDATE `incident` SET
-            `incident_date` = '$incident_date',
-            `incident_type` = '$incident_type',
-            `notes` = '$notes',
-            `action_taken` = '$action_taken',
-            `world` = '$world',
-            `coord_x` = '$coord_x',
-            `coord_y` = '$coord_y',
-            `coord_z` = '$coord_z',
-            `appeal_response` = '$appeal_response'
-            WHERE  `incident`.`id` = $id";
-        
-        $res = $conn->query($query);
-        
-        if($res === false){
-            error("Failed to update incident." . mysqli_error($conn));
-        }
-        
-        echo json_encode( array("success" => true ));
+
+/**
+ * Takes a string and truncates it, if it is over 120 characters long, replacing
+ * the characters over 120 with an ellipsis.
+ * @param string $string The string to truncate.
+ * @return string The truncated string.
+ */
+function truncate($string){
+    if(strlen($string) > 120){
+        return substr($string, 0, 120) . " ...";
+    } else {
+        return $string;
     }
+}
+
+/**
+ * Performs the provided query and builds a table of users from the results.
+ * @param {String} $query The query to retrieve the data, needs to return the
+ * user name, rank, and notes.
+ * @param {mysqli} $conn The MySQLi connection to the database.
+ */
+function buildTable($query, &$conn){
+    
+    $res = $conn->query($query);
+
+    if($res === false){
+        error("Nothing Found " . mysqli_error($conn));
+    }
+
+    $result = "<table class='list'><thead><tr><th>Name</th><th>Rank</th><th>Notes</th></tr></thead><tbody>";
+
+    while($row = $res->fetch_assoc()){
+        $result .= "<tr id='id-" . $row['id'] . "'><td>"
+                . $row['username'] . "</td><td>"
+                . $row['rank'] . "</td><td>"
+                . truncate($row['notes']) . "</td></tr>";
+    }
+
+    $res->free();
+
+
+    $conn->close();
+
+    echo $result . "</tbody></table>";
+}
+
+
+/**
+ * Sanitizes input for insertion into the database.
+ * @param {String} $input The string input to sanitize.
+ * @param {mysqli} $mysqli_conn The MySQLi connection to the database (required
+ * for real escape string).
+ * @param {boolean} $number Wether or not the input should be treated as a number.
+ * True to sanitize as a number. Defaults to false.
+ * @return {mixed} The sanitized string, or the sanitized number of number is set
+ * to true.
+ */
+function sanitize($input, &$mysqli_conn, $number = false) {
+    
+    if($number) {
+        // Sanitize as a number
+        $num = preg_replace('#\D#', '', $input);
+        if(strlen($num) == 0){
+            return null;
+        } else {
+            return $num*1;
+        }
+    } else {
+        // Sanitize as a string
+        return $mysqli_conn->real_escape_string($input);
+    }
+    
+}
+
+
+/**
+ * Updates an exisiting user with new data.
+ * The data is retrieved from the data posted into this page.
+ */
+function updateUser() {
+    $conn = getConnection();
+        
+    $id = sanitize($_POST['id'], $conn, true);
+    $rank = sanitize($_POST['rank'], $conn);
+    $banned = $_POST['banned'] ? 0 : 1;
+    $permanent = $_POST['permanent'] ? 0 : 1;
+    $relations = sanitize($_POST['relations'], $conn);
+    $notes = sanitize($_POST['notes'], $conn);
+
+    $query = "UPDATE  `fsmcbm`.`users` SET
+                `rank` =  '$rank',
+                `relations` =  '$relations',
+                `notes` =  '$notes',
+                `banned` =  '$banned',
+                `permanent` =  '$permanent'
+                WHERE  `users`.`id` = $id";
+
+    $res = $conn->query($query);
+
+    if($res === false){
+        error("Failed to update user." . mysqli_error($conn));
+    }
+
+    echo json_encode( array("success" => true ));
+}
+
+
+/**
+ * Updates an incident with new data.
+ * Data is retrieved from the data posted into this page.
+ */
+function updateIncident() {
+    $conn = getConnection();
+        
+    $id = sanitize($_POST['id'], $conn, true);
+    $incident_date = sanitize($_POST['incident_date'], $conn);
+    $incident_type = sanitize($_POST['incident_type'], $conn);
+    $notes   = sanitize($_POST['notes'], $conn);
+    $action_taken = sanitize($_POST['action_taken'], $conn);
+    $world   = sanitize($_POST['world'], $conn);
+    $coord_x = sanitize($_POST['coord_x'], $conn, true);
+    $coord_y = sanitize($_POST['coord_y'], $conn, true);
+    $coord_z = sanitize($_POST['coord_z'], $conn, true);
+    $appeal_response = sanitize($_POST['appeal_response'], $conn);
+
+    $query = "UPDATE `incident` SET
+        `incident_date` = '$incident_date',
+        `incident_type` = '$incident_type',
+        `notes` = '$notes',
+        `action_taken` = '$action_taken',
+        `world` = '$world',
+        `coord_x` = '$coord_x',
+        `coord_y` = '$coord_y',
+        `coord_z` = '$coord_z',
+        `appeal_response` = '$appeal_response'
+        WHERE  `incident`.`id` = $id";
+
+    $res = $conn->query($query);
+
+    if($res === false){
+        error("Failed to update incident." . mysqli_error($conn));
+    }
+
+    echo json_encode( array("success" => true ));
 }
 
 ?>
