@@ -255,7 +255,7 @@ function getConnection(){
 function getWatchlist() {
     $conn = getConnection();
         
-    buildTable("SELECT users.id, users.username, users.rank, users.notes FROM users, incident WHERE users.id=incident.user_id AND users.banned = FALSE",
+    buildTable("SELECT DISTINCT users.id, users.username, users.rank, users.notes FROM users, incident WHERE users.id=incident.user_id AND users.banned = FALSE",
             $conn);
 }
 
