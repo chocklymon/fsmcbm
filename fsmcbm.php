@@ -1,5 +1,4 @@
 <?php
-// TODO add field verification (make sure that required data is there).
 
 // Detect what action to perform
 if(isset($_GET['term'])){
@@ -64,6 +63,7 @@ function addIncident() {
     $conn = getConnection();
     
     // TODO get moderator ID
+    $moderator = 3;// TEMP value for the query
     
     $user_id = sanitize($_POST['user_id'], $conn, true);
     $today   = date('Y-m-d H:i:s');
@@ -76,13 +76,23 @@ function addIncident() {
     $coord_y = sanitize($_POST['coord_y'], $conn, true);
     $coord_z = sanitize($_POST['coord_z'], $conn, true);
     
-    $query = "INSERT INTO `incident` (`user_id`, `created_date`, `incident_date`, `incident_type`, `notes`, `action_taken`, `world`, `coord_x`, `coord_y`, `coord_z`)
-        VALUES ('$user_id', '$today', '$incident_date', '$incident_type', '$notes', '$action_taken', '$world', '$coord_x', '$coord_y', '$coord_z')";
+    // Verify that we have a user id
+    if($user_id === null || $user_id <= 0) {
+        error("Please provide a user for this incident.");
+    }
+    
+    // Check if we have an incident date.
+    if($incident_date === null || strlen($incident_date) < 6) {
+        $incident_date = $today;
+    }
+    
+    $query = "INSERT INTO `incident` (`user_id`, `moderator`, `created_date`, `incident_date`, `incident_type`, `notes`, `action_taken`, `world`, `coord_x`, `coord_y`, `coord_z`)
+        VALUES ('$user_id', '$moderator', '$today', '$incident_date', '$incident_type', '$notes', '$action_taken', '$world', '$coord_x', '$coord_y', '$coord_z')";
     
     $res = $conn->query($query);
     
     if($res === false){
-        error("Failed to add user " . mysqli_error($conn));
+        error("Failed to add incident.");
     }
     
     // Return the id
@@ -118,7 +128,7 @@ function addUser() {
         VALUES ('$username', '$rank', '$relations', '$notes', $banned, $permanent);");
     
     if($res === false){
-        error("Failed to add user " . mysqli_error($conn));
+        error("Failed to add user.");
     }
     
     // Return the id
@@ -135,6 +145,12 @@ function addUser() {
  * Finds possible user names to autocomplete a term provided to this page.
  */
 function autoComplete() {
+    
+    // Make sure that the term is at least two characters long
+    if(strlen($_GET['term']) < 2) {
+        error("Invalid autocomplete term.");
+    }
+    
     $conn = getConnection();
     
     $term = sanitize( $_GET['term'], $conn );
@@ -142,7 +158,7 @@ function autoComplete() {
     $res = $conn->query("SELECT id,username FROM users WHERE username LIKE '$term%'");
     
     if($res === false){
-        error("Nothing Found " . mysqli_error($conn));
+        error("Nothing Found.");
     }
     
     $result = array();
@@ -154,6 +170,46 @@ function autoComplete() {
     $conn->close();
     
     echo json_encode($result);
+}
+
+
+/**
+ * Performs the provided query and builds a table of users from the results.
+ * @param {String} $query The query to retrieve the data, needs to return the
+ * user name, rank, and notes.
+ * @param {mysqli} $conn The MySQLi connection to the database.
+ */
+function buildTable($query, &$conn){
+    
+    $res = $conn->query($query);
+
+    if($res === false){
+        error("Nothing Found.");
+    }
+    // TODO deal with no results
+    $result = "<table class='list'><thead><tr><th>Name</th><th>Rank</th><th>Notes</th></tr></thead><tbody>";
+
+    while($row = $res->fetch_assoc()){
+        $result .= "<tr id='id-" . $row['id'] . "'><td>"
+                . $row['username'] . "</td><td>"
+                . $row['rank'] . "</td><td>"
+                . truncate($row['notes']) . "</td></tr>";
+    }
+
+    $res->free();
+
+    $conn->close();
+
+    echo $result . "</tbody></table>";
+}
+
+
+/**
+ * Outputs an error message and stops the script.
+ * @param string $message The error message to display, defaults to "Unkown error occured"
+ */
+function error($message = "Unkown error occured"){
+    exit('{"error":"' . $message . '"}');
 }
 
 
@@ -193,16 +249,6 @@ function getWatchlist() {
             $conn);
 }
 
-
-/**
- * Outputs an error message and stops the script.
- * @param string $message The error message to display, defaults to "uknown"
- */
-function error($message = "unkown"){
-    exit('{"error":"' . $message . '"}');
-}
-
-
 /**
  * Retrieves the information for a user.
  * This includes all the users incidents (if any) and their user information.
@@ -213,11 +259,16 @@ function retrieveUserData() {
     
     $lookup = sanitize($_GET['lookup'], $conn, true);
     
+    if($lookup === null || $lookup <= 0) {
+        // Invalid lookup
+        error("Invalid user ID.");
+    }
+    
     // Get the user
     $res = $conn->query("SELECT * FROM users WHERE id = $lookup");
     
     if($res === false){
-        error("Nothing Found " . mysqli_error($conn));
+        error("Nothing Found.");
     }
     
     if($res->num_rows == 0){
@@ -238,7 +289,7 @@ function retrieveUserData() {
     $res = $conn->query("SELECT * FROM incident WHERE user_id = $lookup");
     
     if($res === false){
-        error("Nothing Found " . mysqli_error($conn));
+        error("Nothing Found.");
     }
     
     $user_ids = array();
@@ -250,12 +301,13 @@ function retrieveUserData() {
     
     $res->free();
     
-    if(isset($result['incident'])){
+    
+    if( isset($result['incident']) ){
         // Get the name of the moderators
         $res = $conn->query("SELECT id,username FROM users WHERE id IN (" . implode(",", $user_ids) . ")");
 
         if($res === false){
-            error("Unable to extract moderator id's: " . mysqli_error($conn));
+            error("Unable Found.");
         }
 
         while($row = $res->fetch_assoc()){
@@ -279,9 +331,47 @@ function retrieveUserData() {
 
 
 /**
+ * Sanitizes input for insertion into the database.
+ * @param {String} $input The string input to sanitize.
+ * @param {mysqli} $mysqli_conn The MySQLi connection to the database (required
+ * for real escape string).
+ * @param {boolean} $number Wether or not the input should be treated as a number.
+ * True to sanitize as a number. Defaults to false.
+ * @return {mixed} The sanitized string, or the sanitized number of number is set
+ * to true.
+ */
+function sanitize($input, &$mysqli_conn, $number = false) {
+    
+    if(isset($input) && $input !== null) {
+        if($number) {
+            // Sanitize as a number
+            $num = preg_replace('#\D#', '', $input);
+            if(strlen($num) == 0){
+                return null;
+            } else {
+                return $num*1;
+            }
+        } else {
+            // Sanitize as a string
+            return $mysqli_conn->real_escape_string($input);
+        }
+    } else {
+        return null;
+    }
+    
+}
+
+
+/**
  * Searches the text fields in the database for the provided search keyword.
  */
 function search() {
+    
+    if( strlen($_GET['search']) < 2) {
+        // Searches must contain at least two characters
+        error("Search string to short.");
+    }
+    
     $conn = getConnection();
     
     $search = sanitize($_GET['search'], $conn);
@@ -319,65 +409,6 @@ function truncate($string){
     }
 }
 
-/**
- * Performs the provided query and builds a table of users from the results.
- * @param {String} $query The query to retrieve the data, needs to return the
- * user name, rank, and notes.
- * @param {mysqli} $conn The MySQLi connection to the database.
- */
-function buildTable($query, &$conn){
-    
-    $res = $conn->query($query);
-
-    if($res === false){
-        error("Nothing Found " . mysqli_error($conn));
-    }
-
-    $result = "<table class='list'><thead><tr><th>Name</th><th>Rank</th><th>Notes</th></tr></thead><tbody>";
-
-    while($row = $res->fetch_assoc()){
-        $result .= "<tr id='id-" . $row['id'] . "'><td>"
-                . $row['username'] . "</td><td>"
-                . $row['rank'] . "</td><td>"
-                . truncate($row['notes']) . "</td></tr>";
-    }
-
-    $res->free();
-
-
-    $conn->close();
-
-    echo $result . "</tbody></table>";
-}
-
-
-/**
- * Sanitizes input for insertion into the database.
- * @param {String} $input The string input to sanitize.
- * @param {mysqli} $mysqli_conn The MySQLi connection to the database (required
- * for real escape string).
- * @param {boolean} $number Wether or not the input should be treated as a number.
- * True to sanitize as a number. Defaults to false.
- * @return {mixed} The sanitized string, or the sanitized number of number is set
- * to true.
- */
-function sanitize($input, &$mysqli_conn, $number = false) {
-    
-    if($number) {
-        // Sanitize as a number
-        $num = preg_replace('#\D#', '', $input);
-        if(strlen($num) == 0){
-            return null;
-        } else {
-            return $num*1;
-        }
-    } else {
-        // Sanitize as a string
-        return $mysqli_conn->real_escape_string($input);
-    }
-    
-}
-
 
 /**
  * Updates an exisiting user with new data.
@@ -387,6 +418,12 @@ function updateUser() {
     $conn = getConnection();
         
     $id = sanitize($_POST['id'], $conn, true);
+    
+    // Verify that we have a user id
+    if($id === null || $id <= 0) {
+        error("No user id found.");
+    }
+    
     $rank = sanitize($_POST['rank'], $conn);
     $banned = $_POST['banned'] ? 0 : 1;
     $permanent = $_POST['permanent'] ? 0 : 1;
@@ -402,9 +439,11 @@ function updateUser() {
                 WHERE  `users`.`id` = $id";
 
     $res = $conn->query($query);
+    
+    $conn->close();
 
     if($res === false){
-        error("Failed to update user." . mysqli_error($conn));
+        error("Failed to update user.");
     }
 
     echo json_encode( array("success" => true ));
@@ -419,6 +458,12 @@ function updateIncident() {
     $conn = getConnection();
         
     $id = sanitize($_POST['id'], $conn, true);
+    
+    // Verify that we have an incident id
+    if($id === null || $id <= 0) {
+        error("No incident id found.");
+    }
+    
     $incident_date = sanitize($_POST['incident_date'], $conn);
     $incident_type = sanitize($_POST['incident_type'], $conn);
     $notes   = sanitize($_POST['notes'], $conn);
@@ -442,9 +487,11 @@ function updateIncident() {
         WHERE  `incident`.`id` = $id";
 
     $res = $conn->query($query);
+    
+    $conn->close();
 
     if($res === false){
-        error("Failed to update incident." . mysqli_error($conn));
+        error("Failed to update incident.");
     }
 
     echo json_encode( array("success" => true ));
