@@ -435,8 +435,8 @@ function updateUser() {
     }
     
     $rank = sanitize($_POST['rank'], $conn);
-    $banned = $_POST['banned'] ? 0 : 1;
-    $permanent = $_POST['permanent'] ? 0 : 1;
+    $banned = $_POST['banned'] == "true";
+    $permanent = $_POST['permanent'] == "true";
     $relations = sanitize($_POST['relations'], $conn);
     $notes = sanitize($_POST['notes'], $conn);
 
