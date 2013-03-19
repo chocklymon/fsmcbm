@@ -62,8 +62,42 @@ function addIncident() {
     
     $conn = getConnection();
     
-    // TODO get moderator ID
-    $moderator = 3;// TEMP value for the query
+    // Get the moderator ID
+    $moderator = 0;
+    
+    // Search the wordpress cookies for the logged in user name
+    $keys = array_keys($_COOKIE);
+    foreach($keys as &$key) {
+        if (strncmp("wordpress_logged_in_", $key, 20) === 0) {
+            // Extract user name from the cookie
+            $value = $_COOKIE[$key];
+            $moderator_name = sanitize(
+                    substr($value, 0, strpos($value, "|")), $conn);
+            
+            // Request the user id from the database
+            $res = $conn->query("SELECT `id` FROM `users` WHERE `username` = '$moderator_name'");
+            
+            if($res === false){
+                error("Failed to find moderator.");
+            } else if($res->num_rows == 0) {
+                // Nothing found
+                error("Moderator not found.");
+            }
+
+            $row = $res->fetch_assoc();
+            
+            $moderator = $row['id'];
+            
+            $res->free();
+            
+            break;
+        }
+    }
+    
+    // Make sure we found the moderator
+    if($moderator === 0) {
+        error("Failed to identify moderator.");
+    }
     
     $user_id = sanitize($_POST['user_id'], $conn, true);
     $today   = date('Y-m-d H:i:s');
@@ -166,6 +200,8 @@ function autoComplete() {
     while($row = $res->fetch_assoc()){
         $result[] = array("label"=>$row['username'],"value"=>$row['id']);
     }
+    
+    $res->free();
     
     $conn->close();
     
