@@ -35,6 +35,7 @@
                     <br/>
                     <label for="search">Search:</label>
                     <input type="text" id="search" />
+                    <button id="search-button">Go</button>
                 </div>
                 <div id="actions">
                     <button id="add-user">Add User</button>

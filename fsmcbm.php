@@ -151,6 +151,11 @@ function addUser() {
     
     $username = sanitize($_POST['username'], $conn);
     
+    // Make sure that the user name isn't empty
+    if(strlen($username) == 0) {
+        error("Please provide a user name.");
+    }
+    
     // See if this user is a duplicate
     $res = $conn->query("SELECT `id` FROM `users` WHERE `username` = '$username'");
     if($res === false){

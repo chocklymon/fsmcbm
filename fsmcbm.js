@@ -1,7 +1,7 @@
 /* Final Score MC Ban Manager
  * 
  */
-// TODO add datepicker to incident date field in add incident
+
 // TODO add field verification
 (function($){
     
@@ -148,10 +148,10 @@
             } else if(this.type == "date") {
                 field.datepicker({
                    showOn: "both",
-                   // TODO get my own calendar icon
-                   buttonImage: "http://jqueryui.com/resources/demos/datepicker/images/calendar.gif",
+                   buttonImage: "calendar-month.png",
                    buttonImageOnly : true,
-                   dateFormat : "yy-mm-dd"
+                   dateFormat : "yy-mm-dd",
+                   maxDate : 0
                 });
             }
             
@@ -352,7 +352,7 @@
 
                             // Add the save and cancel buttons
                             div.append($("<button>").text("Save").attr("id","i-s-" + datum.id).button().click(function(){
-                                // TODO save incident button code here
+
                                 // Get the ID
                                 var id = $(this).button("option", "disabled", true).attr('id').substring(4);
                                 
@@ -477,6 +477,39 @@
     function rowLookup(){
         $("#lookup-user_id").val($(this).attr("id").substring(3));
         getInformation();
+    }
+    
+    
+    function search() {
+        if( $("#search").val().length < 2) {
+
+            displayMessage("Search must be two or more characters long.");
+
+        } else {
+            $.get("fsmcbm.php",
+                { search : $("#search").val() },
+                function(data) {
+                    // Check for error with the search
+                    try {
+                        $.parseJSON(data);
+                        if(data.error != null){
+                            handleError(data.error);
+                            return;
+                        }
+                    // Catch and ignore any errors thrown by parseJSON (since it HTML is returned it will error out).
+                    } catch(ignore){}
+
+                    // Set the tab contents
+                    $("#search-tab").html(data);
+
+                    // Attach the row lookup event
+                    $("#search-tab tr").click(rowLookup)
+
+                    // Re-enable the search tab, and switch to it.
+                    $("#tabs").tabs("enable", 3).tabs("option", "active", 3);
+                },
+                'html' );
+        }
     }
     
     
@@ -641,35 +674,11 @@
         });
         
         // Search box
-        $("#search").change(function(){// TODO change from the onChange event (only trigger when enter is pressed)
-            if( $(this).val().length < 2) {
-                
-                displayMessage("Search must be two or more characters long.");
-                
-            } else {
-                $.get("fsmcbm.php",
-                    { search : $(this).val() },
-                    function(data) {
-                        // Check for error with the search
-                        try {
-                            $.parseJSON(data);
-                            if(data.error != null){
-                                handleError(data.error);
-                                return;
-                            }
-                        // Catch and ignore any errors thrown by parseJSON (since it HTML is returned it will error out).
-                        } catch(ignore){}
-
-                        // Set the tab contents
-                        $("#search-tab").html(data);
-
-                        // Attach the row lookup event
-                        $("#search-tab tr").click(rowLookup)
-
-                        // Re-enable the search tab, and switch to it.
-                        $("#tabs").tabs("enable", 3).tabs("option", "active", 3);
-                    },
-                    'html' );
+        $("#search-button").click(search);
+        $("#search").keyup(function(event){
+            // Run when the enter key is pressed
+            if(event.keyCode == 13) {
+                search();
             }
         });
         
