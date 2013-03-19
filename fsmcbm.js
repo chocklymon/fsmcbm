@@ -513,6 +513,9 @@
                                     attachNewUser = false;
                                 }
                                 
+                                // Reset the add user fields
+                                $("#add-user-form")[0].reset();
+                                
                             } else {
                                 // Error occured
                                 handleError(data.error);
@@ -542,6 +545,9 @@
                             if(data.error == null){
                                 // Success
                                 displayMessage("Incident added.");
+                                
+                                // Reset the add incident fields
+                                $("#add-incident-form")[0].reset();
                             } else {
                                 // Error occured
                                 handleError(data.error);
