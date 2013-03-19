@@ -150,14 +150,25 @@ function addUser() {
     $conn = getConnection();
     
     $username = sanitize($_POST['username'], $conn);
+    
+    // See if this user is a duplicate
+    $res = $conn->query("SELECT `id` FROM `users` WHERE `username` = '$username'");
+    if($res === false){
+        error("Query error.");
+    } else if($res->num_rows == 1) {
+        // Username already in the database
+        error("User already exists.");
+    }
+    $res->free();
+    
+    // Get the user's data from the post
     $rank = sanitize($_POST['rank'], $conn);
     $relations = sanitize($_POST['relations'], $conn);
     $notes = sanitize($_POST['notes'], $conn);
-    
     $banned = (isset($_POST['banned']) && $_POST['banned'] == 'on') ? '1' : '0';
-    
     $permanent = (isset($_POST['permanent']) && $_POST['permanent'] == 'on') ? '1' : '0';
     
+    // Insert the user
     $res = $conn->query("INSERT INTO `users` (`username`, `rank`, `relations`, `notes`, `banned`, `permanent`)
         VALUES ('$username', '$rank', '$relations', '$notes', $banned, $permanent);");
     
