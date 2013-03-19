@@ -117,6 +117,7 @@
                 field = $("<input>").attr('type', 'text').val(value);
                 
                 if(this.type == "int"){
+                    label.addClass("int");
                     field.addClass("int");
                 }
                 
