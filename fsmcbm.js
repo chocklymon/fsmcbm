@@ -228,6 +228,22 @@
                     {
                         value:"world4",
                         label:"Gamma"
+                    },
+                    {
+                        value:"world_nether",
+                        label:"Alpha Nether"
+                    },
+                    {
+                        value:"world3_nether",
+                        label:"Delta Nether"
+                    },
+                    {
+                        value:"world4_nether",
+                        label:"Gamma Nether"
+                    },
+                    {
+                        value:"world_the_end",
+                        label:"The End"
                     }],
             after: ""
         }),
