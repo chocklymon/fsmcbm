@@ -135,33 +135,6 @@
                 <input type="text" id="user_name" />
                 <input type='hidden' id="user_id" name="user_id" />
                 <br/>
-                <label>Incident Date</label>
-                <input type="text" name="incident_date" />
-                <br/>
-                <label>Incident Type</label>
-                <input type="text" name="incident_type" />
-                <br/>
-                <label>Notes</label>
-                <textarea name="notes"></textarea>
-                <br/>
-                <label>Action Taken</label>
-                <textarea name="action_taken"></textarea>
-                <br/>
-                Key Location
-                <br/>
-                <label>World</label>
-                <select name="world">
-                    <option value=""></option>
-                    <option value="world1">Alpha</option>
-                    <option value="world3">Delta</option>
-                    <option value="world4">Gamma</option>
-                </select>
-                <label>X</label>
-                <input type="text" name="coord_x" class="int" />
-                <label>Y</label>
-                <input type="text" name="coord_y" class="int" />
-                <label>Z</label>
-                <input type="text" name="coord_z" class="int" />
         </div>
     </body>
 </html>

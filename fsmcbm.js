@@ -83,7 +83,7 @@
             }
             
             if( ! showEmpty ){
-                if(value == null){
+                if(value == null || value == ""){
                     // Don't show empty fields
                     return "";
                 }
@@ -470,6 +470,15 @@
 
     // Runs on document ready.
     $( function($) {
+        
+        // Build the add incident dialog form
+        var incidentForm = $("#add-incident-form");
+        $.each(incident, function(index, value){
+            // Don't attach the created date and moderator
+            if(index != "moderator" && index != "created_date"){
+                incidentForm.append(value.toHTML("", index, "add"));
+            }
+        });
         
         // Set up the tabs
         $("#tabs").tabs({
