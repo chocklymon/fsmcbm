@@ -2,7 +2,6 @@
  * 
  */
 
-// TODO add field verification
 (function($){
     
     // General Variables
@@ -555,7 +554,12 @@
             width: 510,
             buttons: {
                 Save : function(){
-                    // TODO add verification
+                    // Verify that we have a username
+                    if( $("#user-add-username").val() == "" ) {
+                        displayMessage("Please provide a username.");
+                        return;
+                    }
+                    
                     // Save the user
                     $.post(
                         "fsmcbm.php?add_user=true",
@@ -595,7 +599,16 @@
             modal: true,
             buttons: {
                 Save : function(){
-                    // TODO add verification
+                    // Verify that we have data
+                    if( $("#user_id").val() == "" ) {
+                        displayMessage("Please enter a user.");
+                        return;
+                    } else if( $("#notes_add").val() == "" ) {
+                        if( ! confirm("You didn't enter any notes!\n\nPress OK to save this incident anyways.") ){
+                            return;
+                        }
+                    }
+                    
                     // Save the incident.
                     $.post(
                         "fsmcbm.php?add_incident=true",
