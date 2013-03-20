@@ -349,11 +349,11 @@
                                 div.append(value.toHTML(datum[index], index, datum.id));
                             });
 
-                            // Add the save and cancel buttons
-                            div.append($("<button>").text("Save").attr("id","i-s-" + datum.id).button().click(function(){
+                            // Add the save button
+                            div.append($("<button>").text("Save").attr("id","i-s-" + datum.id).click(function(){
 
-                                // Get the ID
-                                var id = $(this).button("option", "disabled", true).attr('id').substring(4);
+                                // Get the ID and disable the button
+                                var id = $(this).addClass("disabled").prop("disabled", true).attr('id').substring(4);
                                 
                                 // Save the fields
                                 var datum = {
@@ -368,7 +368,7 @@
                                     datum,
                                     function(data){
                                         // Re-enable the button
-                                        $("#i-s-" + id).button("option", "disabled", false);
+                                        $("#i-s-" + id).removeClass("disabled").prop("disabled", false);
                                         if(data.error == null){
                                             // Success
                                             displayMessage("Incident updated.");
@@ -379,7 +379,9 @@
                                     },
                                     'json');
                             }));
-                            div.append($("<button>").text("Cancel").attr("id","i-c-" + datum.id).button().click(function(){
+                            
+                            // Add the cancel button
+                            div.append($("<button>").text("Cancel").attr("id", "i-c-" + datum.id).click(function(){
                                 // TODO cancel incident save button code here
                             }));
                         }
@@ -542,9 +544,6 @@
             },
             disabled: [3]// Search tab is disabled by default
         });
-
-        // Make buttons jQuery UI buttons
-        $("button").button();
 
         // Set up the dialogs
         $("#dialog-add-user").dialog({
