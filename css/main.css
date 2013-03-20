@@ -11,20 +11,16 @@ Form Layout Styles
 */
 
 .form {
-    background-color: #f3f3f3;
-    border: solid 1px #a1a1a1;
-    padding: 10px;
-    width: 600px;
     overflow: auto;
 }
 
-.form label, .form input, .form select, .form em, .form code, .form textarea {
+.form label, .form input, .form select, .form textarea {
     display: block;
     float: left;
     margin-bottom: 10px;
 }
 
-.form input, .form select, .form code {
+.form input, .form select {
     width: 120px;
 }
 .form input[type=checkbox] {
@@ -38,14 +34,41 @@ Form Layout Styles
     height: 80px;
 }
 
-.form label, .form em {
+.form label {
     text-align: right;
     padding-right: 20px;
     width: 70px;
 }
 
-br {
+.form br {
     clear: left;
+}
+
+/*
+Search Box
+*/
+
+#search-box, #actions {
+    width: 170px;
+    padding: 10px;
+}
+#search-box label {
+    width: 45px;
+}
+#search-box input {
+    width: 100px;
+}
+#search-button {
+    float:right;
+}
+
+/*
+Manage Users
+*/
+#manage .form {
+    padding-bottom: 5px;
+    margin-bottom: 5px;
+    border-bottom: 1px solid #cccccc;
 }
 
 /*
@@ -53,7 +76,6 @@ Table List Styles
 */
 
 .list, .list tr, .list td {
-    border-collapse: collapse;
     border: 1px solid #cccccc;
 }
 
@@ -66,8 +88,7 @@ Table List Styles
 }
 
 .list tbody tr:hover {
-    background-color: #fdf5ce;
-    color: #c77405;
+    background-color: #f0f0f0;
 }
 
 /*
