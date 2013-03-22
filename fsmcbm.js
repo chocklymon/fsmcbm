@@ -379,11 +379,6 @@
                                     },
                                     'json');
                             }));
-                            
-                            // Add the cancel button
-                            div.append($("<button>").text("Cancel").attr("id", "i-c-" + datum.id).click(function(){
-                                // TODO cancel incident save button code here
-                            }));
                         }
                     }
                     
@@ -681,9 +676,7 @@
         });
         
         // User information cancel button
-        $("#user-info-cancel").click(function(){
-            // TODO
-        });
+        $("#cancel").click(getInformation);
         
         // Search box
         $("#search-button").click(search);

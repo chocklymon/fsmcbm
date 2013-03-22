@@ -79,11 +79,11 @@
                             <br/>
 
                             <button id="user-info-save">Save</button>
-                            <button id="user-info-cancel">Cancel</button>
                         </div>
                         <div id="incident-info">
 
                         </div>
+                        <button id="cancel">Cancel</button>
                     </div>
                     <div id="search-tab">
 
