@@ -112,6 +112,10 @@ MISC
     margin-top: .1em;
 }
 
+#user-add-permanent-box, #user-info-permanent-box {
+    display: none;
+}
+
 /*
 jQuery UI Overrides/Changes
 */

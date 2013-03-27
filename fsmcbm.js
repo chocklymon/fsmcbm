@@ -337,6 +337,9 @@
                         }
                     });
                     
+                    // Update the permanent banned state
+                    $("#user-info-banned").change();
+                    
                     if(data.incident != null){
                         // Attach all the incidents
                         for(var i=0; i<data.incident.length; i++){
@@ -509,6 +512,11 @@
     }
     
     
+    function togglePermanentBox(event) {
+        $(event.data.id).css("display", $(this).prop("checked") ? "inline" : "none");
+    }
+    
+    
     
     /* ----------------------------- *
      *           INITALIZE           *
@@ -674,6 +682,10 @@
             }, 'json');
             
         });
+        
+        // Permanent banned checkbox display
+        $("#user-info-banned").change({id:"#user-info-permanent-box"}, togglePermanentBox);
+        $("#user-add-banned").change({id:"#user-add-permanent-box"}, togglePermanentBox);
         
         // User information cancel button
         $("#cancel").click(getInformation);
