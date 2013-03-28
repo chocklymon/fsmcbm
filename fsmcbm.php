@@ -399,7 +399,7 @@ function retrieveUserData() {
  * for real escape string).
  * @param {boolean} $number Wether or not the input should be treated as a number.
  * True to sanitize as a number. Defaults to false.
- * @return {mixed} The sanitized string, or the sanitized number of number is set
+ * @return {mixed} The sanitized string, or the sanitized number if number is set
  * to true.
  */
 function sanitize($input, &$mysqli_conn, $number = false) {
@@ -414,6 +414,11 @@ function sanitize($input, &$mysqli_conn, $number = false) {
                 return $num*1;
             }
         } else {
+            // Remove magic quote escaping if needed
+            if (get_magic_quotes_gpc()) {
+                $input = stripslashes($input);
+            }
+            
             // Sanitize as a string
             return $mysqli_conn->real_escape_string($input);
         }
