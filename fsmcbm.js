@@ -552,7 +552,7 @@
         $("#dialog-add-user").dialog({
             autoOpen: false,
             modal: true,
-            height: 400,
+            height: 410,
             width: 510,
             buttons: {
                 Save : function(){
@@ -599,6 +599,8 @@
         $("#dialog-add-incident").dialog({
             autoOpen: false,
             modal: true,
+            height: 500,
+            width: 570,
             buttons: {
                 Save : function(){
                     // Verify that we have data
