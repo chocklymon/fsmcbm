@@ -539,7 +539,7 @@ function updateIncident() {
     $coord_x = sanitize($_POST['coord_x'], $conn, true);
     $coord_y = sanitize($_POST['coord_y'], $conn, true);
     $coord_z = sanitize($_POST['coord_z'], $conn, true);
-    $appeal_response = sanitize($_POST['appeal_response'], $conn);
+    $appeal_response = isset($_POST['appeal_response']) ? sanitize($_POST['appeal_response'], $conn) : '';
 
     $query = "UPDATE `incident` SET
         `incident_date` = '$incident_date',
