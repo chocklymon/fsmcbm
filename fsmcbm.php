@@ -227,9 +227,9 @@ function autoComplete() {
 
 /**
  * Performs the provided query and builds a table of users from the results.
- * @param {String} $query The query to retrieve the data, needs to return the
+ * @param string $query The query to retrieve the data, needs to return the
  * user name, rank, and notes.
- * @param {mysqli} $conn The MySQLi connection to the database.
+ * @param mysqli $conn The MySQLi connection to the database.
  */
 function buildTable($query, &$conn){
     
@@ -384,7 +384,7 @@ function retrieveUserData() {
             $incident['moderator'] = $user_ids[$incident['moderator']];
         }
     }
-    
+
     $conn->close();
     
     echo json_encode($result);
@@ -394,12 +394,12 @@ function retrieveUserData() {
 
 /**
  * Sanitizes input for insertion into the database.
- * @param {String} $input The string input to sanitize.
- * @param {mysqli} $mysqli_conn The MySQLi connection to the database (required
+ * @param string $input The string input to sanitize.
+ * @param mysqli $mysqli_conn The MySQLi connection to the database (required
  * for real escape string).
- * @param {boolean} $number Wether or not the input should be treated as a number.
+ * @param boolean $number Wether or not the input should be treated as a number.
  * True to sanitize as a number. Defaults to false.
- * @return {mixed} The sanitized string, or the sanitized number if number is set
+ * @return mixed The sanitized string, or the sanitized number if number is set
  * to true.
  */
 function sanitize($input, &$mysqli_conn, $number = false) {
@@ -407,7 +407,7 @@ function sanitize($input, &$mysqli_conn, $number = false) {
     if(isset($input) && $input !== null) {
         if($number) {
             // Sanitize as a number
-            $num = preg_replace('#\D#', '', $input);
+            $num = preg_replace('[^0-9\-]', '', $input);
             if(strlen($num) == 0){
                 return null;
             } else {
