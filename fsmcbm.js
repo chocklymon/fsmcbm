@@ -194,12 +194,18 @@
             name:"Created Date",
             after:""
         }),
+        modified_date : info({
+           type:"date",
+           disabled: true,
+           name: "Last Modified"
+        }),
+        incident_type : info({
+            name: "Incident Type",
+            after: ""
+        }),
         incident_date : info({
             type:"date",
             name:"Incident Date"
-        }),
-        incident_type : info({
-            name: "Incident Type"
         }),
         notes : info({
             name: "Notes",
@@ -529,7 +535,7 @@
         var incidentForm = $("#add-incident-form");
         $.each(incident, function(index, value){
             // Don't attach the created date and moderator
-            if(index != "moderator" && index != "created_date"){
+            if( ! value.disabled ){
                 incidentForm.append(value.toHTML("", index, "add"));
             }
         });

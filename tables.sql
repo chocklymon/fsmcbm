@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS `incident` (
   `user_id` INT UNSIGNED NOT NULL,
   `moderator` INT UNSIGNED NOT NULL,
   `created_date` DATETIME NOT NULL,
+  `modified_date` DATETIME NOT NULL,
   `incident_date` DATETIME DEFAULT NULL,
   `incident_type` VARCHAR(20) DEFAULT NULL,
   `notes` TEXT,
@@ -37,6 +38,7 @@ CREATE TABLE IF NOT EXISTS `incident` (
 CREATE TABLE IF NOT EXISTS `users` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `username` VARCHAR(20) NOT NULL,
+  `modified_date` DATETIME NOT NULL,
   `rank` VARCHAR(20) DEFAULT NULL,
   `relations` TEXT,
   `notes` TEXT,

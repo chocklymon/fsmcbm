@@ -100,7 +100,7 @@ function addIncident() {
     }
     
     $user_id = sanitize($_POST['user_id'], $conn, true);
-    $today   = date('Y-m-d H:i:s');
+    $today   = getNow();
     $incident_date = sanitize($_POST['incident_date'], $conn);
     $incident_type = sanitize($_POST['incident_type'], $conn);
     $notes   = sanitize($_POST['notes'], $conn);
@@ -120,8 +120,8 @@ function addIncident() {
         $incident_date = $today;
     }
     
-    $query = "INSERT INTO `incident` (`user_id`, `moderator`, `created_date`, `incident_date`, `incident_type`, `notes`, `action_taken`, `world`, `coord_x`, `coord_y`, `coord_z`)
-        VALUES ('$user_id', '$moderator', '$today', '$incident_date', '$incident_type', '$notes', '$action_taken', '$world', '$coord_x', '$coord_y', '$coord_z')";
+    $query = "INSERT INTO `incident` (`user_id`, `moderator`, `created_date`, `modified_date`, `incident_date`, `incident_type`, `notes`, `action_taken`, `world`, `coord_x`, `coord_y`, `coord_z`)
+        VALUES ('$user_id', '$moderator', '$today', '$today', '$incident_date', '$incident_type', '$notes', '$action_taken', '$world', '$coord_x', '$coord_y', '$coord_z')";
     
     $res = $conn->query($query);
     
@@ -172,13 +172,14 @@ function addUser() {
     $notes = sanitize($_POST['notes'], $conn);
     $banned = (isset($_POST['banned']) && $_POST['banned'] == 'on') ? '1' : '0';
     $permanent = (isset($_POST['permanent']) && $_POST['permanent'] == 'on') ? '1' : '0';
+    $today = getNow();
     
     // Insert the user
-    $res = $conn->query("INSERT INTO `users` (`username`, `rank`, `relations`, `notes`, `banned`, `permanent`)
-        VALUES ('$username', '$rank', '$relations', '$notes', $banned, $permanent);");
+    $res = $conn->query("INSERT INTO `users` (`username`, `modified_date`, `rank`, `relations`, `notes`, `banned`, `permanent`)
+        VALUES ('$username', '$today', '$rank', '$relations', '$notes', $banned, $permanent);");
     
     if($res === false){
-        error("Failed to add user.");
+        error("Failed to add user." . $conn->error);
     }
     
     // Return the id
@@ -296,6 +297,16 @@ function getConnection(){
     }
     
     return $mysqli;
+}
+
+
+/**
+ * Gets the current time as a string ready for insertion into a MySQL datetime
+ * field (Y-m-d H:i:s).
+ * @return string The current time as a string.
+ */
+function getNow() {
+    return date('Y-m-d H:i:s');
 }
 
 
@@ -496,8 +507,10 @@ function updateUser() {
     $permanent = $_POST['permanent'] == "true";
     $relations = sanitize($_POST['relations'], $conn);
     $notes = sanitize($_POST['notes'], $conn);
+    $today = getNow();
 
     $query = "UPDATE  `fsmcbm`.`users` SET
+                `modified_date` = '$today',
                 `rank` =  '$rank',
                 `relations` =  '$relations',
                 `notes` =  '$notes',
@@ -531,6 +544,7 @@ function updateIncident() {
         error("No incident id found.");
     }
     
+    $now = getNow();
     $incident_date = sanitize($_POST['incident_date'], $conn);
     $incident_type = sanitize($_POST['incident_type'], $conn);
     $notes   = sanitize($_POST['notes'], $conn);
@@ -542,6 +556,7 @@ function updateIncident() {
     $appeal_response = isset($_POST['appeal_response']) ? sanitize($_POST['appeal_response'], $conn) : '';
 
     $query = "UPDATE `incident` SET
+        `modified_date` = '$now',
         `incident_date` = '$incident_date',
         `incident_type` = '$incident_type',
         `notes` = '$notes',
