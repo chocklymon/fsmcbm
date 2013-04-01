@@ -7,6 +7,7 @@
     // General Variables
     var info,
         DataStructure,
+        user,
         incident,
         attachNewUser = false;
         
@@ -179,6 +180,41 @@
      *      DATA STRUCTURES          *
      * ----------------------------- */
     
+    
+    user = {
+        username : info({
+            name : "Username",
+            disabled : true,
+            after : ""
+        }),
+        modified_date : info({
+            name : "Modified Date",
+            disabled : true,
+            type : "date"
+        }),
+        banned : info({
+            name : "Banned",
+            type : "checkbox",
+            after : ""
+        }),
+        permanent : info({
+            name : "Permanent",
+            type : "checkbox"
+        }),
+        rank : info({
+            name : "Rank",
+            type : "select",
+            options : ["Everyone","Regular","Donor","Builder","Engineer","Moderator","Admin"]
+        }),
+        relations : info({
+            name : "Relations",
+            type : "textarea"
+        }),
+        notes : info({
+            name : "Notes",
+            type : "textarea"
+        })
+    }
     
     /**
      * Contains the Data Structures for incidents.
@@ -538,6 +574,10 @@
             if( ! value.disabled ){
                 incidentForm.append(value.toHTML("", index, "add"));
             }
+        });
+        $.each(user, function(index, value){
+            // Don't attach the created date and moderator
+                $("#user-info").append(value.toHTML("", index, "add"));
         });
         
         // Set up the tabs
