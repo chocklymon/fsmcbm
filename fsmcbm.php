@@ -377,7 +377,7 @@ function retrieveUserData() {
     
     
     // Get the incidents
-    $res = $conn->query("SELECT * FROM incident WHERE user_id = $lookup");
+    $res = $conn->query("SELECT * FROM incident WHERE user_id = $lookup ORDER BY incident_date");
     
     if($res === false){
         error("Nothing Found.");
