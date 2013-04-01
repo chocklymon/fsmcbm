@@ -4,6 +4,22 @@
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `ban_history`
+--
+
+CREATE TABLE IF NOT EXISTS `ban_history` (
+  `user_id` INT UNSIGNED NOT NULL,
+  `moderator` INT UNSIGNED NOT NULL,
+  `date` DATETIME NOT NULL,
+  `banned` BOOLEAN NOT NULL DEFAULT FALSE,
+  `permanent` BOOLEAN NOT NULL DEFAULT FALSE,
+  PRIMARY KEY (`user_id`,`date`),
+  KEY `user_id` (`user_id`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci ;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `incident`
 --
 
