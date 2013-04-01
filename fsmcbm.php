@@ -117,7 +117,7 @@ function addIncident() {
     
     // Check if we have an incident date.
     if($incident_date === null || strlen($incident_date) < 6) {
-        $incident_date = $today;
+        $incident_date = substr($today, 0, 10);
     }
     
     $query = "INSERT INTO `incident` (`user_id`, `moderator`, `created_date`, `modified_date`, `incident_date`, `incident_type`, `notes`, `action_taken`, `world`, `coord_x`, `coord_y`, `coord_z`)
