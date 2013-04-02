@@ -331,10 +331,14 @@
                 if(data.error == null){
                     
                     // Empty out any previous incidents
-                    var incidents = $("#incident-info").empty();
+                    var incidents = $("#incident-info").empty(),
+                    
+                    // Empty out an previous ban history
+                        history = $("#ban-history").empty(),
+                        datum, el, i;
                     
                     // Fill in the fields
-                    $.each(data.user, function(index, value){
+                    $.each(data.user, function(index, value) {
                         var field = $("#user-info-" + index);
                         if(field.attr("type") == "checkbox"){
                             field.prop("checked", value == "1");
@@ -346,20 +350,20 @@
                     // Update the permanent banned state
                     $("#user-info-banned").change();
                     
-                    if(data.incident != null){
+                    if(data.incident != null) {
                         // Attach all the incidents
-                        for(var i=0; i<data.incident.length; i++){
-                            var datum = data.incident[i];
+                        for(i=0; i<data.incident.length; i++){
+                            datum = data.incident[i];
 
-                            var div = $("<div>").addClass("form").attr("id", "i-" + datum.id);
-                            div.appendTo(incidents);
+                            el = $("<div>").addClass("form").attr("id", "i-" + datum.id);
+                            el.appendTo(incidents);
 
                             $.each(incident, function(index, value){
-                                div.append(value.toHTML(datum[index], index, datum.id));
+                                el.append(value.toHTML(datum[index], index, datum.id));
                             });
 
                             // Add the save button
-                            div.append($("<button>").text("Save").attr("id","i-s-" + datum.id).click(function(){
+                            el.append($("<button>").text("Save").attr("id","i-s-" + datum.id).click(function(){
 
                                 // Get the ID and disable the button
                                 var id = $(this).addClass("disabled").prop("disabled", true).attr('id').substring(4);
@@ -389,6 +393,19 @@
                                     'json');
                             }));
                         }
+                    }
+                    
+                    // Attach the ban history
+                    if(data.history != null) {
+                        el = $("<table>");
+                        el.append("<tr><th>Moderator</th><th>Date</th><th>Banned</th><th>Permanent</th></tr>");
+                        
+                        for(i=0; i < data.history.length; i++) {
+                            datum = data.history[i];
+                            el.append("<tr><td>" + datum.moderator + "</td><td>" + datum.date + "</td><td>" + (datum.banned == 1 ? "Yes" : "") + "</td><td>" + (datum.permanent == 1 ? "Yes" : "") + "</td></tr>");
+                        }
+                        
+                        history.append( $("<h3>").text("Ban History") ).append(el);
                     }
                     
                     // Switch to the manage tab

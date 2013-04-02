@@ -65,7 +65,7 @@ Search Box
 /*
 Manage Users
 */
-#manage .form {
+#manage .form, #ban-history table {
     padding-bottom: 5px;
     margin-bottom: 5px;
     border-bottom: 1px solid #cccccc;

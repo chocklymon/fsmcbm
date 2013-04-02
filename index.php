@@ -83,6 +83,9 @@
                         <div id="incident-info">
 
                         </div>
+                        <div id="ban-history">
+                            
+                        </div>
                         <button id="cancel">Cancel</button>
                     </div>
                     <div id="search-tab">

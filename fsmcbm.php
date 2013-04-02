@@ -437,8 +437,24 @@ function retrieveUserData() {
     $res->free();
     
     
-    if( isset($result['incident']) ){
-        // Get the name of the moderators
+    // Get the ban history
+    $res = $conn->query("SELECT * FROM `ban_history` WHERE `user_id` = $lookup ORDER BY `date`;");
+    
+    if($res === false){
+        error("Nothing Found.");
+    }
+    
+    while($row = $res->fetch_assoc()) {
+        $result['history'][] = $row;
+        $user_ids[] = $row['moderator'];
+    }
+    
+    
+    // Get the name of the moderators
+    $user_ids = array_unique($user_ids);
+
+    if( count($user_ids) != 0 ){
+        
         $res = $conn->query("SELECT id,username FROM users WHERE id IN (" . implode(",", $user_ids) . ")");
 
         if($res === false){
@@ -452,9 +468,17 @@ function retrieveUserData() {
         $res->free();
         
         // change the moderator id to username
-        foreach($result['incident'] as &$incident){
-            $incident['moderator_id'] = $incident['moderator'];
-            $incident['moderator'] = $user_ids[$incident['moderator']];
+        if( isset($result['incident']) ) {
+            foreach($result['incident'] as &$incident){
+                $incident['moderator_id'] = $incident['moderator'];
+                $incident['moderator'] = $user_ids[$incident['moderator']];
+            }
+        }
+        if( isset($result['history']) ) {
+            foreach($result['history'] as &$history){
+                $history['moderator_id'] = $history['moderator'];
+                $history['moderator'] = $user_ids[$history['moderator']];
+            }
         }
     }
 
