@@ -534,7 +534,7 @@
         // Build the add incident dialog form
         var incidentForm = $("#add-incident-form");
         $.each(incident, function(index, value){
-            // Don't attach the created date and moderator
+            // Don't attach read only fields
             if( ! value.disabled ){
                 incidentForm.append(value.toHTML("", index, "add"));
             }

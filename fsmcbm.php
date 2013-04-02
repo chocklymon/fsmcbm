@@ -117,7 +117,7 @@ function addIncident() {
     
     // Check if we have an incident date.
     if($incident_date === null || strlen($incident_date) < 6) {
-        $incident_date = $today;
+        $incident_date = substr($today, 0, 10);
     }
     
     $query = "INSERT INTO `incident` (`user_id`, `moderator`, `created_date`, `modified_date`, `incident_date`, `incident_type`, `notes`, `action_taken`, `world`, `coord_x`, `coord_y`, `coord_z`)
@@ -179,7 +179,7 @@ function addUser() {
         VALUES ('$username', '$today', '$rank', '$relations', '$notes', $banned, $permanent);");
     
     if($res === false){
-        error("Failed to add user." . $conn->error);
+        error("Failed to add user.");
     }
     
     // Return the id
@@ -247,13 +247,14 @@ function buildTable($query, &$conn){
     } else {
     
         // Place the results into the table
-        $result = "<table class='list'><thead><tr><th>Name</th><th>Rank</th><th>Notes</th></tr></thead><tbody>";
+        $result = "<table class='list'><thead><tr><th>Name</th><th>Last Incident Date</th><th>Last Incident Type</th><th>Last Action Taken</th></tr></thead><tbody>";
 
         while($row = $res->fetch_assoc()){
             $result .= "<tr id='id-" . $row['id'] . "'><td>"
                     . $row['username'] . "</td><td>"
-                    . $row['rank'] . "</td><td>"
-                    . truncate($row['notes']) . "</td></tr>";
+                    . $row['incident_date'] . "</td><td>"
+                    . truncate($row['incident_type']) . "</td><td>"
+                    . truncate($row['action_taken']) . "</td></tr>";
         }
         
         $result .= "</tbody></table>";
@@ -282,7 +283,18 @@ function error($message = "Unkown error occured"){
 function getBans() {
     $conn = getConnection();
     
-    buildTable("SELECT * FROM users WHERE banned = TRUE", $conn);
+    $query = "SELECT u.id, u.username, i.incident_date, i.incident_type, i.action_taken
+            FROM users AS u
+            LEFT JOIN (
+                SELECT * 
+                FROM incident AS q
+                ORDER BY q.incident_date DESC
+            ) AS i ON u.id = i.user_id
+            WHERE u.banned = TRUE
+            GROUP BY u.id
+            ORDER BY i.incident_date DESC";
+    
+    buildTable($query, $conn);
 }
 
 
@@ -317,9 +329,15 @@ function getNow() {
  */
 function getWatchlist() {
     $conn = getConnection();
-        
-    buildTable("SELECT DISTINCT users.id, users.username, users.rank, users.notes FROM users, incident WHERE users.id=incident.user_id AND users.banned = FALSE",
-            $conn);
+    
+    $query = "SELECT u.id, u.username, i.incident_date, i.incident_type, i.action_taken
+            FROM users AS u, incident AS i
+            WHERE u.banned = FALSE
+            AND u.id = i.user_id
+            GROUP BY u.id
+            ORDER BY i.incident_date DESC ";
+    
+    buildTable($query, $conn);
 }
 
 /**
@@ -359,7 +377,7 @@ function retrieveUserData() {
     
     
     // Get the incidents
-    $res = $conn->query("SELECT * FROM incident WHERE user_id = $lookup");
+    $res = $conn->query("SELECT * FROM incident WHERE user_id = $lookup ORDER BY incident_date");
     
     if($res === false){
         error("Nothing Found.");
@@ -454,22 +472,26 @@ function search() {
     
     $search = sanitize($_GET['search'], $conn);
     
-    buildTable(
-       "SELECT DISTINCT u.id, u.username, u.rank, u.notes
-        FROM users AS u, incident AS i
-        WHERE u.id = i.user_id
-            AND (i.notes LIKE '%$search%'
-            OR i.incident_type LIKE '%$search%'
-            OR i.action_taken LIKE '%$search%'
-            OR i.appeal LIKE '%$search%'
-            OR i.appeal_response LIKE '%$search%')
-        UNION
-        SELECT DISTINCT u.id, u.username, u.rank, u.notes
-        FROM users AS u
-        WHERE u.username LIKE '%$search%'
-            OR u.relations LIKE '%$search%'
-            OR u.notes LIKE '%$search%'",
-            $conn);
+    $query = "SELECT * FROM (
+                SELECT u.id, u.username, u.banned, i.incident_date, i.incident_type, i.action_taken
+                FROM users AS u, incident AS i
+                WHERE u.id = i.user_id
+                    AND (i.notes LIKE '%$search%'
+                    OR i.incident_type LIKE '%$search%'
+                    OR i.action_taken LIKE '%$search%'
+                    OR i.appeal LIKE '%$search%'
+                    OR i.appeal_response LIKE '%$search%')
+                UNION
+                SELECT u.id, u.username, u.banned, u.modified_date AS incident_date, u.rank, u.relations
+                FROM users AS u
+                WHERE u.username LIKE '%$search%'
+                    OR u.relations LIKE '%$search%'
+                    OR u.notes LIKE '%$search%'
+                ORDER BY incident_date DESC
+                ) AS r
+        GROUP BY r.id";
+    
+    buildTable( $query, $conn );
 }
 
 
