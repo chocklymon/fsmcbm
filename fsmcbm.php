@@ -81,6 +81,7 @@ if(isset($_GET['term'])){
 /**
  * Adds a new incident to the database.
  * Uses the data posted into the page to create the incident.
+ * @global int $moderator The ID of the moderator/admin that is logged in.
  */
 function addIncident() {
     
@@ -173,6 +174,11 @@ function addUser() {
     
     // Get the ID
     $result = array('user_id'=>$conn->insert_id);
+    
+    // See if we need to add to the ban history
+    if($banned === '1') {
+        updateBanHistory($conn, $result['user_id'], $banned, $permanent);
+    }
     
     $conn->close();
     
@@ -568,7 +574,25 @@ function updateUser() {
     $relations = sanitize($_POST['relations'], $conn);
     $notes = sanitize($_POST['notes'], $conn);
     $today = getNow();
+    
+    // See if we need to update the ban history
+    $query = "SELECT * FROM `users` WHERE `users`.`id` = $id";
+    
+    $res = $conn->query($query);
+    
+    if($res === false || $res->num_rows == 0) {
+        error("Failed to retrieve incident.");
+    }
+    
+    $row = $res->fetch_assoc();
+    
+    if($row['banned'] != $banned || $row['permanent'] != $permanent) {
+        updateBanHistory($conn, $id, $banned, $permanent);
+    }
+    
+    $res->free();
 
+    // Perform the udpate
     $query = "UPDATE  `fsmcbm`.`users` SET
                 `modified_date` = '$today',
                 `rank` =  '$rank',
@@ -587,6 +611,29 @@ function updateUser() {
     }
 
     echo json_encode( array("success" => true ));
+}
+
+
+/**
+ * Updates the ban history
+ * @global int $moderator The ID of the moderator/admin that is logged in.
+ * @param mysqli $conn The connection to the database.
+ * @param int $user_id The ID of the user who's ban history is being updated.
+ * @param boolean $banned Whether or not the user is banned.
+ * @param boolean $permanent Wether or not the user is banned permanently.
+ */
+function updateBanHistory($conn, $user_id, $banned, $permanent) {
+    
+    global $moderator;
+    
+    $today = getNow();
+    
+    $res = $conn->query("INSERT INTO `fsmcbm`.`ban_history` (`user_id`, `moderator`, `date`, `banned`, `permanent`)
+            VALUES ('$user_id', '$moderator', '$today', '$banned', '$permanent');");
+
+    if($res === false){
+        error("Failed to update ban history.");
+    }
 }
 
 
