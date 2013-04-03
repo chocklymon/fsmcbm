@@ -164,7 +164,10 @@
             
             if(this.type == "date"){
                 // Do date formating (change from yy-mm-dd hh:mm:ss to yy-mm-dd)
-                value = value.substring(0, value.indexOf(" "));
+                var index = value.indexOf(" ");
+                if(index > 0){
+                    value = value.substring(0, index);
+                }
                 return value;
             }
             
