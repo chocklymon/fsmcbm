@@ -1,15 +1,41 @@
 <?php
 
-// Verify the user
+/* =============================
+ * GLOBAL FUNCTIONS AND SETTINGS
+ * =============================
+ */
+
+/** The name of the cookie to use for storing the user's information. */
+$cookie_name = 'fsmcbm';
+
+/** The ID of the moderator/admin. */
 $moderator = 0;
 
-if( isset($_COOKIE['fsmcbm']) ) {
+
+
+/* =============================
+ *        VERIFY USER
+ * =============================
+ */
+
+if( getLoggedInName() === FALSE ) {
+    // User is not logged in, set the ban manager cookie as expired.
+    setcookie($cookie_name, "", time() - 3600);
+    error("Not logged in.");
     
-    $user_info = explode("|", $_COOKIE['fsmcbm']);
+} else if( isset($_COOKIE[$cookie_name]) ) {
     
-    $moderator = $user_info[0];
+    $user_info = explode("|", $_COOKIE[$cookie_name]);
     
-} else {
+    // Check if the user has changed
+    if($user_info[2] == getLoggedInName())
+    {
+        // User is the same, store their ID
+        $moderator = $user_info[0];
+    }
+}
+
+if($moderator === 0) {
     $user_info = getModeratorInfo();
     
     if($user_info === FALSE) {
@@ -17,14 +43,19 @@ if( isset($_COOKIE['fsmcbm']) ) {
         error("Not logged in.");
     } else {
         // Mark the user as logged into the ban manager
-        setcookie("fsmcbm", implode("|", $user_info), 0, "/", "finalscoremc.com", false, true);
+        setcookie($cookie_name, implode("|", $user_info), 0, "/", "finalscoremc.com");
         
         $moderator = $user_info[0];
     }
 }
 
 
-// Detect what action to perform
+
+/* =============================
+ *      PERFORM ACTIONS
+ * =============================
+ */
+
 if(isset($_GET['term'])){
     
     autoComplete();
@@ -308,6 +339,26 @@ function getConnection(){
 
 
 /**
+ * Gets name of the user logged into wordpress.
+ * @return mixed FALSE if the user is not not logged into wordpress, otherwise 
+ * it return an unsanitized string contain the logged in user's name. 
+ */
+function getLoggedInName() {
+    // Search the wordpress cookies for the logged in user name
+    $keys = array_keys($_COOKIE);
+    foreach($keys as &$key) {
+        if (strncmp("wordpress_logged_in_", $key, 20) === 0) {
+            // Extract user name from the cookie
+            $value = $_COOKIE[$key];
+            return substr($value, 0, strpos($value, "|"));
+        }
+    }
+    
+    return FALSE;
+}
+
+
+/**
  * Gets the current time as a string ready for insertion into a MySQL datetime
  * field (Y-m-d H:i:s).
  * @return string The current time as a string.
@@ -320,47 +371,43 @@ function getNow() {
 /**
  * Gets the information for the moderator using the ban manager.
  * @return mixed FALSE if the user is not a moderator/admin or is not logged into
- * wordpress, otherwise it return an array where index zero is the user id and
- * index one is the user's rank.
+ * wordpress, otherwise it return an array where index zero is the user id,
+ * index one is the user's rank, and index two is the user's name.
  */
 function getModeratorInfo() {
     $id = FALSE;
     
-    // Search the wordpress cookies for the logged in user name
-    $keys = array_keys($_COOKIE);
-    foreach($keys as &$key) {
-        if (strncmp("wordpress_logged_in_", $key, 20) === 0) {
-            // Extract user name from the cookie
-            $conn = getConnection();
-            
-            $value = $_COOKIE[$key];
-            $moderator_name = sanitize(
-                    substr($value, 0, strpos($value, "|")), $conn);
-            
-            // Request the user id from the database
-            $res = $conn->query("SELECT `id`,`rank` FROM `users` WHERE `username` = '$moderator_name'");
-            
-            if($res === false){
-                error("Failed to find moderator.");
-            } else if($res->num_rows == 0) {
-                // Nothing found
-                error("Moderator not found.");
-            }
-
-            $row = $res->fetch_assoc();
-            
-            // Only store the information of admins/moderators
-            if($row['rank'] == 'Admin' || $row['rank'] == 'Moderator') {
-                $id = array($row['id'], $row['rank']);
-            }
-            
-            $res->free();
-            
-            $conn->close();
-            
-            break;
-        }
+    // Get the moderators name from the cookie
+    $moderator_name = getLoggedInName();
+    
+    if($moderator_name === FALSE) {
+        return FALSE;
     }
+    
+    $conn = getConnection();
+
+    $moderator_name = sanitize($moderator_name);
+
+    // Request the user id from the database
+    $res = $conn->query("SELECT `id`,`rank` FROM `users` WHERE `username` = '$moderator_name'");
+
+    if($res === false){
+        error("Failed to find moderator.");
+    } else if($res->num_rows == 0) {
+        // Nothing found
+        error("Moderator not found.");
+    }
+
+    $row = $res->fetch_assoc();
+
+    // Only store the information of admins/moderators
+    if($row['rank'] == 'Admin' || $row['rank'] == 'Moderator') {
+        $id = array($row['id'], $row['rank'], $moderator_name);
+    }
+
+    $res->free();
+
+    $conn->close();
     
     return $id;
 }
