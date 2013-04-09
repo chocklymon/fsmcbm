@@ -4,6 +4,20 @@
 
 (function($){
     
+    // Attach the css and needed javascript
+    var domain = '',// specify the domain, or leave blank to use relative path.
+            css = ['css/custom-theme/jquery-ui-1.10.2.custom.min.css',
+                    'css/main.min.css'],
+            script = ['jquery-ui-1.10.2.custom.min.js'];
+
+    for(var i=0; i<css.length; i++) {
+            $('head').append( $('<link>').attr('type', 'text/css').attr('rel', 'stylesheet').attr('href', domain + css[i]) );
+    }
+    for(var i=0; i<script.length; i++) {
+            $('head').append( $('<script>').attr('type', 'text/javascript').attr('src', domain + script[i]) );
+    }
+        
+    
     // General Variables
     var info,
         DataStructure,
