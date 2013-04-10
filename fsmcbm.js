@@ -342,7 +342,7 @@
      */
     function getInformation() {
         $.get(
-            "fsmcbm.php",
+            domain + "fsmcbm.php",
             { 'lookup': $("#lookup-user_id").val() },
             function(data){
                 if(data.error == null){
@@ -394,7 +394,7 @@
                                     datum[index] = $("#" + index + "_" + id).val();
                                 });
                                 
-                                $.post("fsmcbm.php?update=incident",
+                                $.post(domain + "fsmcbm.php?update=incident",
                                     datum,
                                     function(data){
                                         // Re-enable the button
@@ -470,7 +470,7 @@
     function lookup(input, value, callback, emptyLabel, emptyCallback) {
         $(input).autocomplete({
             source : function (request, response) {
-                $.get("fsmcbm.php",{
+                $.get(domain + "fsmcbm.php",{
                         term: request.term
                     }, function (data) {
                         if (data.length == 0) {
@@ -525,7 +525,7 @@
             displayMessage("Search must be two or more characters long.");
 
         } else {
-            $.get("fsmcbm.php",
+            $.get(domain + "fsmcbm.php",
                 { search : $("#search").val() },
                 function(data) {
                     // Check for error with the search
@@ -604,7 +604,7 @@
                     
                     // Save the user
                     $.post(
-                        "fsmcbm.php?add_user=true",
+                        domain + "fsmcbm.php?add_user=true",
                         $("#add-user-form").serialize(),
                         function(data){
                             if(data.error == null){
@@ -655,7 +655,7 @@
                     
                     // Save the incident.
                     $.post(
-                        "fsmcbm.php?add_incident=true",
+                        domain + "fsmcbm.php?add_incident=true",
                         $("#add-incident-form").serialize(),
                         function(data){
                             if(data.error == null){
@@ -715,7 +715,7 @@
             data.notes = $("#user-info-notes").val();
             
             // Send in the changes
-            $.post("fsmcbm.php?update=user", data, function(data){
+            $.post(domain + "fsmcbm.php?update=user", data, function(data){
                 if(data.error == null){
                     displayMessage("User updated.");
                 } else {
