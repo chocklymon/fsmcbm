@@ -386,7 +386,7 @@ function getModeratorInfo() {
     
     $conn = getConnection();
 
-    $moderator_name = sanitize($moderator_name);
+    $moderator_name = sanitize($moderator_name, $conn);
 
     // Request the user id from the database
     $res = $conn->query("SELECT `id`,`rank` FROM `users` WHERE `username` = '$moderator_name'");
