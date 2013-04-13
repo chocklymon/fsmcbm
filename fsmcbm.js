@@ -4,25 +4,42 @@
 
 (function($){
     
-    // Attach the css and needed javascript
-    var domain = '',// specify the domain, or leave blank to use relative path.
-            css = ['css/custom-theme/jquery-ui-1.10.2.custom.min.css',
+    /* ----------------------------- *
+     *  VARIABLES AND CONFIGURATION  *
+     * ----------------------------- */
+    var 
+        /**
+         * Points to the domain and folder where the domain manager files are
+         * located. Can be absolute or relative path.
+         * @type String|Location of the ban manager files on the server.
+         */
+        domain = '',
+        
+        // CSS files needed for the ban manger
+        css = ['css/custom-theme/jquery-ui-1.10.2.custom.min.css',
                     'css/main.min.css'],
-            script = ['jquery-ui-1.10.2.custom.min.js'];
-
+        
+        // JS library needed by the ban manger.
+        script = ['jquery-ui-1.10.2.custom.min.js'],
+        
+        // Data structure, see documentation below
+        info,
+        DataStructure,
+        
+        // Data structure for incidents
+        incident,
+        
+        // Used internally by add incident functions
+        attachNewUser = false;
+    
+    
+    // Attach the css and needed javascript libraries
     for(var i=0; i<css.length; i++) {
-            $('head').append( $('<link>').attr('type', 'text/css').attr('rel', 'stylesheet').attr('href', domain + css[i]) );
+        $('head').append( $('<link>').attr('type', 'text/css').attr('rel', 'stylesheet').attr('href', domain + css[i]) );
     }
     for(var i=0; i<script.length; i++) {
-            $('head').append( $('<script>').attr('type', 'text/javascript').attr('src', domain + script[i]) );
+        $('head').append( $('<script>').attr('type', 'text/javascript').attr('src', domain + script[i]) );
     }
-        
-    
-    // General Variables
-    var info,
-        DataStructure,
-        incident,
-        attachNewUser = false;
         
     /* ----------------------------- *
      *   DATA STRUCTURE OBJECT       *
