@@ -37,7 +37,7 @@ Form Layout Styles
 .form label {
     text-align: right;
     padding-right: 20px;
-    width: 70px;
+    width: 110px;
 }
 
 .form br {
@@ -45,15 +45,25 @@ Form Layout Styles
 }
 
 /*
-Search Box
+Search Box and Actions
 */
 
+div.left-menu {
+    margin: 0 auto;
+    width: 365px;
+}
 #search-box, #actions {
-    width: 170px;
-    padding: 10px;
+    float: left;
+}
+#search-box {
+    width: 225px;
+}
+#actions {
+    width: 140px;
+    text-align:center;
 }
 #search-box label {
-    width: 45px;
+    width: 50px;
 }
 #search-box input {
     width: 100px;
@@ -61,14 +71,33 @@ Search Box
 #search-button {
     float:right;
 }
+#actions button {
+    margin-bottom: 10px;
+}
 
 /*
 Manage Users
 */
+
+#tabs {
+    clear: both;
+    min-width: 840px;
+    overflow: auto;
+}
+
 #manage .form, #ban-history table {
     padding-bottom: 5px;
     margin-bottom: 5px;
-    border-bottom: 1px solid #cccccc;
+    border-bottom: 1px solid #CCC;
+}
+
+#user-info textarea {
+    height: 50px;
+}
+
+
+#user-add-permanent-box, #user-info-permanent-box {
+    display: none;
 }
 
 /*
@@ -76,7 +105,7 @@ Table List Styles
 */
 
 .list, .list tr, .list td {
-    border: 1px solid #cccccc;
+    border: 1px solid #CCC;
 }
 
 .list td {
@@ -88,17 +117,18 @@ Table List Styles
 }
 
 .list tbody tr:hover {
-    background-color: #f0f0f0;
+    background-color: #F0F0F0;
 }
 
 /*
-MISC
+Error and Highlight Styles
 */
+
 
 #error, #highlight {
     position: fixed;
     z-index: 101;
-    top: 5px;
+    top: 35px;
     left: 10px;
     right: 10px;
     display: none;
@@ -110,10 +140,6 @@ MISC
     float: left;
     margin-right: .3em;
     margin-top: .1em;
-}
-
-#user-add-permanent-box, #user-info-permanent-box {
-    display: none;
 }
 
 /*
