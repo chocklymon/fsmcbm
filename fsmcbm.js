@@ -121,7 +121,7 @@
             
             value = this.formatValue(value);
             
-            label = $("<label>").text(this.name).attr("for", id);
+            label = $("<label>").text(this.name + ":").attr("for", id);
             
             if(this.type == "textarea"){
                 // Text area
@@ -178,7 +178,7 @@
             } else if(this.type == "date") {
                 field.datepicker({
                    showOn: "both",
-                   buttonImage: "calendar-month.png",
+                   buttonImage: domain + "calendar-month.png",
                    buttonImageOnly : true,
                    dateFormat : "yy-mm-dd",
                    maxDate : 0
