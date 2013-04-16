@@ -664,7 +664,7 @@ function updateUser() {
     $res->free();
 
     // Perform the udpate
-    $query = "UPDATE  `fsmcbm`.`users` SET
+    $query = "UPDATE  `users` SET
                 `modified_date` = '$today',
                 `rank` =  '$rank',
                 `relations` =  '$relations',
@@ -699,7 +699,7 @@ function updateBanHistory($conn, $user_id, $banned, $permanent) {
     
     $today = getNow();
     
-    $res = $conn->query("INSERT INTO `fsmcbm`.`ban_history` (`user_id`, `moderator`, `date`, `banned`, `permanent`)
+    $res = $conn->query("INSERT INTO `ban_history` (`user_id`, `moderator`, `date`, `banned`, `permanent`)
             VALUES ('$user_id', '$moderator', '$today', '$banned', '$permanent');");
 
     if($res === false){
