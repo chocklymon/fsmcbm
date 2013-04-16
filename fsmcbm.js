@@ -4,12 +4,42 @@
 
 (function($){
     
-    // General Variables
-    var info,
+    /* ----------------------------- *
+     *  VARIABLES AND CONFIGURATION  *
+     * ----------------------------- */
+    var 
+        /**
+         * Points to the domain and folder where the domain manager files are
+         * located. Can be absolute or relative path.
+         * @type String|Location of the ban manager files on the server.
+         */
+        domain = '',
+        
+        // CSS files needed for the ban manger
+        css = ['css/custom-theme/jquery-ui-1.10.2.custom.min.css',
+                    'css/main.min.css'],
+        
+        // JS library needed by the ban manger.
+        script = ['jquery-ui-1.10.2.custom.min.js'],
+        
+        // Data structure, see documentation below
+        info,
         DataStructure,
         user,
+        // Data structure for incidents
         incident,
+        
+        // Used internally by add incident functions
         attachNewUser = false;
+    
+    
+    // Attach the css and needed javascript libraries
+    for(var i=0; i<css.length; i++) {
+        $('head').append( $('<link>').attr('type', 'text/css').attr('rel', 'stylesheet').attr('href', domain + css[i]) );
+    }
+    for(var i=0; i<script.length; i++) {
+        $('head').append( $('<script>').attr('type', 'text/javascript').attr('src', domain + script[i]) );
+    }
         
     /* ----------------------------- *
      *   DATA STRUCTURE OBJECT       *
@@ -91,7 +121,7 @@
             
             value = this.formatValue(value);
             
-            label = $("<label>").text(this.name).attr("for", id);
+            label = $("<label>").text(this.name + ":").attr("for", id);
             
             if(this.type == "textarea"){
                 // Text area
@@ -148,7 +178,7 @@
             } else if(this.type == "date") {
                 field.datepicker({
                    showOn: "both",
-                   buttonImage: "calendar-month.png",
+                   buttonImage: domain + "calendar-month.png",
                    buttonImageOnly : true,
                    dateFormat : "yy-mm-dd",
                    maxDate : 0
@@ -165,7 +195,10 @@
             
             if(this.type == "date"){
                 // Do date formating (change from yy-mm-dd hh:mm:ss to yy-mm-dd)
-                value = value.substring(0, value.indexOf(" "));
+                var index = value.indexOf(" ");
+                if(index > 0){
+                    value = value.substring(0, index);
+                }
                 return value;
             }
             
@@ -361,16 +394,20 @@
      */
     function getInformation() {
         $.get(
-            "fsmcbm.php",
+            domain + "fsmcbm.php",
             { 'lookup': $("#lookup-user_id").val() },
             function(data){
                 if(data.error == null){
                     
                     // Empty out any previous incidents
-                    var incidents = $("#incident-info").empty();
+                    var incidents = $("#incident-info").empty(),
+                    
+                    // Empty out an previous ban history
+                        history = $("#ban-history").empty(),
+                        datum, el, i;
                     
                     // Fill in the fields
-                    $.each(data.user, function(index, value){
+                    $.each(data.user, function(index, value) {
                         var field = $("#user-info-" + index);
                         if(field.attr("type") == "checkbox"){
                             field.prop("checked", value == "1");
@@ -382,20 +419,20 @@
                     // Update the permanent banned state
                     $("#user-info-banned").change();
                     
-                    if(data.incident != null){
+                    if(data.incident != null) {
                         // Attach all the incidents
-                        for(var i=0; i<data.incident.length; i++){
-                            var datum = data.incident[i];
+                        for(i=0; i<data.incident.length; i++){
+                            datum = data.incident[i];
 
-                            var div = $("<div>").addClass("form").attr("id", "i-" + datum.id);
-                            div.appendTo(incidents);
+                            el = $("<div>").addClass("form").attr("id", "i-" + datum.id);
+                            el.appendTo(incidents);
 
                             $.each(incident, function(index, value){
-                                div.append(value.toHTML(datum[index], index, datum.id));
+                                el.append(value.toHTML(datum[index], index, datum.id));
                             });
 
                             // Add the save button
-                            div.append($("<button>").text("Save").attr("id","i-s-" + datum.id).click(function(){
+                            el.append($("<button>").text("Save").attr("id","i-s-" + datum.id).click(function(){
 
                                 // Get the ID and disable the button
                                 var id = $(this).addClass("disabled").prop("disabled", true).attr('id').substring(4);
@@ -409,7 +446,7 @@
                                     datum[index] = $("#" + index + "_" + id).val();
                                 });
                                 
-                                $.post("fsmcbm.php?update=incident",
+                                $.post(domain + "fsmcbm.php?update=incident",
                                     datum,
                                     function(data){
                                         // Re-enable the button
@@ -425,6 +462,19 @@
                                     'json');
                             }));
                         }
+                    }
+                    
+                    // Attach the ban history
+                    if(data.history != null) {
+                        el = $("<table>");
+                        el.append("<tr><th>Moderator</th><th>Date</th><th>Banned</th><th>Permanent</th></tr>");
+                        
+                        for(i=0; i < data.history.length; i++) {
+                            datum = data.history[i];
+                            el.append("<tr><td>" + datum.moderator + "</td><td>" + datum.date + "</td><td>" + (datum.banned == 1 ? "Yes" : "") + "</td><td>" + (datum.permanent == 1 ? "Yes" : "") + "</td></tr>");
+                        }
+                        
+                        history.append( $("<h3>").text("Ban History") ).append(el);
                     }
                     
                     // Switch to the manage tab
@@ -472,7 +522,7 @@
     function lookup(input, value, callback, emptyLabel, emptyCallback) {
         $(input).autocomplete({
             source : function (request, response) {
-                $.get("fsmcbm.php",{
+                $.get(domain + "fsmcbm.php",{
                         term: request.term
                     }, function (data) {
                         if (data.length == 0) {
@@ -527,7 +577,7 @@
             displayMessage("Search must be two or more characters long.");
 
         } else {
-            $.get("fsmcbm.php",
+            $.get(domain + "fsmcbm.php",
                 { search : $("#search").val() },
                 function(data) {
                     // Check for error with the search
@@ -570,7 +620,7 @@
         // Build the add incident dialog form
         var incidentForm = $("#add-incident-form");
         $.each(incident, function(index, value){
-            // Don't attach the created date and moderator
+            // Don't attach read only fields
             if( ! value.disabled ){
                 incidentForm.append(value.toHTML("", index, "add"));
             }
@@ -610,7 +660,7 @@
                     
                     // Save the user
                     $.post(
-                        "fsmcbm.php?add_user=true",
+                        domain + "fsmcbm.php?add_user=true",
                         $("#add-user-form").serialize(),
                         function(data){
                             if(data.error == null){
@@ -661,7 +711,7 @@
                     
                     // Save the incident.
                     $.post(
-                        "fsmcbm.php?add_incident=true",
+                        domain + "fsmcbm.php?add_incident=true",
                         $("#add-incident-form").serialize(),
                         function(data){
                             if(data.error == null){
@@ -721,7 +771,7 @@
             data.notes = $("#user-info-notes").val();
             
             // Send in the changes
-            $.post("fsmcbm.php?update=user", data, function(data){
+            $.post(domain + "fsmcbm.php?update=user", data, function(data){
                 if(data.error == null){
                     displayMessage("User updated.");
                 } else {

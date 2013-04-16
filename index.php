@@ -13,10 +13,7 @@
         body { background-color: #fdfeb8; background-image: url('http://finalscoremc.com/wp-content/uploads/2012/04/fsbackground.png'); background-repeat: repeat-x; background-position: top left; background-attachment: scroll; }
 </style>
         <!-- END -->
-        <link rel="stylesheet" type="text/css" href="css/custom-theme/jquery-ui-1.10.2.custom.css" />
-        <link rel="stylesheet" type="text/css" href="css/main.css" />
         <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js" ></script>
-        <script type="text/javascript" src="jquery-ui-1.10.2.custom.min.js"></script>
         <script type="text/javascript" src="fsmcbm.js"></script>
     </head>
     <body class="page">
@@ -82,6 +79,9 @@
                         </div>
                         <div id="incident-info">
 
+                        </div>
+                        <div id="ban-history">
+                            
                         </div>
                         <button id="cancel">Cancel</button>
                     </div>

@@ -1,6 +1,61 @@
 <?php
 
-// Detect what action to perform
+/* =============================
+ * GLOBAL FUNCTIONS AND SETTINGS
+ * =============================
+ */
+
+/** The name of the cookie to use for storing the user's information. */
+$cookie_name = 'fsmcbm';
+
+/** The ID of the moderator/admin. */
+$moderator = 0;
+
+
+
+/* =============================
+ *        VERIFY USER
+ * =============================
+ */
+
+if( getLoggedInName() === FALSE ) {
+    // User is not logged in, set the ban manager cookie as expired.
+    setcookie($cookie_name, "", time() - 3600);
+    error("Not logged in.");
+    
+} else if( isset($_COOKIE[$cookie_name]) ) {
+    
+    $user_info = explode("|", $_COOKIE[$cookie_name]);
+    
+    // Check if the user has changed
+    if($user_info[2] == getLoggedInName())
+    {
+        // User is the same, store their ID
+        $moderator = $user_info[0];
+    }
+}
+
+if($moderator === 0) {
+    $user_info = getModeratorInfo();
+    
+    if($user_info === FALSE) {
+        // Not a moderator
+        error("Not logged in.");
+    } else {
+        // Mark the user as logged into the ban manager
+        setcookie($cookie_name, implode("|", $user_info), 0, "/", "finalscoremc.com");
+        
+        $moderator = $user_info[0];
+    }
+}
+
+
+
+/* =============================
+ *      PERFORM ACTIONS
+ * =============================
+ */
+
 if(isset($_GET['term'])){
     
     autoComplete();
@@ -57,47 +112,13 @@ if(isset($_GET['term'])){
 /**
  * Adds a new incident to the database.
  * Uses the data posted into the page to create the incident.
+ * @global int $moderator The ID of the moderator/admin that is logged in.
  */
 function addIncident() {
     
+    global $moderator;
+    
     $conn = getConnection();
-    
-    // Get the moderator ID
-    $moderator = 0;
-    
-    // Search the wordpress cookies for the logged in user name
-    $keys = array_keys($_COOKIE);
-    foreach($keys as &$key) {
-        if (strncmp("wordpress_logged_in_", $key, 20) === 0) {
-            // Extract user name from the cookie
-            $value = $_COOKIE[$key];
-            $moderator_name = sanitize(
-                    substr($value, 0, strpos($value, "|")), $conn);
-            
-            // Request the user id from the database
-            $res = $conn->query("SELECT `id` FROM `users` WHERE `username` = '$moderator_name'");
-            
-            if($res === false){
-                error("Failed to find moderator.");
-            } else if($res->num_rows == 0) {
-                // Nothing found
-                error("Moderator not found.");
-            }
-
-            $row = $res->fetch_assoc();
-            
-            $moderator = $row['id'];
-            
-            $res->free();
-            
-            break;
-        }
-    }
-    
-    // Make sure we found the moderator
-    if($moderator === 0) {
-        error("Failed to identify moderator.");
-    }
     
     $user_id = sanitize($_POST['user_id'], $conn, true);
     $today   = getNow();
@@ -117,7 +138,7 @@ function addIncident() {
     
     // Check if we have an incident date.
     if($incident_date === null || strlen($incident_date) < 6) {
-        $incident_date = $today;
+        $incident_date = substr($today, 0, 10);
     }
     
     $query = "INSERT INTO `incident` (`user_id`, `moderator`, `created_date`, `modified_date`, `incident_date`, `incident_type`, `notes`, `action_taken`, `world`, `coord_x`, `coord_y`, `coord_z`)
@@ -179,11 +200,16 @@ function addUser() {
         VALUES ('$username', '$today', '$rank', '$relations', '$notes', $banned, $permanent);");
     
     if($res === false){
-        error("Failed to add user." . $conn->error);
+        error("Failed to add user.");
     }
     
-    // Return the id
+    // Get the ID
     $result = array('user_id'=>$conn->insert_id);
+    
+    // See if we need to add to the ban history
+    if($banned === '1') {
+        updateBanHistory($conn, $result['user_id'], $banned, $permanent);
+    }
     
     $conn->close();
     
@@ -247,13 +273,14 @@ function buildTable($query, &$conn){
     } else {
     
         // Place the results into the table
-        $result = "<table class='list'><thead><tr><th>Name</th><th>Rank</th><th>Notes</th></tr></thead><tbody>";
+        $result = "<table class='list'><thead><tr><th>Name</th><th>Last Incident Date</th><th>Last Incident Type</th><th>Last Action Taken</th></tr></thead><tbody>";
 
         while($row = $res->fetch_assoc()){
             $result .= "<tr id='id-" . $row['id'] . "'><td>"
                     . $row['username'] . "</td><td>"
-                    . $row['rank'] . "</td><td>"
-                    . truncate($row['notes']) . "</td></tr>";
+                    . $row['incident_date'] . "</td><td>"
+                    . truncate($row['incident_type']) . "</td><td>"
+                    . truncate($row['action_taken']) . "</td></tr>";
         }
         
         $result .= "</tbody></table>";
@@ -282,7 +309,18 @@ function error($message = "Unkown error occured"){
 function getBans() {
     $conn = getConnection();
     
-    buildTable("SELECT * FROM users WHERE banned = TRUE", $conn);
+    $query = "SELECT u.id, u.username, i.incident_date, i.incident_type, i.action_taken
+            FROM users AS u
+            LEFT JOIN (
+                SELECT * 
+                FROM incident AS q
+                ORDER BY q.incident_date DESC
+            ) AS i ON u.id = i.user_id
+            WHERE u.banned = TRUE
+            GROUP BY u.id
+            ORDER BY i.incident_date DESC";
+    
+    buildTable($query, $conn);
 }
 
 
@@ -301,6 +339,26 @@ function getConnection(){
 
 
 /**
+ * Gets name of the user logged into wordpress.
+ * @return mixed FALSE if the user is not not logged into wordpress, otherwise 
+ * it return an unsanitized string contain the logged in user's name. 
+ */
+function getLoggedInName() {
+    // Search the wordpress cookies for the logged in user name
+    $keys = array_keys($_COOKIE);
+    foreach($keys as &$key) {
+        if (strncmp("wordpress_logged_in_", $key, 20) === 0) {
+            // Extract user name from the cookie
+            $value = $_COOKIE[$key];
+            return substr($value, 0, strpos($value, "|"));
+        }
+    }
+    
+    return FALSE;
+}
+
+
+/**
  * Gets the current time as a string ready for insertion into a MySQL datetime
  * field (Y-m-d H:i:s).
  * @return string The current time as a string.
@@ -311,15 +369,66 @@ function getNow() {
 
 
 /**
+ * Gets the information for the moderator using the ban manager.
+ * @return mixed FALSE if the user is not a moderator/admin or is not logged into
+ * wordpress, otherwise it return an array where index zero is the user id,
+ * index one is the user's rank, and index two is the user's name.
+ */
+function getModeratorInfo() {
+    $id = FALSE;
+    
+    // Get the moderators name from the cookie
+    $moderator_name = getLoggedInName();
+    
+    if($moderator_name === FALSE) {
+        return FALSE;
+    }
+    
+    $conn = getConnection();
+
+    $moderator_name = sanitize($moderator_name, $conn);
+
+    // Request the user id from the database
+    $res = $conn->query("SELECT `id`,`rank` FROM `users` WHERE `username` = '$moderator_name'");
+
+    if($res === false){
+        error("Failed to find moderator.");
+    } else if($res->num_rows == 0) {
+        // Nothing found
+        error("Moderator not found.");
+    }
+
+    $row = $res->fetch_assoc();
+
+    // Only store the information of admins/moderators
+    if($row['rank'] == 'Admin' || $row['rank'] == 'Moderator') {
+        $id = array($row['id'], $row['rank'], $moderator_name);
+    }
+
+    $res->free();
+
+    $conn->close();
+    
+    return $id;
+}
+
+
+/**
  * Gets all the users on the watchlist.
  * The watchlist is defined as a user that isn't banned, but has an incident
  * attached to them.
  */
 function getWatchlist() {
     $conn = getConnection();
-        
-    buildTable("SELECT DISTINCT users.id, users.username, users.rank, users.notes FROM users, incident WHERE users.id=incident.user_id AND users.banned = FALSE",
-            $conn);
+    
+    $query = "SELECT u.id, u.username, i.incident_date, i.incident_type, i.action_taken
+            FROM users AS u, incident AS i
+            WHERE u.banned = FALSE
+            AND u.id = i.user_id
+            GROUP BY u.id
+            ORDER BY i.incident_date DESC ";
+    
+    buildTable($query, $conn);
 }
 
 /**
@@ -359,7 +468,7 @@ function retrieveUserData() {
     
     
     // Get the incidents
-    $res = $conn->query("SELECT * FROM incident WHERE user_id = $lookup");
+    $res = $conn->query("SELECT * FROM incident WHERE user_id = $lookup ORDER BY incident_date");
     
     if($res === false){
         error("Nothing Found.");
@@ -375,8 +484,24 @@ function retrieveUserData() {
     $res->free();
     
     
-    if( isset($result['incident']) ){
-        // Get the name of the moderators
+    // Get the ban history
+    $res = $conn->query("SELECT * FROM `ban_history` WHERE `user_id` = $lookup ORDER BY `date`;");
+    
+    if($res === false){
+        error("Nothing Found.");
+    }
+    
+    while($row = $res->fetch_assoc()) {
+        $result['history'][] = $row;
+        $user_ids[] = $row['moderator'];
+    }
+    
+    
+    // Get the name of the moderators
+    $user_ids = array_unique($user_ids);
+
+    if( count($user_ids) != 0 ){
+        
         $res = $conn->query("SELECT id,username FROM users WHERE id IN (" . implode(",", $user_ids) . ")");
 
         if($res === false){
@@ -390,9 +515,17 @@ function retrieveUserData() {
         $res->free();
         
         // change the moderator id to username
-        foreach($result['incident'] as &$incident){
-            $incident['moderator_id'] = $incident['moderator'];
-            $incident['moderator'] = $user_ids[$incident['moderator']];
+        if( isset($result['incident']) ) {
+            foreach($result['incident'] as &$incident){
+                $incident['moderator_id'] = $incident['moderator'];
+                $incident['moderator'] = $user_ids[$incident['moderator']];
+            }
+        }
+        if( isset($result['history']) ) {
+            foreach($result['history'] as &$history){
+                $history['moderator_id'] = $history['moderator'];
+                $history['moderator'] = $user_ids[$history['moderator']];
+            }
         }
     }
 
@@ -454,22 +587,26 @@ function search() {
     
     $search = sanitize($_GET['search'], $conn);
     
-    buildTable(
-       "SELECT DISTINCT u.id, u.username, u.rank, u.notes
-        FROM users AS u, incident AS i
-        WHERE u.id = i.user_id
-            AND (i.notes LIKE '%$search%'
-            OR i.incident_type LIKE '%$search%'
-            OR i.action_taken LIKE '%$search%'
-            OR i.appeal LIKE '%$search%'
-            OR i.appeal_response LIKE '%$search%')
-        UNION
-        SELECT DISTINCT u.id, u.username, u.rank, u.notes
-        FROM users AS u
-        WHERE u.username LIKE '%$search%'
-            OR u.relations LIKE '%$search%'
-            OR u.notes LIKE '%$search%'",
-            $conn);
+    $query = "SELECT * FROM (
+                SELECT u.id, u.username, u.banned, i.incident_date, i.incident_type, i.action_taken
+                FROM users AS u, incident AS i
+                WHERE u.id = i.user_id
+                    AND (i.notes LIKE '%$search%'
+                    OR i.incident_type LIKE '%$search%'
+                    OR i.action_taken LIKE '%$search%'
+                    OR i.appeal LIKE '%$search%'
+                    OR i.appeal_response LIKE '%$search%')
+                UNION
+                SELECT u.id, u.username, u.banned, u.modified_date AS incident_date, u.rank, u.relations
+                FROM users AS u
+                WHERE u.username LIKE '%$search%'
+                    OR u.relations LIKE '%$search%'
+                    OR u.notes LIKE '%$search%'
+                ORDER BY incident_date DESC
+                ) AS r
+        GROUP BY r.id";
+    
+    buildTable( $query, $conn );
 }
 
 
@@ -508,8 +645,26 @@ function updateUser() {
     $relations = sanitize($_POST['relations'], $conn);
     $notes = sanitize($_POST['notes'], $conn);
     $today = getNow();
+    
+    // See if we need to update the ban history
+    $query = "SELECT * FROM `users` WHERE `users`.`id` = $id";
+    
+    $res = $conn->query($query);
+    
+    if($res === false || $res->num_rows == 0) {
+        error("Failed to retrieve incident.");
+    }
+    
+    $row = $res->fetch_assoc();
+    
+    if($row['banned'] != $banned || $row['permanent'] != $permanent) {
+        updateBanHistory($conn, $id, $banned, $permanent);
+    }
+    
+    $res->free();
 
-    $query = "UPDATE  `fsmcbm`.`users` SET
+    // Perform the udpate
+    $query = "UPDATE  `users` SET
                 `modified_date` = '$today',
                 `rank` =  '$rank',
                 `relations` =  '$relations',
@@ -527,6 +682,29 @@ function updateUser() {
     }
 
     echo json_encode( array("success" => true ));
+}
+
+
+/**
+ * Updates the ban history
+ * @global int $moderator The ID of the moderator/admin that is logged in.
+ * @param mysqli $conn The connection to the database.
+ * @param int $user_id The ID of the user who's ban history is being updated.
+ * @param boolean $banned Whether or not the user is banned.
+ * @param boolean $permanent Wether or not the user is banned permanently.
+ */
+function updateBanHistory($conn, $user_id, $banned, $permanent) {
+    
+    global $moderator;
+    
+    $today = getNow();
+    
+    $res = $conn->query("INSERT INTO `ban_history` (`user_id`, `moderator`, `date`, `banned`, `permanent`)
+            VALUES ('$user_id', '$moderator', '$today', '$banned', '$permanent');");
+
+    if($res === false){
+        error("Failed to update ban history.");
+    }
 }
 
 
