@@ -25,7 +25,10 @@
         // Data structure, see documentation below
         info,
         DataStructure,
+        
+        // Data structure for the user
         user,
+        
         // Data structure for incidents
         incident,
         
@@ -157,6 +160,11 @@
                     'type' : 'checkbox'
                 });
                 
+                if(value == 1) {
+                    // Check the checkbox
+                    field.prop("checked", true);
+                }
+                
             } else {
                 // Unknown
                 console.log("Unkown Type: " + this.type);
@@ -232,7 +240,8 @@
         }),
         permanent : info({
             name : "Permanent",
-            type : "checkbox"
+            type : "checkbox",
+            after: ""
         }),
         rank : info({
             name : "Rank",
@@ -402,24 +411,72 @@
                     // Empty out any previous incidents
                     var incidents = $("#incident-info").empty(),
                     
-                    // Empty out an previous ban history
+                        // Empty out an previous ban history
                         history = $("#ban-history").empty(),
+                        
+                        // Emtpy out the previous user field
+                        userInfo = $("#user-info").empty(),
+                        
+                        // Misc Variables
                         datum, el, i;
                     
-                    // Fill in the fields
-                    $.each(data.user, function(index, value) {
-                        var field = $("#user-info-" + index);
-                        if(field.attr("type") == "checkbox"){
-                            field.prop("checked", value == "1");
-                        } else {
-                            field.val(value);
+                    
+                    // Fill in the fields //
+                    
+                    // Attach the user data
+                    $.each(user, function(index, value) {
+                        el = value.toHTML(data.user[index], index, "info");
+                
+                        // Handle the special case for the permanent checkbox
+                        if(index === "permanent"){
+                            el = $("<span id='user-info-permanent-box' />").append(el).after("<br>");
                         }
+                        
+                        userInfo.append( el );
                     });
                     
                     // Update the permanent banned state
-                    $("#user-info-banned").change();
+                    $("#banned_info").change({id:"#user-info-permanent-box"}, togglePermanentBox);
+                    $("#banned_info").change();
+                    
+                    // Attach the save button
+                    userInfo.append($("<button>").text("Save").click(function() {
+                        // Save the user information
+                        
+                        // Verify that there is a user
+                        var user_id = $("#lookup-user_id").val();
+                        if(user_id === null || user_id === ""){
+                            displayMessage("Please select a user.");
+                            return;
+                        }
+
+                        // Serialize the user information
+
+                        var datum = {};
+
+                        datum.id = user_id;
+                        
+                        $.each(user, function(index, value){
+                            datum[index] = $("#" + index + "_info").val();
+                        });
+
+                        // Send in the changes
+                        $.post( domain + "fsmcbm.php?update=user",
+                            datum,
+                            function(data){
+                                if(data.error == null){
+                                    displayMessage("User updated.");
+                                } else {
+                                    handleError(data.error);
+                                }
+                            },
+                            'json' );
+                        
+                    }));
+                    
                     
                     if(data.incident != null) {
+                        
                         // Attach all the incidents
                         for(i=0; i<data.incident.length; i++){
                             datum = data.incident[i];
@@ -475,6 +532,11 @@
                         }
                         
                         history.append( $("<h3>").text("Ban History") ).append(el);
+                    }
+                    
+                    // Attach the cancel button
+                    if($("#cancel").length === 0){
+                        $("<button>").attr('id','cancel').text("Cancel").click(getInformation).appendTo("#manage");
                     }
                     
                     // Switch to the manage tab
@@ -617,17 +679,32 @@
     // Runs on document ready.
     $( function($) {
         
+        // Save variables
+        var incidentForm = $("#add-incident-form"),
+            addUserForm = $("#add-user-form"),
+            temp;
+            
         // Build the add incident dialog form
-        var incidentForm = $("#add-incident-form");
         $.each(incident, function(index, value){
             // Don't attach read only fields
             if( ! value.disabled ){
                 incidentForm.append(value.toHTML("", index, "add"));
             }
         });
+        
+        // Build the add user dialog form
         $.each(user, function(index, value){
-            // Don't attach the created date and moderator
-                $("#user-info").append(value.toHTML("", index, "add"));
+            // Don't attach read only fields
+            if( ! value.disabled ) {
+                temp = value.toHTML("", index, "add");
+                
+                // Handle the special case for the permanent checkbox
+                if(index === "permanent"){
+                    temp = $("<span id='user-add-permanent-box' />").append(temp).after("<br>");
+                }
+                
+                addUserForm.append(temp);
+            }
         });
         
         // Set up the tabs
@@ -749,44 +826,8 @@
             $("#dialog-add-incident").dialog("open");
         });
         
-        // Save user information button
-        $("#user-info-save").click(function(){
-            
-            // Verify that there is a user
-            var user_id = $("#lookup-user_id").val();
-            if(user_id == null || user_id == ""){
-                displayMessage("Please select a user.");
-                return;
-            }
-            
-            // Serialize the user information
-            
-            var data = {};
-            
-            data.id = user_id;
-            data.rank = $("#user-info-rank").val();
-            data.banned = $("#user-info-banned").is(":checked");
-            data.permanent = $("#user-info-permanent").is(":checked");
-            data.relations = $("#user-info-relations").val();
-            data.notes = $("#user-info-notes").val();
-            
-            // Send in the changes
-            $.post(domain + "fsmcbm.php?update=user", data, function(data){
-                if(data.error == null){
-                    displayMessage("User updated.");
-                } else {
-                    handleError(data.error);
-                }
-            }, 'json');
-            
-        });
-        
         // Permanent banned checkbox display
-        $("#user-info-banned").change({id:"#user-info-permanent-box"}, togglePermanentBox);
-        $("#user-add-banned").change({id:"#user-add-permanent-box"}, togglePermanentBox);
-        
-        // User information cancel button
-        $("#cancel").click(getInformation);
+        $("#banned_add").change({id:"#user-add-permanent-box"}, togglePermanentBox);
         
         // Search box
         $("#search-button").click(search);

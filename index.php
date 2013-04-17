@@ -43,39 +43,7 @@
                     </ul>
                     <div id="manage">
                         <div id="user-info" class="form">
-                            <label for="user-info-username">Username:</label>
-                            <input type="text" id="user-info-username" disabled="disabled" />
-                            <br/>
-
-                            <label for="user-info-rank">Rank:</label>
-                            <select id="user-info-rank" name="rank">
-                                <option>Everyone</option>
-                                <option>Regular</option>
-                                <option>Donor</option>
-                                <option>Builder</option>
-                                <option>Engineer</option>
-                                <option>Moderator</option>
-                                <option>Admin</option>
-                            </select>
-                            <br/>
-
-                            <label for="user-info-banned">Banned:</label>
-                            <input type="checkbox" id="user-info-banned" />
-                            <span id="user-info-permanent-box">
-                                <label for="user-info-permanent">Permanent:</label>
-                                <input type="checkbox" id="user-info-permanent"/>
-                            </span>
-                            <br/>
-
-                            <label for="user-info-relations">Relations:</label>
-                            <textarea id="user-info-relations" name="relations"></textarea>
-                            <br/>
-
-                            <label for="user-info-notes">Notes:</label>
-                            <textarea id="user-info-notes" name="notes"></textarea>
-                            <br/>
-
-                            <button id="user-info-save">Save</button>
+                            <h5>Select a user to manage.</h5>
                         </div>
                         <div id="incident-info">
 
@@ -83,7 +51,6 @@
                         <div id="ban-history">
                             
                         </div>
-                        <button id="cancel">Cancel</button>
                     </div>
                     <div id="search-tab">
 
@@ -109,36 +76,9 @@
                 <!-- Dialogs -->
                 <div id="dialog-add-user" title="Add User">
                     <form id="add-user-form" class="form">
-                        <label for="user-add-username">Username:</label>
-                        <input type="text" value="" id="user-add-username" name="username">
+                        <label for="user_add_username">Username:</label>
+                        <input type="text" value="" id="user_add_username" name="username">
                         <br/>
-
-                        <label for="user-add-rank">Rank:</label>
-                        <select id="user-add-rank" name="rank">
-                            <option>Everyone</option>
-                            <option>Regular</option>
-                            <option>Donor</option>
-                            <option>Builder</option>
-                            <option>Engineer</option>
-                            <option>Moderator</option>
-                            <option>Admin</option>
-                        </select>
-                        <br/>
-
-                        <label for="user-add-banned">Banned:</label>
-                        <input type="checkbox" id="user-add-banned" name="banned" />
-                        <span id="user-add-permanent-box">
-                            <label for="user-add-permanent">Permanent:</label>
-                            <input type="checkbox" id="user-add-permanent" name="permanent" />
-                        </span>
-                        <br/>
-
-                        <label for="user-add-relations">Relations:</label>
-                        <textarea id="user-add-relations" name="relations"></textarea>
-                        <br/>
-
-                        <label for="user-add-notes">Notes:</label>
-                        <textarea id="user-add-notes" name="notes"></textarea>
                     </form>
                 </div>
                 <div id="dialog-add-incident" title="Add Incident">
