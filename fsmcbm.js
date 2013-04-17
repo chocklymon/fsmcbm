@@ -462,13 +462,9 @@
                         }
 
                         // Serialize the user information
-                        var datum = {};
+                        var datum = serialize(user, "info");
 
                         datum.id = user_id;
-                        
-                        $.each(user, function(index, value) {
-                            datum[index] = $("#" + index + "_info").val();
-                        });
 
                         // Send in the changes
                         $.post( domain + "fsmcbm.php?update=user",
@@ -503,15 +499,12 @@
                                 // Get the ID and disable the button (to prevent repeatedly clicking the button)
                                 var id = $(this).addClass("disabled").prop("disabled", true).attr('id').substring(4);
                                 
-                                // Save the fields
-                                var datum = {
-                                    "id" : id
-                                };
+                                // Serialize the incident fields
+                                var datum = serialize(incident, id);
+
+                                datum.id = id;
                                 
-                                $.each(incident, function(index, value) {
-                                    datum[index] = $("#" + index + "_" + id).val();
-                                });
-                                
+                                // Post in the updated incident
                                 $.post(domain + "fsmcbm.php?update=incident",
                                     datum,
                                     function(data) {
@@ -672,6 +665,31 @@
                 },
                 'html' );
         }
+    }
+    
+    
+    /**
+     * Takes a datastructure on the page and serializes it to an object.
+     * @param {DataStructure} structure The data structure that is being serialized.
+     * @param {String} id The ID number of the HTML tags containing the data.
+     * This should be the same as the idNum passed to the generated HTML function
+     * of datastructure.
+     * @return {Object} The serialized data.
+     */
+    function serialize(structure, id) {
+        var datum = {};
+
+        $.each(structure, function(index, value) {
+            if(value.type == "checkbox") {
+                // Handle checkboxes
+               datum[index] = $("#" + index + "_" + id).is(":checked") ? "true" : "false";
+            } else {
+                // Generic type, get it's value
+                datum[index] = $("#" + index + "_" + id).val();
+            }
+        });
+        
+        return datum;
     }
     
     
