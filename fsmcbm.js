@@ -246,7 +246,7 @@
         rank : info({
             name : "Rank",
             type : "select",
-            options : ["Everyone","Regular","Donor","Builder","Engineer","Moderator","Admin"]
+            options : ["Everyone","Regular","Donor","Builder","Engineer","Moderator","Admin","Default"]
         }),
         relations : info({
             name : "Relations",
