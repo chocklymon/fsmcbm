@@ -2,7 +2,7 @@
  * 
  */
 
-(function($){
+(function($) {
     
     /* ----------------------------- *
      *  VARIABLES AND CONFIGURATION  *
@@ -63,7 +63,10 @@
         return new DataStructure(options);
     };
     
-    // DataStructure Constructor
+    /**
+     * DataStructure Constructor.
+     * See the info documentation for information about datastructures.
+     */
     DataStructure = function(options) {
         var datum, i;
         
@@ -106,17 +109,20 @@
              * - int
              * - checkbox
              */
-            var showEmpty, label, field, id = name + "_" + idNum;
+            var showEmpty,
+                label,
+                field,
+                id = name + "_" + idNum;
             
             // See if this field should be shown when empty
-            if(typeof(this.showEmpty) === 'function') {
+            if( typeof(this.showEmpty) == 'function' ) {
                 showEmpty = this.showEmpty(idNum);
             } else {
                 showEmpty = this.showEmpty;
             }
             
-            if( ! showEmpty ){
-                if(value == null || value == ""){
+            if( ! showEmpty ) {
+                if(value == null || value == "") {
                     // Don't show empty fields
                     return "";
                 }
@@ -126,35 +132,37 @@
             
             label = $("<label>").text(this.name + ":").attr("for", id);
             
-            if(this.type == "textarea"){
+            if(this.type == "textarea") {
                 // Text area
                 field = $("<textarea>").text(value);
                 
-            } else if(this.type == "select"){
+            } else if(this.type == "select") {
                 // Drop Down
                 field = $("<select>")
                 
+                // Attach each of the options
                 var i;
-                for(i in this.options){
+                for(i in this.options) {
                     i = this.options[i];
-                    if(i.label == null){
+                    if(i.label == null) {
                         field.append($("<option>").text(i));
                     } else {
                         field.append($("<option>").attr("value", i.value).text(i.label));
                     }
                 }
+                
                 field.val(value);
                 
-            } else if(this.type == "text" || this.type == "int" || this.type == "date"){
+            } else if(this.type == "text" || this.type == "int" || this.type == "date") {
                 // Text, date, and int types
                 field = $("<input>").attr('type', 'text').val(value);
                 
-                if(this.type == "int"){
+                if(this.type == "int") {
                     label.addClass("int");
                     field.addClass("int");
                 }
                 
-            } else if(this.type == "checkbox"){
+            } else if(this.type == "checkbox") {
                 // Checkbox
                 field = $("<input>").attr({
                     'type' : 'checkbox'
@@ -201,10 +209,10 @@
             if(value == null)
                 return "";
             
-            if(this.type == "date"){
+            if(this.type == "date") {
                 // Do date formating (change from yy-mm-dd hh:mm:ss to yy-mm-dd)
                 var index = value.indexOf(" ");
-                if(index > 0){
+                if(index > 0) {
                     value = value.substring(0, index);
                 }
                 return value;
@@ -222,6 +230,9 @@
      * ----------------------------- */
     
     
+    /**
+     * Contains the data structures for a user.
+     */
     user = {
         username : info({
             name : "Username",
@@ -256,7 +267,7 @@
             name : "Notes",
             type : "textarea"
         })
-    }
+    };
     
     /**
      * Contains the Data Structures for incidents.
@@ -360,7 +371,7 @@
         appeal_response : info({
             type: "textarea",
             name: "Appeal Response",
-            showEmpty: function(idNum){
+            showEmpty: function(idNum) {
                 return $("#appeal_" + idNum).length > 0;
             }
         })
@@ -393,7 +404,7 @@
         $("#highlight").slideDown();
         
         // Display for four seconds
-        setTimeout(function(){$("#highlight").slideUp();}, 4000);
+        setTimeout(function() {$("#highlight").slideUp();}, 4000);
     }
     
     
@@ -405,16 +416,16 @@
         $.get(
             domain + "fsmcbm.php",
             { 'lookup': $("#lookup-user_id").val() },
-            function(data){
-                if(data.error == null){
+            function(data) {
+                if(data.error == null) {
                     
-                    // Empty out any previous incidents
+                    // Empty out any previous incidents and save the incidents div
                     var incidents = $("#incident-info").empty(),
                     
-                        // Empty out an previous ban history
+                        // Empty out an previous ban history and save the element
                         history = $("#ban-history").empty(),
                         
-                        // Emtpy out the previous user field
+                        // Emtpy out the previous user field and save the element
                         userInfo = $("#user-info").empty(),
                         
                         // Misc Variables
@@ -428,7 +439,7 @@
                         el = value.toHTML(data.user[index], index, "info");
                 
                         // Handle the special case for the permanent checkbox
-                        if(index === "permanent"){
+                        if(index === "permanent") {
                             el = $("<span id='user-info-permanent-box' />").append(el).after("<br>");
                         }
                         
@@ -441,57 +452,55 @@
                     
                     // Attach the save button
                     userInfo.append($("<button>").text("Save").click(function() {
-                        // Save the user information
+                        // Save the user information //
                         
                         // Verify that there is a user
                         var user_id = $("#lookup-user_id").val();
-                        if(user_id === null || user_id === ""){
+                        if(user_id == null || user_id == "") {
                             displayMessage("Please select a user.");
                             return;
                         }
 
                         // Serialize the user information
-
                         var datum = {};
 
                         datum.id = user_id;
                         
-                        $.each(user, function(index, value){
+                        $.each(user, function(index, value) {
                             datum[index] = $("#" + index + "_info").val();
                         });
 
                         // Send in the changes
                         $.post( domain + "fsmcbm.php?update=user",
                             datum,
-                            function(data){
-                                if(data.error == null){
+                            function(data) {
+                                if(data.error == null) {
                                     displayMessage("User updated.");
                                 } else {
                                     handleError(data.error);
                                 }
                             },
                             'json' );
-                        
                     }));
                     
                     
                     if(data.incident != null) {
                         
                         // Attach all the incidents
-                        for(i=0; i<data.incident.length; i++){
+                        for(i=0; i<data.incident.length; i++) {
                             datum = data.incident[i];
 
                             el = $("<div>").addClass("form").attr("id", "i-" + datum.id);
                             el.appendTo(incidents);
 
-                            $.each(incident, function(index, value){
+                            $.each(incident, function(index, value) {
                                 el.append(value.toHTML(datum[index], index, datum.id));
                             });
 
                             // Add the save button
-                            el.append($("<button>").text("Save").attr("id","i-s-" + datum.id).click(function(){
+                            el.append($("<button>").text("Save").attr("id","i-s-" + datum.id).click(function() {
 
-                                // Get the ID and disable the button
+                                // Get the ID and disable the button (to prevent repeatedly clicking the button)
                                 var id = $(this).addClass("disabled").prop("disabled", true).attr('id').substring(4);
                                 
                                 // Save the fields
@@ -499,16 +508,16 @@
                                     "id" : id
                                 };
                                 
-                                $.each(incident, function(index, value){
+                                $.each(incident, function(index, value) {
                                     datum[index] = $("#" + index + "_" + id).val();
                                 });
                                 
                                 $.post(domain + "fsmcbm.php?update=incident",
                                     datum,
-                                    function(data){
+                                    function(data) {
                                         // Re-enable the button
                                         $("#i-s-" + id).removeClass("disabled").prop("disabled", false);
-                                        if(data.error == null){
+                                        if(data.error == null) {
                                             // Success
                                             displayMessage("Incident updated.");
                                         } else {
@@ -534,8 +543,8 @@
                         history.append( $("<h3>").text("Ban History") ).append(el);
                     }
                     
-                    // Attach the cancel button
-                    if($("#cancel").length === 0){
+                    // Attach the cancel button, if needed
+                    if($("#cancel").length === 0) {
                         $("<button>").attr('id','cancel').text("Cancel").click(getInformation).appendTo("#manage");
                     }
                     
@@ -565,7 +574,7 @@
         $("#error").slideDown();
         
         // Display for six seconds
-        setTimeout(function(){$("#error").slideUp();}, 6000);
+        setTimeout(function() {$("#error").slideUp();}, 6000);
     }
     
     
@@ -597,16 +606,16 @@
                     }, 'json');
             },
             minLength : 2,
-            select : function( event, ui ){
-                if(ui.item.value == 0){
-                    if(emptyCallback != null){
+            select : function( event, ui  ) {
+                if(ui.item.value == 0) {
+                    if(emptyCallback != null) {
                         emptyCallback();
                     }
                 } else {
                     $(this).val(ui.item.label);
                     $(value).val(ui.item.value);
 
-                    if(callback != null){
+                    if(callback != null) {
                         callback();
                     }
                 }
@@ -627,7 +636,7 @@
     /**
      * Performs a lookup on a user based on which table row was clicked.
      */
-    function rowLookup(){
+    function rowLookup() {
         $("#lookup-user_id").val($(this).attr("id").substring(3));
         getInformation();
     }
@@ -645,12 +654,12 @@
                     // Check for error with the search
                     try {
                         $.parseJSON(data);
-                        if(data.error != null){
+                        if(data.error != null) {
                             handleError(data.error);
                             return;
                         }
-                    // Catch and ignore any errors thrown by parseJSON (since it HTML is returned it will error out).
-                    } catch(ignore){}
+                    // Catch and ignore any errors thrown by parseJSON (since HTML is returned it will error out).
+                    } catch(ignore) { }
 
                     // Set the tab contents
                     $("#search-tab").html(data);
@@ -685,21 +694,21 @@
             temp;
             
         // Build the add incident dialog form
-        $.each(incident, function(index, value){
+        $.each(incident, function(index, value) {
             // Don't attach read only fields
-            if( ! value.disabled ){
+            if( ! value.disabled ) {
                 incidentForm.append(value.toHTML("", index, "add"));
             }
         });
         
         // Build the add user dialog form
-        $.each(user, function(index, value){
+        $.each(user, function(index, value) {
             // Don't attach read only fields
             if( ! value.disabled ) {
                 temp = value.toHTML("", index, "add");
                 
                 // Handle the special case for the permanent checkbox
-                if(index === "permanent"){
+                if(index === "permanent") {
                     temp = $("<span id='user-add-permanent-box' />").append(temp).after("<br>");
                 }
                 
@@ -709,13 +718,13 @@
         
         // Set up the tabs
         $("#tabs").tabs({
-            beforeLoad: function(event, ui){
+            beforeLoad: function(event, ui) {
                 // Set up error handling
-                ui.jqXHR.error(function(){
+                ui.jqXHR.error(function() {
                    ui.panel.html("Couldn't load this tab."); 
                 });
             },
-            load: function(event, ui){
+            load: function(event, ui) {
                 $(ui.panel).find("tr").click(rowLookup);
             },
             disabled: [3]// Search tab is disabled by default
@@ -728,7 +737,7 @@
             height: 410,
             width: 510,
             buttons: {
-                Save : function(){
+                Save : function() {
                     // Verify that we have a username
                     if( $("#user-add-username").val() == "" ) {
                         displayMessage("Please provide a username.");
@@ -739,13 +748,13 @@
                     $.post(
                         domain + "fsmcbm.php?add_user=true",
                         $("#add-user-form").serialize(),
-                        function(data){
-                            if(data.error == null){
+                        function(data) {
+                            if(data.error == null) {
                                 // Success
                                 displayMessage("User added succesfully.");
                                 
                                 // See if the user needs to be attached to an incident
-                                if(attachNewUser){
+                                if(attachNewUser) {
                                     $("#user_name").val($("#user-add-username").val());
                                     $("#user_id").val(data.user_id);
                                     attachNewUser = false;
@@ -764,7 +773,7 @@
                     $(this).dialog("close");
                 },
 
-                Cancel : function(){
+                Cancel : function() {
                     $(this).dialog("close");
                 }
             }
@@ -775,13 +784,13 @@
             height: 500,
             width: 570,
             buttons: {
-                Save : function(){
+                Save : function() {
                     // Verify that we have data
                     if( $("#user_id").val() == "" ) {
                         displayMessage("Please enter a user.");
                         return;
                     } else if( $("#notes_add").val() == "" ) {
-                        if( ! confirm("You didn't enter any notes!\n\nPress OK to save this incident anyways.") ){
+                        if( ! confirm("You didn't enter any notes!\n\nPress OK to save this incident anyways.") ) {
                             return;
                         }
                     }
@@ -790,8 +799,8 @@
                     $.post(
                         domain + "fsmcbm.php?add_incident=true",
                         $("#add-incident-form").serialize(),
-                        function(data){
-                            if(data.error == null){
+                        function(data) {
+                            if(data.error == null) {
                                 // Success
                                 displayMessage("Incident added.");
                                 
@@ -806,7 +815,7 @@
                     
                     $(this).dialog("close");
                 },
-                Cancel : function(){
+                Cancel : function() {
                     $(this).dialog("close");
                 }
             }
@@ -822,7 +831,7 @@
         $("#add-user").click(openAddUser);
         
         // Add incident button
-        $("#add-incident").click(function(){
+        $("#add-incident").click(function() {
             $("#dialog-add-incident").dialog("open");
         });
         
@@ -831,7 +840,7 @@
         
         // Search box
         $("#search-button").click(search);
-        $("#search").keyup(function(event){
+        $("#search").keyup(function(event) {
             // Run when the enter key is pressed
             if(event.keyCode == 13) {
                 search();
