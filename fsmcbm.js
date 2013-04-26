@@ -389,7 +389,7 @@
      */
     function attachNewUserToIncident() {
         attachNewUser = true;
-        $("#user-add-username").val($("#user_name").val());
+        $("#user_add_username").val($("#user_name").val());
         openAddUser();
     }
     
@@ -757,7 +757,7 @@
             buttons: {
                 Save : function() {
                     // Verify that we have a username
-                    if( $("#user-add-username").val() == "" ) {
+                    if( $("#user_add_username").val() == "" ) {
                         displayMessage("Please provide a username.");
                         return;
                     }
@@ -773,7 +773,7 @@
                                 
                                 // See if the user needs to be attached to an incident
                                 if(attachNewUser) {
-                                    $("#user_name").val($("#user-add-username").val());
+                                    $("#user_name").val($("#user_add_username").val());
                                     $("#user_id").val(data.user_id);
                                     attachNewUser = false;
                                 }
