@@ -723,7 +723,7 @@
         $.each(user, function(index, value) {
             // Don't attach read only fields
             if( ! value.disabled ) {
-                temp = value.toHTML("", index, "add");
+                temp = value.toHTML("", index, "add_u");
                 
                 // Handle the special case for the permanent checkbox
                 if(index === "permanent") {
