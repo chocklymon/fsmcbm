@@ -752,8 +752,8 @@
         $("#dialog-add-user").dialog({
             autoOpen: false,
             modal: true,
-            height: 410,
-            width: 510,
+            height: 450,
+            width: 540,
             buttons: {
                 Save : function() {
                     // Verify that we have a username
@@ -799,8 +799,8 @@
         $("#dialog-add-incident").dialog({
             autoOpen: false,
             modal: true,
-            height: 500,
-            width: 570,
+            height: 480,
+            width: 645,
             buttons: {
                 Save : function() {
                     // Verify that we have data
