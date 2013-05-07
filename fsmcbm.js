@@ -339,6 +339,18 @@
                     {
                         value:"world_the_end",
                         label:"The End"
+                    },
+                    {
+                        value:"custom",
+                        label:"Custom"
+                    },
+                    {
+                        value:"dev",
+                        label:"Dev"
+                    },
+                    {
+                        value:"outworld",
+                        label:"Outworld"
                     }],
             after: ""
         }),
