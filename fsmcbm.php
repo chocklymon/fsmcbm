@@ -551,7 +551,7 @@ function sanitize($input, &$mysqli_conn, $number = false) {
     if(isset($input) && $input !== null) {
         if($number) {
             // Sanitize as a number
-            $num = preg_replace('[^0-9\-]', '', $input);
+            $num = preg_replace('/[^0-9\-]/', '', $input);
             if(strlen($num) == 0){
                 return null;
             } else {
