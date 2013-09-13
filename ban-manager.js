@@ -2,6 +2,14 @@
  * 
  */
 
+// TODO make a better way to handle different domains than this
+// Create the bm object if we don't have it.
+if (window.bm == null || bm.url == null) {
+    var bm = {
+        url : ''
+    };
+}
+
 (function($) {
     
     /* ----------------------------- *

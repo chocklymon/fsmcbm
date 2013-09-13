@@ -3,7 +3,7 @@
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
         <title>Final Score MC Ban Manager</title>
-        <link href="css/custom-theme/jquery-ui-1.10.2.custom.min.css" type="text/css" rel="stylsheet" />
+        <link href="css/custom-theme/jquery-ui-1.10.2.custom.min.css" type="text/css" rel="stylesheet" />
         <link href="css/main.min.css" type="text/css" rel="stylesheet" />
         <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js" ></script>
         <script type="text/javascript" src="jquery-ui-1.10.2.custom.min.js"></script>
