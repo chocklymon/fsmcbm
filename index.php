@@ -14,7 +14,7 @@
 </style>
         <!-- END -->
         <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js" ></script>
-        <script type="text/javascript" src="fsmcbm.js"></script>
+        <script type="text/javascript" src="ban-manager.js"></script>
     </head>
     <body class="page">
         <div id="container">
@@ -37,8 +37,8 @@
                 <div id="tabs" class="main-column" style="overflow:auto"><!-- Overflow auto - fixes tabs height being weird with floats -->
                     <ul>
                         <li><a href="#manage">Manage</a></li>
-                        <li><a href="fsmcbm.php?get=bans">Bans</a></li>
-                        <li><a href="fsmcbm.php?get=watchlist">Watch-List</a></li>
+                        <li><a href="ban-manager.php?get=bans">Bans</a></li>
+                        <li><a href="ban-manager.php?get=watchlist">Watch-List</a></li>
                         <li><a href="#search-tab">Search</a></li>
                     </ul>
                     <div id="manage">

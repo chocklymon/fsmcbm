@@ -462,7 +462,7 @@
      */
     function getInformation() {
         $.get(
-            domain + "fsmcbm.php",
+            domain + "ban-manager.php",
             { 'lookup': $("#lookup-user_id").val() },
             function(data) {
                 if(data.error == null) {
@@ -509,7 +509,7 @@
                         datum.id = user_id;
 
                         // Send in the changes
-                        $.post( domain + "fsmcbm.php?update=user",
+                        $.post( domain + "ban-manager.php?update=user",
                             datum,
                             function(data) {
                                 if(data.error == null) {
@@ -547,7 +547,7 @@
                                 datum.id = id;
                                 
                                 // Post in the updated incident
-                                $.post(domain + "fsmcbm.php?update=incident",
+                                $.post(domain + "ban-manager.php?update=incident",
                                     datum,
                                     function(data) {
                                         // Re-enable the button
@@ -628,7 +628,7 @@
     function lookup(input, value, callback, emptyLabel, emptyCallback) {
         $(input).autocomplete({
             source : function (request, response) {
-                $.get(domain + "fsmcbm.php",{
+                $.get(domain + "ban-manager.php",{
                         term: request.term
                     }, function (data) {
                         if (data.length == 0) {
@@ -683,7 +683,7 @@
             displayMessage("Search must be two or more characters long.");
 
         } else {
-            $.get(domain + "fsmcbm.php",
+            $.get(domain + "ban-manager.php",
                 { search : $("#search").val() },
                 function(data) {
                     // Check for error with the search
@@ -812,7 +812,7 @@
                     
                     // Save the user
                     $.post(
-                        domain + "fsmcbm.php?add_user=true",
+                        domain + "ban-manager.php?add_user=true",
                         $("#add-user-form").serialize(),
                         function(data) {
                             if(data.error == null) {
@@ -863,7 +863,7 @@
                     
                     // Save the incident.
                     $.post(
-                        domain + "fsmcbm.php?add_incident=true",
+                        domain + "ban-manager.php?add_incident=true",
                         $("#add-incident-form").serialize(),
                         function(data) {
                             if(data.error == null) {
