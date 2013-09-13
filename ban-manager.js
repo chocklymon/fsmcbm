@@ -8,20 +8,6 @@
      *  VARIABLES AND CONFIGURATION  *
      * ----------------------------- */
     var 
-        /**
-         * Points to the domain and folder where the domain manager files are
-         * located. Can be absolute or relative path.
-         * @type String|Location of the ban manager files on the server.
-         */
-        domain = '',
-        
-        // CSS files needed for the ban manger
-        css = ['css/custom-theme/jquery-ui-1.10.2.custom.min.css',
-                    'css/main.min.css'],
-        
-        // JS library needed by the ban manger.
-        script = ['jquery-ui-1.10.2.custom.min.js'],
-        
         // Data structure, see documentation below
         info,
         DataStructure,
@@ -34,15 +20,7 @@
         
         // Used internally by add incident functions
         attachNewUser = false;
-    
-    
-    // Attach the css and needed javascript libraries
-    for(var i=0; i<css.length; i++) {
-        $('head').append( $('<link>').attr('type', 'text/css').attr('rel', 'stylesheet').attr('href', domain + css[i]) );
-    }
-    for(var i=0; i<script.length; i++) {
-        $('head').append( $('<script>').attr('type', 'text/javascript').attr('src', domain + script[i]) );
-    }
+
         
     /* ----------------------------- *
      *   DATA STRUCTURE OBJECT       *
@@ -198,7 +176,7 @@
             } else if(this.type == "date") {
                 field.datepicker({
                    showOn: "both",
-                   buttonImage: domain + "calendar-month.png",
+                   buttonImage: bm.url + "calendar-month.png",
                    buttonImageOnly : true,
                    dateFormat : "yy-mm-dd",
                    maxDate : 0
@@ -462,7 +440,7 @@
      */
     function getInformation() {
         $.get(
-            domain + "ban-manager.php",
+            bm.url + "ban-manager.php",
             { 'lookup': $("#lookup-user_id").val() },
             function(data) {
                 if(data.error == null) {
@@ -509,7 +487,7 @@
                         datum.id = user_id;
 
                         // Send in the changes
-                        $.post( domain + "ban-manager.php?update=user",
+                        $.post( bm.url + "ban-manager.php?update=user",
                             datum,
                             function(data) {
                                 if(data.error == null) {
@@ -547,7 +525,7 @@
                                 datum.id = id;
                                 
                                 // Post in the updated incident
-                                $.post(domain + "ban-manager.php?update=incident",
+                                $.post(bm.url + "ban-manager.php?update=incident",
                                     datum,
                                     function(data) {
                                         // Re-enable the button
@@ -628,7 +606,7 @@
     function lookup(input, value, callback, emptyLabel, emptyCallback) {
         $(input).autocomplete({
             source : function (request, response) {
-                $.get(domain + "ban-manager.php",{
+                $.get(bm.url + "ban-manager.php",{
                         term: request.term
                     }, function (data) {
                         if (data.length == 0) {
@@ -683,7 +661,7 @@
             displayMessage("Search must be two or more characters long.");
 
         } else {
-            $.get(domain + "ban-manager.php",
+            $.get(bm.url + "ban-manager.php",
                 { search : $("#search").val() },
                 function(data) {
                     // Check for error with the search
@@ -812,7 +790,7 @@
                     
                     // Save the user
                     $.post(
-                        domain + "ban-manager.php?add_user=true",
+                        bm.url + "ban-manager.php?add_user=true",
                         $("#add-user-form").serialize(),
                         function(data) {
                             if(data.error == null) {
@@ -863,7 +841,7 @@
                     
                     // Save the incident.
                     $.post(
-                        domain + "ban-manager.php?add_incident=true",
+                        bm.url + "ban-manager.php?add_incident=true",
                         $("#add-incident-form").serialize(),
                         function(data) {
                             if(data.error == null) {
