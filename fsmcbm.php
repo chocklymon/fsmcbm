@@ -5,10 +5,9 @@
  * =============================
  */
 
-/** The name of the cookie to use for storing the user's information. */
-$cookie_name = 'fsmcbm';
+require_once 'bm-config.php';
 
-/** The ID of the moderator/admin. */
+/** The ID of the current user. */
 $moderator = 0;
 
 
@@ -18,34 +17,39 @@ $moderator = 0;
  * =============================
  */
 
-if( getLoggedInName() === FALSE ) {
-    // User is not logged in, set the ban manager cookie as expired.
-    setcookie($cookie_name, "", time() - 3600);
-    error("Not logged in.");
-    
-} else if( isset($_COOKIE[$cookie_name]) ) {
-    
-    $user_info = explode("|", $_COOKIE[$cookie_name]);
-    
-    // Check if the user has changed
-    if($user_info[2] == getLoggedInName())
-    {
-        // User is the same, store their ID
-        $moderator = $user_info[0];
-    }
-}
-
-if($moderator === 0) {
-    $user_info = getModeratorInfo();
-    
-    if($user_info === FALSE) {
-        // Not a moderator
+if (DEBUG_MODE) {
+    // Debugging mode on, auto login as the first user
+    $moderator = 1;
+} else {
+    if( getLoggedInName() === FALSE ) {
+        // User is not logged in, set the ban manager cookie as expired.
+        setcookie(BM_COOKIE, "", time() - 3600);
         error("Not logged in.");
-    } else {
-        // Mark the user as logged into the ban manager
-        setcookie($cookie_name, implode("|", $user_info), 0, "/", "finalscoremc.com");
-        
-        $moderator = $user_info[0];
+
+    } else if( isset($_COOKIE[BM_COOKIE]) ) {
+
+        $user_info = explode("|", $_COOKIE[BM_COOKIE]);
+
+        // Check if the user has changed
+        if($user_info[2] == getLoggedInName())
+        {
+            // User is the same, store their ID
+            $moderator = $user_info[0];
+        }
+    }
+
+    if($moderator === 0) {
+        $user_info = getModeratorInfo();
+
+        if($user_info === FALSE) {
+            // Not a moderator
+            error("Not logged in.");
+        } else {
+            // Mark the user as logged into the ban manager
+            setcookie(BM_COOKIE, implode("|", $user_info), 0, "/", "finalscoremc.com");
+
+            $moderator = $user_info[0];
+        }
     }
 }
 
@@ -329,7 +333,13 @@ function getBans() {
  * @return mysqli The MySQLi database connection.
  */
 function getConnection(){
-    $mysqli = mysqli_connect("localhost", "root", "", "fsmcbm");
+    $mysqli = mysqli_connect(
+        DB_HOST,
+        DB_USERNAME,
+        DB_PASSWORD,
+        DB_DATABASE
+    );
+    
     if($mysqli->connect_errno){
         error("DB Connection Issue");
     }
