@@ -58,6 +58,8 @@
      * after {Mixed} The element to insert after the DataStructure when it is generated. Default is "<br/>"
      * options {Array} An array of Strings or objects to use as the options when the type is select. Objects need label and value properties.
      * showEmpty {Mixed} Indicates if this DataStructure should be generated when it has no value. Accepts boolean or a function that returns true. The function is passed the id number of the html field.
+     * special {Function} This function is called immediatly after the HTML is generated and is passed the jQuery object that contains the HTML for the datastructure. Used to attach special handlers to the field or provided additional features to the html structure. The returned value is used for insertion into the DOM. Default is null.
+     * serialize {Function} This function is called when the field is serialized. It is passed in the jQuery object containing the datastructure's node in the DOM, it should return the data/object to be serialized or false if the field shouldn't be serialized. When null the field will use the default serialization method. Default is null.
      */
     info = function(options) {
         return new DataStructure(options);
@@ -77,7 +79,9 @@
             name:null,
             after:"<br/>",
             options:[],
-            showEmpty:true
+            showEmpty:true,
+            special:null,
+            serialize:null
         }, options);
         
         // Attach each option to the data structure
@@ -188,7 +192,7 @@
             // Attach the date picker to dates
             if( this.disabled ) {
                 // Disabled field
-                field.prop('disabled', true);
+                field.prop('readonly', true);
                 
                 // Date check part of this if else so that disabled fields don't have the datpicker attached.
             } else if(this.type == "date") {
@@ -201,7 +205,13 @@
                 });
             }
             
-            return label.add(field).add(this.after);
+            field = label.add(field).add(this.after);
+            
+            if (this.special != null && typeof(this.special) == 'function') {
+                field = this.special(field);
+            }
+            
+            return field;
         },
         
         formatValue : function(value) {
@@ -237,7 +247,30 @@
         username : info({
             name : "Username",
             disabled : true,
-            after : ""
+            after : "",
+            special : function(field) {
+                
+                // When the user name field is double clicked make it editable
+                $(field[1]).dblclick(function(){
+                    $(this).prop('readonly', false);
+                })
+                // Store the orginal username
+                .data("orginal", $(field[1]).val());
+                
+                return field;
+            },
+            serialize : function(field) {
+                // TODO
+                if (!field.prop("readonly")) {
+                    var original = field.data("orginal");
+                    if (original != field.val() && confirm("Are you sure that you wish to change the username?\nPress OK to have the username changed.")) {
+                        return field.val();
+                    } else {
+                        field.val(original);
+                    }
+                }
+                return false;
+            }
         }),
         modified_date : info({
             name : "Modified Date",
@@ -252,7 +285,10 @@
         permanent : info({
             name : "Permanent",
             type : "checkbox",
-            after: ""
+            after: "",
+            special : function(field) {
+                return field.wrapAll("<span id='user-info-permanent-box' />").parent().add("<br/>");
+            }
         }),
         rank : info({
             name : "Rank",
@@ -449,12 +485,6 @@
                     // Attach the user data
                     $.each(user, function(index, value) {
                         el = value.toHTML(data.user[index], index, "info");
-                
-                        // Handle the special case for the permanent checkbox
-                        if(index === "permanent") {
-                            el = $("<span id='user-info-permanent-box' />").append(el).after("<br>");
-                        }
-                        
                         userInfo.append( el );
                     });
                     
@@ -692,12 +722,18 @@
         var datum = {};
 
         $.each(structure, function(index, value) {
-            if(value.type == "checkbox") {
+            var field = $("#" + index + "_" + id);
+            if (value.serialize != null && typeof(value.serialize) == 'function') {
+                var result = value.serialize(field);
+                if (result === false)
+                    return;
+                datum[index] = result;
+            } else if (value.type == "checkbox") {
                 // Handle checkboxes
-               datum[index] = $("#" + index + "_" + id).is(":checked") ? "true" : "false";
+               datum[index] = field.is(":checked") ? "true" : "false";
             } else {
                 // Generic type, get it's value
-                datum[index] = $("#" + index + "_" + id).val();
+                datum[index] = field.val();
             }
         });
         

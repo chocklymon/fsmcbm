@@ -639,6 +639,10 @@ function updateUser() {
         error("No user id found.");
     }
     
+    $username = null;
+    if (isset($_POST['username'])) {
+        $username = sanitize($_POST['username'], $conn);
+    }
     $rank = sanitize($_POST['rank'], $conn);
     $banned = $_POST['banned'] == "true";
     $permanent = $_POST['permanent'] == "true";
@@ -664,8 +668,12 @@ function updateUser() {
     $res->free();
 
     // Perform the udpate
-    $query = "UPDATE  `users` SET
-                `modified_date` = '$today',
+    $query = "UPDATE  `users` SET ";
+    
+    if ($username != null && strlen($username) > 0)
+        $query .= "`username` = '$username', ";
+    
+    $query .=   "`modified_date` = '$today',
                 `rank` =  '$rank',
                 `relations` =  '$relations',
                 `notes` =  '$notes',
@@ -677,7 +685,7 @@ function updateUser() {
     
     $conn->close();
 
-    if($res === false){
+    if ($res === false) {
         error("Failed to update user.");
     }
 
