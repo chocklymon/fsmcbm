@@ -18,11 +18,14 @@ class Database {
         );
 
         if($this->conn->connect_errno){
-            error("DB Connection Issue");
+            Output::error(
+                "Unable to connect to the database.",
+                array($this->conn->connect_errno)
+            );
         }
         
         if (!$this->conn->set_charset("utf8")) {
-            error("Unable to set utf8 character set.");
+            Output::error("Unable to set utf8 character set.");
         }
     }
     
@@ -36,16 +39,24 @@ class Database {
     /**
      * Performs a query against the database. 
      * @param string $sql The query string.
+     * @param string $error_message An optional error message to output if
+     * the query fails.
      * @return mixed For successful SELECT, SHOW, DESCRIBE or EXPLAIN queries
      * this will return a mysqli_result object. For other successful queries
      * this will return TRUE. 
      */
-    public function &query($sql) {
+    public function &query($sql, $error_message = "Nothing Found.") {
         $result = $this->conn->query($sql);
         
         if($result === false){
-            // TODO better error handling
-            error("Nothing Found. " . $this->conn->errno . " " . $this->conn->error . " SQL: $sql");
+            Output::error(
+                $error_message,
+                array(
+                    'errno' => $this->conn->errno,
+                    'error' => $this->conn->error,
+                    'query' => $sql
+                )
+            );
         }
         
         return $result;

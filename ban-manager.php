@@ -6,6 +6,7 @@
  */
 
 require_once 'bm-config.php';
+require_once 'bm-output.php';
 require_once 'bm-database.php';
 
 /** The ID of the current user. */
@@ -25,7 +26,7 @@ if (DEBUG_MODE) {
     if( getLoggedInName() === FALSE ) {
         // User is not logged in, set the ban manager cookie as expired.
         setcookie(BM_COOKIE, "", time() - 3600);
-        error("Not logged in.");
+        Output::error("Not logged in.");
 
     } else if( isset($_COOKIE[BM_COOKIE]) ) {
 
@@ -44,7 +45,7 @@ if (DEBUG_MODE) {
 
         if($user_info === FALSE) {
             // Not a moderator
-            error("Not logged in.");
+            Output::error("Not logged in.");
         } else {
             // Mark the user as logged into the ban manager
             setcookie(BM_COOKIE, implode("|", $user_info), 0, "/", "finalscoremc.com");
@@ -140,7 +141,7 @@ function addIncident() {
     
     // Verify that we have a user id
     if($user_id === null || $user_id <= 0) {
-        error("Please provide a user for this incident.");
+        Output::error("Please provide a user for this incident.");
     }
     
     // Check if we have an incident date.
@@ -168,21 +169,21 @@ function addUser() {
     global $db;
     
     if( !isset($_POST['username'])){
-        error("Username required");
+        Output::error("Username required");
     }
     
     $username = $db->sanitize($_POST['username']);
     
     // Make sure that the user name isn't empty
     if(strlen($username) == 0) {
-        error("Please provide a user name.");
+        Output::error("Please provide a user name.");
     }
     
     // See if this user is a duplicate
     $res = $db->query("SELECT `id` FROM `users` WHERE `username` = '$username'");
     if($res->num_rows == 1) {
         // Username already in the database
-        error("User already exists.");
+        Output::error("User already exists.");
     }
     $res->free();
     
@@ -219,7 +220,7 @@ function autoComplete() {
     
     // Make sure that the term is at least two characters long
     if(strlen($_GET['term']) < 2) {
-        error("Invalid autocomplete term.");
+        Output::error("Invalid autocomplete term.");
     }
     
     $term = $db->sanitize( $_GET['term'] );
@@ -271,15 +272,6 @@ function buildTable($query) {
     $res->free();
 
     echo $result;
-}
-
-
-/**
- * Outputs an error message and stops the script.
- * @param string $message The error message to display, defaults to "Unkown error occured"
- */
-function error($message = "Unkown error occured"){
-    exit('{"error":"' . $message . '"}');
 }
 
 
@@ -356,7 +348,7 @@ function getModeratorInfo() {
 
     if($res->num_rows == 0) {
         // Nothing found
-        error("Moderator not found.");
+        Output::error("Moderator not found.");
     }
 
     $row = $res->fetch_assoc();
@@ -399,7 +391,7 @@ function retrieveUserData() {
     
     if($lookup === null || $lookup <= 0) {
         // Invalid lookup
-        error("Invalid user ID.");
+        Output::error("Invalid user ID.");
     }
     
     // Get the user
@@ -407,7 +399,7 @@ function retrieveUserData() {
     
     if($res->num_rows == 0){
         // Nothing found
-        error("User not found.");
+        Output::error("User not found.");
     }
     
     $result = array();
@@ -482,7 +474,7 @@ function search() {
     
     if( strlen($_GET['search']) < 2) {
         // Searches must contain at least two characters
-        error("Search string to short.");
+        Output::error("Search string to short.");
     }
     
     $search = $db->sanitize($_GET['search']);
@@ -536,7 +528,7 @@ function updateUser() {
     
     // Verify that we have a user id
     if($id === null || $id <= 0) {
-        error("No user id found.");
+        Output::error("No user id found.");
     }
     
     $username = null;
@@ -556,7 +548,7 @@ function updateUser() {
     $res = $db->query($query);
     
     if($res->num_rows == 0) {
-        error("Failed to retrieve incident.");
+        Output::error("Failed to retrieve incident.");
     }
     
     $row = $res->fetch_assoc();
@@ -584,7 +576,7 @@ function updateUser() {
     $res = $db->query($query);
 
     if ($res === false) {
-        error("Failed to update user.");
+        Output::error("Failed to update user.");
     }
 
     echo json_encode( array("success" => true ));
@@ -619,7 +611,7 @@ function updateIncident() {
     
     // Verify that we have an incident id
     if($id === null || $id <= 0) {
-        error("No incident id found.");
+        Output::error("No incident id found.");
     }
     
     $now = getNow();
