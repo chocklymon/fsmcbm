@@ -6,6 +6,7 @@
  */
 
 require_once 'bm-config.php';
+require_once 'bm-database.php';
 
 /** The ID of the current user. */
 $moderator = 0;
@@ -60,6 +61,9 @@ if (DEBUG_MODE) {
  * =============================
  */
 
+// Get the connection to the database
+$db = new Database();
+
 if(isset($_GET['term'])){
     
     autoComplete();
@@ -105,6 +109,7 @@ if(isset($_GET['term'])){
     }
 }
 
+$db->close();
 
 
 /* =============================
@@ -120,20 +125,18 @@ if(isset($_GET['term'])){
  */
 function addIncident() {
     
-    global $moderator;
+    global $moderator, $db;
     
-    $conn = getConnection();
-    
-    $user_id = sanitize($_POST['user_id'], $conn, true);
+    $user_id = $db->sanitize($_POST['user_id'], true);
     $today   = getNow();
-    $incident_date = sanitize($_POST['incident_date'], $conn);
-    $incident_type = sanitize($_POST['incident_type'], $conn);
-    $notes   = sanitize($_POST['notes'], $conn);
-    $action_taken = sanitize($_POST['action_taken'], $conn);
-    $world   = sanitize($_POST['world'], $conn);
-    $coord_x = sanitize($_POST['coord_x'], $conn, true);
-    $coord_y = sanitize($_POST['coord_y'], $conn, true);
-    $coord_z = sanitize($_POST['coord_z'], $conn, true);
+    $incident_date = $db->sanitize($_POST['incident_date']);
+    $incident_type = $db->sanitize($_POST['incident_type']);
+    $notes   = $db->sanitize($_POST['notes']);
+    $action_taken = $db->sanitize($_POST['action_taken']);
+    $world   = $db->sanitize($_POST['world']);
+    $coord_x = $db->sanitize($_POST['coord_x'], true);
+    $coord_y = $db->sanitize($_POST['coord_y'], true);
+    $coord_z = $db->sanitize($_POST['coord_z'], true);
     
     // Verify that we have a user id
     if($user_id === null || $user_id <= 0) {
@@ -148,16 +151,10 @@ function addIncident() {
     $query = "INSERT INTO `incident` (`user_id`, `moderator`, `created_date`, `modified_date`, `incident_date`, `incident_type`, `notes`, `action_taken`, `world`, `coord_x`, `coord_y`, `coord_z`)
         VALUES ('$user_id', '$moderator', '$today', '$today', '$incident_date', '$incident_type', '$notes', '$action_taken', '$world', '$coord_x', '$coord_y', '$coord_z')";
     
-    $res = $conn->query($query);
-    
-    if($res === false){
-        error("Failed to add incident.");
-    }
+    $incident_id = $db->insert($query);
     
     // Return the id
-    $result = array('incident_id' => $conn->insert_id);
-    
-    $conn->close();
+    $result = array('incident_id' => $incident_id);
     
     echo json_encode($result);
 }
@@ -168,13 +165,13 @@ function addIncident() {
  * User information is gathered from the data posted into this page.
  */
 function addUser() {
+    global $db;
+    
     if( !isset($_POST['username'])){
         error("Username required");
     }
     
-    $conn = getConnection();
-    
-    $username = sanitize($_POST['username'], $conn);
+    $username = $db->sanitize($_POST['username']);
     
     // Make sure that the user name isn't empty
     if(strlen($username) == 0) {
@@ -182,40 +179,32 @@ function addUser() {
     }
     
     // See if this user is a duplicate
-    $res = $conn->query("SELECT `id` FROM `users` WHERE `username` = '$username'");
-    if($res === false){
-        error("Query error.");
-    } else if($res->num_rows == 1) {
+    $res = $db->query("SELECT `id` FROM `users` WHERE `username` = '$username'");
+    if($res->num_rows == 1) {
         // Username already in the database
         error("User already exists.");
     }
     $res->free();
     
     // Get the user's data from the post
-    $rank = sanitize($_POST['rank'], $conn);
-    $relations = sanitize($_POST['relations'], $conn);
-    $notes = sanitize($_POST['notes'], $conn);
+    $rank = $db->sanitize($_POST['rank']);
+    $relations = $db->sanitize($_POST['relations']);
+    $notes = $db->sanitize($_POST['notes']);
     $banned = (isset($_POST['banned']) && $_POST['banned'] == 'on') ? '1' : '0';
     $permanent = (isset($_POST['permanent']) && $_POST['permanent'] == 'on') ? '1' : '0';
     $today = getNow();
     
     // Insert the user
-    $res = $conn->query("INSERT INTO `users` (`username`, `modified_date`, `rank`, `relations`, `notes`, `banned`, `permanent`)
+    $user_id = $db->insert("INSERT INTO `users` (`username`, `modified_date`, `rank`, `relations`, `notes`, `banned`, `permanent`)
         VALUES ('$username', '$today', '$rank', '$relations', '$notes', $banned, $permanent);");
     
-    if($res === false){
-        error("Failed to add user.");
-    }
-    
     // Get the ID
-    $result = array('user_id'=>$conn->insert_id);
+    $result = array('user_id' => $user_id);
     
     // See if we need to add to the ban history
     if($banned === '1') {
-        updateBanHistory($conn, $result['user_id'], $banned, $permanent);
+        updateBanHistory($user_id, $banned, $permanent);
     }
-    
-    $conn->close();
     
     echo json_encode($result);
     
@@ -226,21 +215,16 @@ function addUser() {
  * Finds possible user names to autocomplete a term provided to this page.
  */
 function autoComplete() {
+    global $db;
     
     // Make sure that the term is at least two characters long
     if(strlen($_GET['term']) < 2) {
         error("Invalid autocomplete term.");
     }
     
-    $conn = getConnection();
+    $term = $db->sanitize( $_GET['term'] );
     
-    $term = sanitize( $_GET['term'], $conn );
-    
-    $res = $conn->query("SELECT id,username FROM users WHERE username LIKE '$term%'");
-    
-    if($res === false){
-        error("Nothing Found.");
-    }
+    $res = $db->query("SELECT id,username FROM users WHERE username LIKE '$term%'");
     
     $result = array();
     
@@ -250,8 +234,6 @@ function autoComplete() {
     
     $res->free();
     
-    $conn->close();
-    
     echo json_encode($result);
 }
 
@@ -260,15 +242,11 @@ function autoComplete() {
  * Performs the provided query and builds a table of users from the results.
  * @param string $query The query to retrieve the data, needs to return the
  * user name, rank, and notes.
- * @param mysqli $conn The MySQLi connection to the database.
  */
-function buildTable($query, &$conn){
+function buildTable($query) {
+    global $db;
     
-    $res = $conn->query($query);
-
-    if($res === false){
-        error("Nothing Found.");
-    }
+    $res = $db->query($query);
     
     if($res->num_rows == 0){
         // Nothing found
@@ -292,8 +270,6 @@ function buildTable($query, &$conn){
 
     $res->free();
 
-    $conn->close();
-
     echo $result;
 }
 
@@ -311,8 +287,6 @@ function error($message = "Unkown error occured"){
  * Retrieves a list of all banned users.
  */
 function getBans() {
-    $conn = getConnection();
-    
     $query = "SELECT u.id, u.username, i.incident_date, i.incident_type, i.action_taken
             FROM users AS u
             LEFT JOIN (
@@ -324,29 +298,8 @@ function getBans() {
             GROUP BY u.id
             ORDER BY i.incident_date DESC";
     
-    buildTable($query, $conn);
+    buildTable($query);
 }
-
-
-/**
- * Gets the connection to the mysql database.
- * @return mysqli The MySQLi database connection.
- */
-function getConnection(){
-    $mysqli = mysqli_connect(
-        DB_HOST,
-        DB_USERNAME,
-        DB_PASSWORD,
-        DB_DATABASE
-    );
-    
-    if($mysqli->connect_errno){
-        error("DB Connection Issue");
-    }
-    
-    return $mysqli;
-}
-
 
 /**
  * Gets name of the user logged into wordpress.
@@ -385,6 +338,8 @@ function getNow() {
  * index one is the user's rank, and index two is the user's name.
  */
 function getModeratorInfo() {
+    global $db;
+    
     $id = FALSE;
     
     // Get the moderators name from the cookie
@@ -393,17 +348,13 @@ function getModeratorInfo() {
     if($moderator_name === FALSE) {
         return FALSE;
     }
-    
-    $conn = getConnection();
 
-    $moderator_name = sanitize($moderator_name, $conn);
+    $moderator_name = $db->sanitize($moderator_name);
 
     // Request the user id from the database
-    $res = $conn->query("SELECT `id`,`rank` FROM `users` WHERE `username` = '$moderator_name'");
+    $res = $db->query("SELECT `id`,`rank` FROM `users` WHERE `username` = '$moderator_name'");
 
-    if($res === false){
-        error("Failed to find moderator.");
-    } else if($res->num_rows == 0) {
+    if($res->num_rows == 0) {
         // Nothing found
         error("Moderator not found.");
     }
@@ -416,8 +367,6 @@ function getModeratorInfo() {
     }
 
     $res->free();
-
-    $conn->close();
     
     return $id;
 }
@@ -429,8 +378,6 @@ function getModeratorInfo() {
  * attached to them.
  */
 function getWatchlist() {
-    $conn = getConnection();
-    
     $query = "SELECT u.id, u.username, i.incident_date, i.incident_type, i.action_taken
             FROM users AS u, incident AS i
             WHERE u.banned = FALSE
@@ -438,7 +385,7 @@ function getWatchlist() {
             GROUP BY u.id
             ORDER BY i.incident_date DESC ";
     
-    buildTable($query, $conn);
+    buildTable($query);
 }
 
 /**
@@ -446,10 +393,9 @@ function getWatchlist() {
  * This includes all the users incidents (if any) and their user information.
  */
 function retrieveUserData() {
+    global $db;
     
-    $conn = getConnection();
-    
-    $lookup = sanitize($_GET['lookup'], $conn, true);
+    $lookup = $db->sanitize($_GET['lookup'], true);
     
     if($lookup === null || $lookup <= 0) {
         // Invalid lookup
@@ -457,11 +403,7 @@ function retrieveUserData() {
     }
     
     // Get the user
-    $res = $conn->query("SELECT * FROM users WHERE id = $lookup");
-    
-    if($res === false){
-        error("Nothing Found.");
-    }
+    $res = $db->query("SELECT * FROM users WHERE id = $lookup");
     
     if($res->num_rows == 0){
         // Nothing found
@@ -478,12 +420,8 @@ function retrieveUserData() {
     
     
     // Get the incidents
-    $res = $conn->query("SELECT * FROM incident WHERE user_id = $lookup ORDER BY incident_date");
-    
-    if($res === false){
-        error("Nothing Found.");
-    }
-    
+    $res = $db->query("SELECT * FROM incident WHERE user_id = $lookup ORDER BY incident_date");
+
     $user_ids = array();
     
     while($row = $res->fetch_assoc()){
@@ -495,11 +433,7 @@ function retrieveUserData() {
     
     
     // Get the ban history
-    $res = $conn->query("SELECT * FROM `ban_history` WHERE `user_id` = $lookup ORDER BY `date`;");
-    
-    if($res === false){
-        error("Nothing Found.");
-    }
+    $res = $db->query("SELECT * FROM `ban_history` WHERE `user_id` = $lookup ORDER BY `date`;");
     
     while($row = $res->fetch_assoc()) {
         $result['history'][] = $row;
@@ -512,11 +446,7 @@ function retrieveUserData() {
 
     if( count($user_ids) != 0 ){
         
-        $res = $conn->query("SELECT id,username FROM users WHERE id IN (" . implode(",", $user_ids) . ")");
-
-        if($res === false){
-            error("Unable Found.");
-        }
+        $res = $db->query("SELECT id,username FROM users WHERE id IN (" . implode(",", $user_ids) . ")");
 
         while($row = $res->fetch_assoc()){
             $user_ids[$row['id']] = $row['username'];
@@ -538,47 +468,8 @@ function retrieveUserData() {
             }
         }
     }
-
-    $conn->close();
     
     echo json_encode($result);
-    
-}
-
-
-/**
- * Sanitizes input for insertion into the database.
- * @param string $input The string input to sanitize.
- * @param mysqli $mysqli_conn The MySQLi connection to the database (required
- * for real escape string).
- * @param boolean $number Wether or not the input should be treated as a number.
- * True to sanitize as a number. Defaults to false.
- * @return mixed The sanitized string, or the sanitized number if number is set
- * to true.
- */
-function sanitize($input, &$mysqli_conn, $number = false) {
-    
-    if(isset($input) && $input !== null) {
-        if($number) {
-            // Sanitize as a number
-            $num = preg_replace('/[^0-9\-]/', '', $input);
-            if(strlen($num) == 0){
-                return null;
-            } else {
-                return $num*1;
-            }
-        } else {
-            // Remove magic quote escaping if needed
-            if (get_magic_quotes_gpc()) {
-                $input = stripslashes($input);
-            }
-            
-            // Sanitize as a string
-            return $mysqli_conn->real_escape_string($input);
-        }
-    } else {
-        return null;
-    }
     
 }
 
@@ -587,15 +478,14 @@ function sanitize($input, &$mysqli_conn, $number = false) {
  * Searches the text fields in the database for the provided search keyword.
  */
 function search() {
+    global $db;
     
     if( strlen($_GET['search']) < 2) {
         // Searches must contain at least two characters
         error("Search string to short.");
     }
     
-    $conn = getConnection();
-    
-    $search = sanitize($_GET['search'], $conn);
+    $search = $db->sanitize($_GET['search']);
     
     $query = "SELECT * FROM (
                 SELECT u.id, u.username, u.banned, i.incident_date, i.incident_type, i.action_taken
@@ -616,7 +506,7 @@ function search() {
                 ) AS r
         GROUP BY r.id";
     
-    buildTable( $query, $conn );
+    buildTable($query);
 }
 
 
@@ -640,9 +530,9 @@ function truncate($string){
  * The data is retrieved from the data posted into this page.
  */
 function updateUser() {
-    $conn = getConnection();
+    global $db;
         
-    $id = sanitize($_POST['id'], $conn, true);
+    $id = $db->sanitize($_POST['id'], true);
     
     // Verify that we have a user id
     if($id === null || $id <= 0) {
@@ -651,28 +541,28 @@ function updateUser() {
     
     $username = null;
     if (isset($_POST['username'])) {
-        $username = sanitize($_POST['username'], $conn);
+        $username = $db->sanitize($_POST['username']);
     }
-    $rank = sanitize($_POST['rank'], $conn);
+    $rank = $db->sanitize($_POST['rank']);
     $banned = $_POST['banned'] == "true";
     $permanent = $_POST['permanent'] == "true";
-    $relations = sanitize($_POST['relations'], $conn);
-    $notes = sanitize($_POST['notes'], $conn);
+    $relations = $db->sanitize($_POST['relations']);
+    $notes = $db->sanitize($_POST['notes']);
     $today = getNow();
     
     // See if we need to update the ban history
     $query = "SELECT * FROM `users` WHERE `users`.`id` = $id";
     
-    $res = $conn->query($query);
+    $res = $db->query($query);
     
-    if($res === false || $res->num_rows == 0) {
+    if($res->num_rows == 0) {
         error("Failed to retrieve incident.");
     }
     
     $row = $res->fetch_assoc();
     
     if($row['banned'] != $banned || $row['permanent'] != $permanent) {
-        updateBanHistory($conn, $id, $banned, $permanent);
+        updateBanHistory($id, $banned, $permanent);
     }
     
     $res->free();
@@ -691,9 +581,7 @@ function updateUser() {
                 `permanent` =  '$permanent'
                 WHERE  `users`.`id` = $id";
 
-    $res = $conn->query($query);
-    
-    $conn->close();
+    $res = $db->query($query);
 
     if ($res === false) {
         error("Failed to update user.");
@@ -706,23 +594,17 @@ function updateUser() {
 /**
  * Updates the ban history
  * @global int $moderator The ID of the moderator/admin that is logged in.
- * @param mysqli $conn The connection to the database.
  * @param int $user_id The ID of the user who's ban history is being updated.
  * @param boolean $banned Whether or not the user is banned.
  * @param boolean $permanent Wether or not the user is banned permanently.
  */
-function updateBanHistory($conn, $user_id, $banned, $permanent) {
-    
-    global $moderator;
+function updateBanHistory($user_id, $banned, $permanent) {
+    global $moderator, $db;
     
     $today = getNow();
     
-    $res = $conn->query("INSERT INTO `ban_history` (`user_id`, `moderator`, `date`, `banned`, `permanent`)
+    $res = $db->query("INSERT INTO `ban_history` (`user_id`, `moderator`, `date`, `banned`, `permanent`)
             VALUES ('$user_id', '$moderator', '$today', '$banned', '$permanent');");
-
-    if($res === false){
-        error("Failed to update ban history.");
-    }
 }
 
 
@@ -731,9 +613,9 @@ function updateBanHistory($conn, $user_id, $banned, $permanent) {
  * Data is retrieved from the data posted into this page.
  */
 function updateIncident() {
-    $conn = getConnection();
+    global $db;
         
-    $id = sanitize($_POST['id'], $conn, true);
+    $id = $db->sanitize($_POST['id'], true);
     
     // Verify that we have an incident id
     if($id === null || $id <= 0) {
@@ -741,15 +623,15 @@ function updateIncident() {
     }
     
     $now = getNow();
-    $incident_date = sanitize($_POST['incident_date'], $conn);
-    $incident_type = sanitize($_POST['incident_type'], $conn);
-    $notes   = sanitize($_POST['notes'], $conn);
-    $action_taken = sanitize($_POST['action_taken'], $conn);
-    $world   = sanitize($_POST['world'], $conn);
-    $coord_x = sanitize($_POST['coord_x'], $conn, true);
-    $coord_y = sanitize($_POST['coord_y'], $conn, true);
-    $coord_z = sanitize($_POST['coord_z'], $conn, true);
-    $appeal_response = isset($_POST['appeal_response']) ? sanitize($_POST['appeal_response'], $conn) : '';
+    $incident_date = $db->sanitize($_POST['incident_date']);
+    $incident_type = $db->sanitize($_POST['incident_type']);
+    $notes   = $db->sanitize($_POST['notes']);
+    $action_taken = $db->sanitize($_POST['action_taken']);
+    $world   = $db->sanitize($_POST['world']);
+    $coord_x = $db->sanitize($_POST['coord_x'], true);
+    $coord_y = $db->sanitize($_POST['coord_y'], true);
+    $coord_z = $db->sanitize($_POST['coord_z'], true);
+    $appeal_response = isset($_POST['appeal_response']) ? $db->sanitize($_POST['appeal_response']) : '';
 
     $query = "UPDATE `incident` SET
         `modified_date` = '$now',
@@ -764,13 +646,7 @@ function updateIncident() {
         `appeal_response` = '$appeal_response'
         WHERE  `incident`.`id` = $id";
 
-    $res = $conn->query($query);
-    
-    $conn->close();
-
-    if($res === false){
-        error("Failed to update incident.");
-    }
+    $res = $db->query($query);
 
     echo json_encode( array("success" => true ));
 }
