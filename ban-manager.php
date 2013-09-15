@@ -128,16 +128,16 @@ function addIncident() {
     
     global $moderator, $db;
     
-    $user_id = $db->sanitize($_POST['user_id'], true);
-    $today   = getNow();
+    $user_id       = $db->sanitize($_POST['user_id'], true);
+    $today         = getNow();
     $incident_date = $db->sanitize($_POST['incident_date']);
     $incident_type = $db->sanitize($_POST['incident_type']);
-    $notes   = $db->sanitize($_POST['notes']);
-    $action_taken = $db->sanitize($_POST['action_taken']);
-    $world   = $db->sanitize($_POST['world']);
-    $coord_x = $db->sanitize($_POST['coord_x'], true);
-    $coord_y = $db->sanitize($_POST['coord_y'], true);
-    $coord_z = $db->sanitize($_POST['coord_z'], true);
+    $notes         = $db->sanitize($_POST['notes']);
+    $action_taken  = $db->sanitize($_POST['action_taken']);
+    $world         = $db->sanitize($_POST['world']);
+    $coord_x       = $db->sanitize($_POST['coord_x'], true);
+    $coord_y       = $db->sanitize($_POST['coord_y'], true);
+    $coord_z       = $db->sanitize($_POST['coord_z'], true);
     
     // Verify that we have a user id
     if($user_id === null || $user_id <= 0) {
@@ -188,27 +188,28 @@ function addUser() {
     $res->free();
     
     // Get the user's data from the post
-    $rank = $db->sanitize($_POST['rank']);
+    $rank      = $db->sanitize($_POST['rank']);
     $relations = $db->sanitize($_POST['relations']);
-    $notes = $db->sanitize($_POST['notes']);
-    $banned = (isset($_POST['banned']) && $_POST['banned'] == 'on') ? '1' : '0';
-    $permanent = (isset($_POST['permanent']) && $_POST['permanent'] == 'on') ? '1' : '0';
-    $today = getNow();
+    $notes     = $db->sanitize($_POST['notes']);
+    $banned    = (isset($_POST['banned']) && $_POST['banned'] == 'on');
+    $permanent = (isset($_POST['permanent']) && $_POST['permanent'] == 'on');
+    $today     = getNow();
     
     // Insert the user
-    $user_id = $db->insert("INSERT INTO `users` (`username`, `modified_date`, `rank`, `relations`, `notes`, `banned`, `permanent`)
-        VALUES ('$username', '$today', '$rank', '$relations', '$notes', $banned, $permanent);");
+    $user_id = $db->insert(
+        "INSERT INTO `users` (`username`, `modified_date`, `rank`, `relations`, `notes`, `banned`, `permanent`)
+        VALUES ('$username', '$today', '$rank', '$relations', '$notes', $banned, $permanent)"
+    );
     
-    // Get the ID
+    // Store the ID
     $result = array('user_id' => $user_id);
     
     // See if we need to add to the ban history
-    if($banned === '1') {
+    if($banned === true) {
         updateBanHistory($user_id, $banned, $permanent);
     }
     
     echo json_encode($result);
-    
 }
 
 
@@ -220,17 +221,20 @@ function autoComplete() {
     
     // Make sure that the term is at least two characters long
     if(strlen($_GET['term']) < 2) {
-        Output::error("Invalid autocomplete term.");
+        Output::error('Invalid autocomplete term.');
     }
     
     $term = $db->sanitize( $_GET['term'] );
     
-    $res = $db->query("SELECT id,username FROM users WHERE username LIKE '$term%'");
+    $res = $db->query(
+        "SELECT id, username FROM users WHERE username LIKE '$term%'",
+        'Invalid autocomplete term.'
+    );
     
     $result = array();
     
     while($row = $res->fetch_assoc()){
-        $result[] = array("label"=>$row['username'],"value"=>$row['id']);
+        $result[] = array("label"=>$row['username'], "value"=>$row['id']);
     }
     
     $res->free();
@@ -332,7 +336,7 @@ function getNow() {
 function getModeratorInfo() {
     global $db;
     
-    $id = FALSE;
+    $info = FALSE;
     
     // Get the moderators name from the cookie
     $moderator_name = getLoggedInName();
@@ -344,23 +348,17 @@ function getModeratorInfo() {
     $moderator_name = $db->sanitize($moderator_name);
 
     // Request the user id from the database
-    $res = $db->query("SELECT `id`,`rank` FROM `users` WHERE `username` = '$moderator_name'");
-
-    if($res->num_rows == 0) {
-        // Nothing found
-        Output::error("Moderator not found.");
-    }
-
-    $row = $res->fetch_assoc();
+    $row = $db->querySingleRow(
+        "SELECT `id`, `rank` FROM `users` WHERE `username` = '$moderator_name'",
+        'Moderator not found.'
+    );
 
     // Only store the information of admins/moderators
     if($row['rank'] == 'Admin' || $row['rank'] == 'Moderator') {
-        $id = array($row['id'], $row['rank'], $moderator_name);
+        $info = array($row['id'], $row['rank'], $moderator_name);
     }
-
-    $res->free();
     
-    return $id;
+    return $info;
 }
 
 
@@ -389,30 +387,22 @@ function retrieveUserData() {
     
     $lookup = $db->sanitize($_GET['lookup'], true);
     
-    if($lookup === null || $lookup <= 0) {
+    if($lookup <= 0) {
         // Invalid lookup
         Output::error("Invalid user ID.");
     }
     
-    // Get the user
-    $res = $db->query("SELECT * FROM users WHERE id = $lookup");
-    
-    if($res->num_rows == 0){
-        // Nothing found
-        Output::error("User not found.");
-    }
-    
     $result = array();
     
-    while($row = $res->fetch_assoc()){
-        $result["user"] = $row;
-    }
-    
-    $res->free();
+    // Get the user
+    $result['user'] = $db->querySingleRow(
+        "SELECT * FROM users WHERE id = '$lookup'",
+        'User not found.'
+    );
     
     
     // Get the incidents
-    $res = $db->query("SELECT * FROM incident WHERE user_id = $lookup ORDER BY incident_date");
+    $res = $db->query("SELECT * FROM incident WHERE user_id = '$lookup' ORDER BY incident_date");
 
     $user_ids = array();
     
@@ -523,12 +513,13 @@ function truncate($string){
  */
 function updateUser() {
     global $db;
-        
+    
+    // Sanitize the inputs
     $id = $db->sanitize($_POST['id'], true);
     
-    // Verify that we have a user id
-    if($id === null || $id <= 0) {
-        Output::error("No user id found.");
+    // Verify that we have a valid user id
+    if($id <= 0) {
+        Output::error("Invalid user ID.");
     }
     
     $username = null;
@@ -544,20 +535,11 @@ function updateUser() {
     
     // See if we need to update the ban history
     $query = "SELECT * FROM `users` WHERE `users`.`id` = $id";
-    
-    $res = $db->query($query);
-    
-    if($res->num_rows == 0) {
-        Output::error("Failed to retrieve incident.");
-    }
-    
-    $row = $res->fetch_assoc();
+    $row = $db->querySingleRow($query, "Failed to retrieve incident.");
     
     if($row['banned'] != $banned || $row['permanent'] != $permanent) {
         updateBanHistory($id, $banned, $permanent);
     }
-    
-    $res->free();
 
     // Perform the udpate
     $query = "UPDATE  `users` SET ";
@@ -573,11 +555,7 @@ function updateUser() {
                 `permanent` =  '$permanent'
                 WHERE  `users`.`id` = $id";
 
-    $res = $db->query($query);
-
-    if ($res === false) {
-        Output::error("Failed to update user.");
-    }
+    $db->query($query);
 
     echo json_encode( array("success" => true ));
 }
@@ -593,9 +571,14 @@ function updateUser() {
 function updateBanHistory($user_id, $banned, $permanent) {
     global $moderator, $db;
     
+    // Be sure the inputs are what the are supposed to be.
+    $user_id = (int) $user_id;
+    $banned = (boolean) $banned;
+    $permanent = (boolean) $permanent;
+    
     $today = getNow();
     
-    $res = $db->query("INSERT INTO `ban_history` (`user_id`, `moderator`, `date`, `banned`, `permanent`)
+    $db->query("INSERT INTO `ban_history` (`user_id`, `moderator`, `date`, `banned`, `permanent`)
             VALUES ('$user_id', '$moderator', '$today', '$banned', '$permanent');");
 }
 
@@ -610,19 +593,19 @@ function updateIncident() {
     $id = $db->sanitize($_POST['id'], true);
     
     // Verify that we have an incident id
-    if($id === null || $id <= 0) {
-        Output::error("No incident id found.");
+    if($id <= 0) {
+        Output::error("Invalid incident id.");
     }
     
     $now = getNow();
     $incident_date = $db->sanitize($_POST['incident_date']);
     $incident_type = $db->sanitize($_POST['incident_type']);
-    $notes   = $db->sanitize($_POST['notes']);
-    $action_taken = $db->sanitize($_POST['action_taken']);
-    $world   = $db->sanitize($_POST['world']);
-    $coord_x = $db->sanitize($_POST['coord_x'], true);
-    $coord_y = $db->sanitize($_POST['coord_y'], true);
-    $coord_z = $db->sanitize($_POST['coord_z'], true);
+    $notes         = $db->sanitize($_POST['notes']);
+    $action_taken  = $db->sanitize($_POST['action_taken']);
+    $world         = $db->sanitize($_POST['world']);
+    $coord_x       = $db->sanitize($_POST['coord_x'], true);
+    $coord_y       = $db->sanitize($_POST['coord_y'], true);
+    $coord_z       = $db->sanitize($_POST['coord_z'], true);
     $appeal_response = isset($_POST['appeal_response']) ? $db->sanitize($_POST['appeal_response']) : '';
 
     $query = "UPDATE `incident` SET
@@ -638,7 +621,7 @@ function updateIncident() {
         `appeal_response` = '$appeal_response'
         WHERE  `incident`.`id` = $id";
 
-    $res = $db->query($query);
+    $db->query($query);
 
     echo json_encode( array("success" => true ));
 }

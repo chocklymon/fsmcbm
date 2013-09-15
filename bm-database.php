@@ -45,7 +45,7 @@ class Database {
      * this will return a mysqli_result object. For other successful queries
      * this will return TRUE. 
      */
-    public function &query($sql, $error_message = "Nothing Found.") {
+    public function &query($sql, $error_message = 'Nothing found.') {
         $result = $this->conn->query($sql);
         
         if($result === false){
@@ -60,6 +60,26 @@ class Database {
         }
         
         return $result;
+    }
+    
+    /**
+     * Performs a query against the database and returns the first row returned.
+     * @param string $sql The query string.
+     * @param string $error_message An optional error message to output if
+     * the query fails.
+     * @return array The associative array of the returned row.
+     */
+    public function querySingleRow($sql, $error_message = 'Nothing found.') {
+        $result = $this->query($sql, $error_message);
+        
+        if ($result->num_rows == 0) {
+            Output::error($error_message);
+        }
+        
+        $row = $result->fetch_assoc();
+        $result->free();
+        
+        return $row;
     }
     
     /**
