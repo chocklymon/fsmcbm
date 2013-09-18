@@ -1,6 +1,25 @@
 -- Ban Manager database tables.
--- v1
+-- v2
 -- Last updated 9/18/2013
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `appeal`
+--
+
+CREATE TABLE IF NOT EXISTS `appeal` (
+  `appeal_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int(10) unsigned NOT NULL,
+  `author_id` int(10) unsigned NOT NULL,
+  `closed` tinyint(1) NOT NULL DEFAULT '0',
+  `date` datetime DEFAULT NULL,
+  `message` text COLLATE utf8_unicode_ci,
+  PRIMARY KEY (`appeal_id`),
+  KEY `user_id` (`user_id`),
+  KEY `author_id` (`author_id`),
+  KEY `closed` (`closed`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci ;
 
 -- --------------------------------------------------------
 
@@ -9,14 +28,14 @@
 --
 
 CREATE TABLE IF NOT EXISTS `ban_history` (
-  `user_id` INT UNSIGNED NOT NULL,
-  `moderator` INT UNSIGNED NOT NULL,
-  `date` DATETIME NOT NULL,
-  `banned` BOOLEAN NOT NULL DEFAULT FALSE,
-  `permanent` BOOLEAN NOT NULL DEFAULT FALSE,
+  `user_id` int(10) unsigned NOT NULL,
+  `moderator_id` int(10) unsigned NOT NULL,
+  `date` datetime NOT NULL,
+  `banned` tinyint(1) NOT NULL DEFAULT '0',
+  `permanent` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`user_id`,`date`),
   KEY `user_id` (`user_id`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci ;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci ;
 
 -- --------------------------------------------------------
 
@@ -25,26 +44,34 @@ CREATE TABLE IF NOT EXISTS `ban_history` (
 --
 
 CREATE TABLE IF NOT EXISTS `incident` (
-  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `user_id` INT UNSIGNED NOT NULL,
-  `moderator` INT UNSIGNED NOT NULL,
-  `created_date` DATETIME NOT NULL,
-  `modified_date` DATETIME NOT NULL,
-  `incident_date` DATE NOT NULL,
-  `incident_type` VARCHAR(20) DEFAULT NULL,
-  `notes` TEXT,
-  `action_taken` TEXT,
-  `world` VARCHAR(20) DEFAULT NULL,
-  `coord_x` INT DEFAULT NULL,
-  `coord_y` TINYINT UNSIGNED DEFAULT NULL,
-  `coord_z` INT DEFAULT NULL,
-  `appeal_date` DATETIME DEFAULT NULL,
-  `appeal` TEXT,
-  `appeal_response` TEXT,
-  PRIMARY KEY (`id`),
+  `incident_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int(10) unsigned NOT NULL,
+  `moderator_id` int(10) unsigned NOT NULL,
+  `created_date` datetime NOT NULL,
+  `modified_date` datetime NOT NULL,
+  `incident_date` datetime DEFAULT NULL,
+  `incident_type` varchar(30) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `notes` text COLLATE utf8_unicode_ci,
+  `action_taken` text COLLATE utf8_unicode_ci,
+  `world` varchar(20) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `coord_x` int(11) DEFAULT NULL,
+  `coord_z` int(11) DEFAULT NULL,
+  `coord_y` tinyint(11) unsigned DEFAULT NULL,
+  PRIMARY KEY (`incident_id`),
   KEY `user_id` (`user_id`),
-  KEY `moderator` (`moderator`),
-  KEY `user_id_2` (`user_id`,`incident_date`)
+  KEY `moderator` (`moderator_id`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci ;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `rank`
+--
+
+CREATE TABLE IF NOT EXISTS `rank` (
+  `rank_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(20) COLLATE utf8_unicode_ci DEFAULT NULL,
+  PRIMARY KEY (`rank_id`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci ;
 
 -- --------------------------------------------------------
@@ -54,15 +81,16 @@ CREATE TABLE IF NOT EXISTS `incident` (
 --
 
 CREATE TABLE IF NOT EXISTS `users` (
-  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `username` VARCHAR(20) NOT NULL,
-  `modified_date` DATETIME NOT NULL,
-  `rank` VARCHAR(20) DEFAULT NULL,
-  `relations` TEXT,
-  `notes` TEXT,
-  `banned` BOOLEAN NOT NULL DEFAULT FALSE,
-  `permanent` BOOLEAN NOT NULL DEFAULT FALSE,
-  PRIMARY KEY (`id`),
+  `user_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `username` varchar(20) COLLATE utf8_unicode_ci NOT NULL,
+  `modified_date` datetime NOT NULL,
+  `rank` int(10) NOT NULL DEFAULT '1',
+  `relations` text COLLATE utf8_unicode_ci,
+  `notes` text COLLATE utf8_unicode_ci,
+  `banned` tinyint(1) NOT NULL DEFAULT '0',
+  `permanent` tinyint(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`user_id`),
   UNIQUE KEY `username` (`username`),
-  KEY `banned` (`banned`)
+  KEY `banned` (`banned`),
+  KEY `rank` (`rank`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci ;

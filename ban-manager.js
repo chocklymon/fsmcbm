@@ -279,7 +279,31 @@ if (window.bm == null || bm.url == null) {
         rank : info({
             name : "Rank",
             type : "select",
-            options : ["Everyone","Regular","Donor","Builder","Engineer","Moderator","Admin","Default"]
+            options : [{
+                        value:1,
+                        label:"Everyone"
+                    },{
+                        value:2,
+                        label:"Regular"
+                    },{
+                        value:3,
+                        label:"Donor"
+                    },{
+                        value:4,
+                        label:"Builder"
+                    },{
+                        value:5,
+                        label:"Engineer"
+                    },{
+                        value:6,
+                        label:"Moderator"
+                    },{
+                        value:7,
+                        label:"Admin"
+                    },{
+                        value:8,
+                        label:"Default"
+                    }]
         }),
         relations : info({
             name : "Relations",
@@ -514,15 +538,15 @@ if (window.bm == null || bm.url == null) {
                         for(i=0; i<data.incident.length; i++) {
                             datum = data.incident[i];
 
-                            el = $("<div>").addClass("form").attr("id", "i-" + datum.id);
+                            el = $("<div>").addClass("form").attr("id", "i-" + datum.incident_id);
                             el.appendTo(incidents);
 
                             $.each(incident, function(index, value) {
-                                el.append(value.toHTML(datum[index], index, datum.id));
+                                el.append(value.toHTML(datum[index], index, datum.incident_id));
                             });
 
                             // Add the save button
-                            el.append($("<button>").text("Save").attr("id","i-s-" + datum.id).click(function() {
+                            el.append($("<button>").text("Save").attr("id","i-s-" + datum.incident_id).click(function() {
 
                                 // Get the ID and disable the button (to prevent repeatedly clicking the button)
                                 var id = $(this).addClass("disabled").prop("disabled", true).attr('id').substring(4);

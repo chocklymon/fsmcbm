@@ -149,7 +149,7 @@ function addIncident() {
         $incident_date = substr($today, 0, 10);
     }
     
-    $query = "INSERT INTO `incident` (`user_id`, `moderator`, `created_date`, `modified_date`, `incident_date`, `incident_type`, `notes`, `action_taken`, `world`, `coord_x`, `coord_y`, `coord_z`)
+    $query = "INSERT INTO `incident` (`user_id`, `moderator_id`, `created_date`, `modified_date`, `incident_date`, `incident_type`, `notes`, `action_taken`, `world`, `coord_x`, `coord_y`, `coord_z`)
         VALUES ('$user_id', '$moderator', '$today', '$today', '$incident_date', '$incident_type', '$notes', '$action_taken', '$world', '$coord_x', '$coord_y', '$coord_z')";
     
     $incident_id = $db->insert($query);
@@ -179,7 +179,7 @@ function addUser() {
     }
     
     // See if this user is a duplicate
-    $res = $db->query("SELECT `id` FROM `users` WHERE `username` = '$username'");
+    $res = $db->query("SELECT `user_id` FROM `users` WHERE `username` = '$username'");
     if($res->num_rows == 1) {
         // Username already in the database
         Output::error("User already exists.");
@@ -187,11 +187,11 @@ function addUser() {
     $res->free();
     
     // Get the user's data from the post
-    $rank      = $db->sanitize($_POST['rank']);
+    $rank      = $db->sanitize($_POST['rank'], true);
     $relations = $db->sanitize($_POST['relations']);
     $notes     = $db->sanitize($_POST['notes']);
-    $banned    = (isset($_POST['banned']) && $_POST['banned'] == 'on');
-    $permanent = (isset($_POST['permanent']) && $_POST['permanent'] == 'on');
+    $banned    = (isset($_POST['banned']) && $_POST['banned'] == 'on') ? '1' : '0';
+    $permanent = (isset($_POST['permanent']) && $_POST['permanent'] == 'on') ? '1' : '0';
     $today     = getNow();
     
     // Insert the user
@@ -225,13 +225,13 @@ function autoComplete() {
     $term = $db->sanitize( $_GET['term'] );
     
     $res = $db->query(
-        "SELECT id, username FROM users WHERE username LIKE '$term%'",
+        "SELECT user_id, username FROM users WHERE username LIKE '$term%'",
         'Invalid autocomplete term.'
     );
     
     while($row = $res->fetch_assoc()){
         Output::append(
-            array('label'=>$row['username'], 'value'=>$row['id'])
+            array('label'=>$row['username'], 'value'=>$row['user_id'])
         );
     }
     
@@ -264,7 +264,7 @@ function buildTable($query) {
 
         while($row = $res->fetch_assoc()){
             Output::append(
-                "<tr id='id-" . $row['id'] . "'><td>"
+                "<tr id='id-" . $row['user_id'] . "'><td>"
                . Output::prepareHTML($row['username'])            . "</td><td>"
                . Output::prepareHTML($row['incident_date'])       . "</td><td>"
                . Output::prepareHTML($row['incident_type'], true) . "</td><td>"
@@ -285,15 +285,15 @@ function buildTable($query) {
  * Retrieves a list of all banned users.
  */
 function getBans() {
-    $query = "SELECT u.id, u.username, i.incident_date, i.incident_type, i.action_taken
+    $query = "SELECT u.user_id, u.username, i.incident_date, i.incident_type, i.action_taken
             FROM users AS u
             LEFT JOIN (
                 SELECT * 
                 FROM incident AS q
                 ORDER BY q.incident_date DESC
-            ) AS i ON u.id = i.user_id
+            ) AS i ON u.user_id = i.user_id
             WHERE u.banned = TRUE
-            GROUP BY u.id
+            GROUP BY u.user_id
             ORDER BY i.incident_date DESC";
     
     buildTable($query);
@@ -351,7 +351,10 @@ function getModeratorInfo() {
 
     // Request the user id from the database
     $row = $db->querySingleRow(
-        "SELECT `id`, `rank` FROM `users` WHERE `username` = '$moderator_name'",
+        "SELECT `users`.`user_id`, `rank`.`name` AS rank
+         FROM `users`
+         LEFT JOIN `rank` ON (`users`.`rank` = `rank`.`rank_id`)
+         WHERE `username` = '$moderator_name'",
         'Moderator not found.'
     );
 
@@ -370,11 +373,11 @@ function getModeratorInfo() {
  * attached to them.
  */
 function getWatchlist() {
-    $query = "SELECT u.id, u.username, i.incident_date, i.incident_type, i.action_taken
+    $query = "SELECT u.user_id, u.username, i.incident_date, i.incident_type, i.action_taken
             FROM users AS u, incident AS i
             WHERE u.banned = FALSE
-            AND u.id = i.user_id
-            GROUP BY u.id
+            AND u.user_id = i.user_id
+            GROUP BY u.user_id
             ORDER BY i.incident_date DESC ";
     
     buildTable($query);
@@ -394,67 +397,41 @@ function retrieveUserData() {
         Output::error("Invalid user ID.");
     }
     
-    $result = array();
     
     // Get the user
-    $result['user'] = $db->querySingleRow(
-        "SELECT * FROM users WHERE id = '$lookup'",
-        'User not found.'
+    Output::append(
+        $db->querySingleRow(
+            "SELECT * FROM users WHERE user_id = '$lookup'",
+            'User not found.'
+        ),
+        'user'
     );
     
     
     // Get the incidents
-    $res = $db->query("SELECT * FROM incident WHERE user_id = '$lookup' ORDER BY incident_date");
+    $sql = <<<SQL
+SELECT i.*, u.username AS moderator
+FROM `incident` AS i
+LEFT JOIN `users` AS u ON (i.moderator_id = u.user_id)
+WHERE i.user_id = '$lookup'
+ORDER BY i.incident_date
+SQL;
 
-    $user_ids = array();
-    
-    while($row = $res->fetch_assoc()){
-        $result["incident"][] = $row;
-        $user_ids[] = $row['moderator'];
-    }
-    
-    $res->free();
-    
+    $db->queryRowsIntoOutput($sql, 'incident');
+
     
     // Get the ban history
-    $res = $db->query("SELECT * FROM `ban_history` WHERE `user_id` = $lookup ORDER BY `date`;");
+    $sql = <<<SQL
+SELECT u.username AS moderator, bh.date, bh.banned, bh.permanent
+FROM `ban_history` AS bh
+LEFT JOIN `users` AS u ON (bh.moderator_id = u.user_id)
+WHERE bh.`user_id` = '$lookup'
+ORDER BY bh.`date`
+SQL;
     
-    while($row = $res->fetch_assoc()) {
-        $result['history'][] = $row;
-        $user_ids[] = $row['moderator'];
-    }
-    
-    
-    // Get the name of the moderators
-    $user_ids = array_unique($user_ids);
+    $db->queryRowsIntoOutput($sql, 'history');
 
-    if( count($user_ids) != 0 ){
-        
-        $res = $db->query("SELECT id,username FROM users WHERE id IN (" . implode(",", $user_ids) . ")");
-
-        while($row = $res->fetch_assoc()){
-            $user_ids[$row['id']] = $row['username'];
-        }
-
-        $res->free();
-        
-        // change the moderator id to username
-        if( isset($result['incident']) ) {
-            foreach($result['incident'] as &$incident){
-                $incident['moderator_id'] = $incident['moderator'];
-                $incident['moderator'] = $user_ids[$incident['moderator']];
-            }
-        }
-        if( isset($result['history']) ) {
-            foreach($result['history'] as &$history){
-                $history['moderator_id'] = $history['moderator'];
-                $history['moderator'] = $user_ids[$history['moderator']];
-            }
-        }
-    }
-    
-    echo json_encode($result);
-    
+    Output::reply();
 }
 
 
@@ -472,24 +449,25 @@ function search() {
     
     $search = $db->sanitize($_GET['search']);
     
+    // TODO this query needs to be re-written, probably make it three queries.
+    // and then return three tables. One for users, another for incidents, and finally one for appeals.
     $query = "SELECT * FROM (
-                SELECT u.id, u.username, u.banned, i.incident_date, i.incident_type, i.action_taken
+                SELECT u.user_id, u.username, u.banned, i.incident_date, i.incident_type, i.action_taken
                 FROM users AS u, incident AS i
-                WHERE u.id = i.user_id
+                WHERE u.user_id = i.user_id
                     AND (i.notes LIKE '%$search%'
                     OR i.incident_type LIKE '%$search%'
-                    OR i.action_taken LIKE '%$search%'
-                    OR i.appeal LIKE '%$search%'
-                    OR i.appeal_response LIKE '%$search%')
+                    OR i.action_taken LIKE '%$search%')
                 UNION
-                SELECT u.id, u.username, u.banned, u.modified_date AS incident_date, u.rank, u.relations
+                SELECT u.user_id, u.username, u.banned, u.modified_date AS incident_date, r.name, u.relations
                 FROM users AS u
+                LEFT JOIN `rank` AS r ON (u.`rank` = r.`rank_id`)
                 WHERE u.username LIKE '%$search%'
                     OR u.relations LIKE '%$search%'
                     OR u.notes LIKE '%$search%'
                 ORDER BY incident_date DESC
-                ) AS r
-        GROUP BY r.id";
+                ) AS results
+        GROUP BY results.user_id";
     
     buildTable($query);
 }
@@ -522,7 +500,7 @@ function updateUser() {
     $today = getNow();
     
     // See if we need to update the ban history
-    $query = "SELECT * FROM `users` WHERE `users`.`id` = $id";
+    $query = "SELECT * FROM `users` WHERE `users`.`user_id` = $id";
     $row = $db->querySingleRow($query, "Failed to retrieve incident.");
     
     if($row['banned'] != $banned || $row['permanent'] != $permanent) {
@@ -541,7 +519,7 @@ function updateUser() {
                 `notes` =  '$notes',
                 `banned` =  '$banned',
                 `permanent` =  '$permanent'
-                WHERE  `users`.`id` = $id";
+                WHERE  `users`.`user_id` = $id";
 
     $db->query($query);
 
@@ -566,7 +544,7 @@ function updateBanHistory($user_id, $banned, $permanent) {
     
     $today = getNow();
     
-    $db->query("INSERT INTO `ban_history` (`user_id`, `moderator`, `date`, `banned`, `permanent`)
+    $db->query("INSERT INTO `ban_history` (`user_id`, `moderator_id`, `date`, `banned`, `permanent`)
             VALUES ('$user_id', '$moderator', '$today', '$banned', '$permanent');");
 }
 
@@ -594,7 +572,6 @@ function updateIncident() {
     $coord_x       = $db->sanitize($_POST['coord_x'], true);
     $coord_y       = $db->sanitize($_POST['coord_y'], true);
     $coord_z       = $db->sanitize($_POST['coord_z'], true);
-    $appeal_response = isset($_POST['appeal_response']) ? $db->sanitize($_POST['appeal_response']) : '';
 
     $query = "UPDATE `incident` SET
         `modified_date` = '$now',
@@ -605,11 +582,10 @@ function updateIncident() {
         `world` = '$world',
         `coord_x` = '$coord_x',
         `coord_y` = '$coord_y',
-        `coord_z` = '$coord_z',
-        `appeal_response` = '$appeal_response'
-        WHERE  `incident`.`id` = $id";
+        `coord_z` = '$coord_z'
+        WHERE  `incident`.`incident_id` = $id";
 
-    $db->query($query);
+    $db->query($query, 'Failed to update incident.');
 
     Output::success();
 }
