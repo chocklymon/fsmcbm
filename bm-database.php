@@ -101,6 +101,24 @@ class Database {
     }
     
     /**
+     * Performs a query against the database and stores all the rows returned
+     * into the output as a subarray of the provided key.
+     * Only use this when JSON output mode is on.
+     * @param string $sql The query string.
+     * @param string $key The array key to use for storing the results.
+     * @param string $error_message An optional error message to output if
+     * the query fails.
+     */
+    public function queryRowsIntoOutput($sql, $key, $error_message = 'Nothing found.') {
+        $result = $this->query($sql, $error_message);
+        
+        while($row = $result->fetch_assoc()){
+            Output::append($row, $key, true);
+        }
+        $result->free();
+    }
+    
+    /**
      * Performs a query against the database and returns the first row returned.
      * @param string $sql The query string.
      * @param string $error_message An optional error message to output if
