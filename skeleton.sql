@@ -1,5 +1,6 @@
--- Database: `fsmcbm`
---
+-- Ban Manager database tables.
+-- v1
+-- Last updated 9/18/2013
 
 -- --------------------------------------------------------
 
