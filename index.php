@@ -1,7 +1,7 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
 <html>
     <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+        <meta charset="UTF-8" />
         <title>Final Score MC Ban Manager</title>
         <link href="css/custom-theme/jquery-ui-1.10.2.custom.min.css" type="text/css" rel="stylesheet" />
         <link href="css/main.min.css" type="text/css" rel="stylesheet" />
