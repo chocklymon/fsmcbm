@@ -37,6 +37,23 @@ class Database {
     }
     
     /**
+     * Indicates if the specified column exits in the table.
+     * @param string $table The table to check.
+     * @param string $column The column to look for.
+     * @return boolean True if the column exists.
+     */
+    public function columnExists($table, $column) {
+        $table = $this->sanitize($table);
+        $column = $this->sanitize($column);
+        $result = $this->query("SHOW COLUMNS FROM `$table` LIKE '$column'");
+        
+        $exists = $result->num_rows != 0;
+        $result->free();
+        
+        return $exists;
+    }
+    
+    /**
      * Performs a query against the database. 
      * @param string $sql The query string.
      * @param string $error_message An optional error message to output if
@@ -60,6 +77,27 @@ class Database {
         }
         
         return $result;
+    }
+    
+    /**
+     * Performs a query against the database and returns all the rows returned
+     * by the query as an array.
+     * @param string $sql The query string.
+     * @param string $error_message An optional error message to output if
+     * the query fails.
+     * @return array An array containing associative arrays of each row.
+     */
+    public function &queryRows($sql, $error_message = 'Nothing found.') {
+        $result = $this->query($sql, $error_message);
+        
+        $rows = array();
+        
+        while($row = $result->fetch_assoc()){
+            $rows[] = $row;
+        }
+        $result->free();
+        
+        return $rows;
     }
     
     /**
@@ -134,4 +172,19 @@ class Database {
        }
     }
     
+    /**
+     * Indicates if the given table exits in the database.
+     * @param string $table The name of the table.
+     * @return boolean True if the table is in the database.
+     */
+    public function tableExits($table) {
+        $table = $this->sanitize($table);
+        $result = $this->query("SHOW TABLES LIKE '$table'");
+        
+        $exists = $result->num_rows != 0;
+        
+        $result->free();
+        
+        return $exists;
+    }
 }
