@@ -91,14 +91,16 @@ class Output {
      * script.
      * @param string $message The error message. If HTML output mode is enabled
      * this message is HTML special chars encoded.
-     * @param array $debug_extra Any extra debugging to include. Only output if
-     * DEBUG_MODE is true and JSON ouput mode is enabled.
+     * @param array $debug_extra Any extra debugging to include.
      * @param boolean $fatal When true the script will exit after outputing the
      * message.
      */
     public static function error($message = 'Unkown error', $debug_extra = array(), $fatal = true) {
         if (self::$outputAsHtml) {
-            self::$html_response .= '<div class="error">' . prepareHTML($message) . "</div>";
+            self::$html_response .= '<div class="error">' . self::prepareHTML($message) . "</div>";
+            if (DEBUG_MODE) {
+                self::$html_response .= "<div style='display:none'><pre>" . print_r($debug_extra, true) . "</pre><pre>" . print_r(debug_backtrace(), true) . "</pre></div>";
+            }
         } else {
             self::$js_response['error'] = $message;
             if (DEBUG_MODE) {
