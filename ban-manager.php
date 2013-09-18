@@ -155,9 +155,8 @@ function addIncident() {
     $incident_id = $db->insert($query);
     
     // Return the id
-    $result = array('incident_id' => $incident_id);
-    
-    echo json_encode($result);
+    Output::append($incident_id, 'incident_id');
+    Output::reply();
 }
 
 
@@ -200,16 +199,15 @@ function addUser() {
         "INSERT INTO `users` (`username`, `modified_date`, `rank`, `relations`, `notes`, `banned`, `permanent`)
         VALUES ('$username', '$today', '$rank', '$relations', '$notes', $banned, $permanent)"
     );
-    
-    // Store the ID
-    $result = array('user_id' => $user_id);
-    
+
     // See if we need to add to the ban history
     if($banned === true) {
         updateBanHistory($user_id, $banned, $permanent);
     }
     
-    echo json_encode($result);
+    // Return the new users ID
+    Output::append($user_id, 'user_id');
+    Output::reply();
 }
 
 
@@ -231,15 +229,15 @@ function autoComplete() {
         'Invalid autocomplete term.'
     );
     
-    $result = array();
-    
     while($row = $res->fetch_assoc()){
-        $result[] = array("label"=>$row['username'], "value"=>$row['id']);
+        Output::append(
+            array('label'=>$row['username'], 'value'=>$row['id'])
+        );
     }
     
     $res->free();
-    
-    echo json_encode($result);
+   
+    Output::reply();
 }
 
 
@@ -251,31 +249,35 @@ function autoComplete() {
 function buildTable($query) {
     global $db;
     
+    Output::setHTMLMode(true);
+    
     $res = $db->query($query);
     
     if($res->num_rows == 0){
         // Nothing found
-        $result = "<div>Nothing Found</div>";
+        Output::append("<div>Nothing Found</div>");
         
     } else {
     
         // Place the results into the table
-        $result = "<table class='list'><thead><tr><th>Name</th><th>Last Incident Date</th><th>Last Incident Type</th><th>Last Action Taken</th></tr></thead><tbody>";
+        Output::append("<table class='list'><thead><tr><th>Name</th><th>Last Incident Date</th><th>Last Incident Type</th><th>Last Action Taken</th></tr></thead><tbody>");
 
         while($row = $res->fetch_assoc()){
-            $result .= "<tr id='id-" . $row['id'] . "'><td>"
-                    . $row['username'] . "</td><td>"
-                    . $row['incident_date'] . "</td><td>"
-                    . truncate($row['incident_type']) . "</td><td>"
-                    . truncate($row['action_taken']) . "</td></tr>";
+            Output::append(
+                "<tr id='id-" . $row['id'] . "'><td>"
+               . Output::prepareHTML($row['username'])            . "</td><td>"
+               . Output::prepareHTML($row['incident_date'])       . "</td><td>"
+               . Output::prepareHTML($row['incident_type'], true) . "</td><td>"
+               . Output::prepareHTML($row['action_taken'], true)  . "</td></tr>"
+            );
         }
         
-        $result .= "</tbody></table>";
+        Output::append("</tbody></table>");
     }
 
     $res->free();
 
-    echo $result;
+    Output::reply();
 }
 
 
@@ -464,6 +466,7 @@ function search() {
     
     if( strlen($_GET['search']) < 2) {
         // Searches must contain at least two characters
+        Output::setHTMLMode(true);
         Output::error("Search string to short.");
     }
     
@@ -489,21 +492,6 @@ function search() {
         GROUP BY r.id";
     
     buildTable($query);
-}
-
-
-/**
- * Takes a string and truncates it, if it is over 120 characters long, replacing
- * the characters over 120 with an ellipsis.
- * @param string $string The string to truncate.
- * @return string The truncated string.
- */
-function truncate($string){
-    if(strlen($string) > 120){
-        return substr($string, 0, 120) . " ...";
-    } else {
-        return $string;
-    }
 }
 
 
@@ -557,7 +545,7 @@ function updateUser() {
 
     $db->query($query);
 
-    echo json_encode( array("success" => true ));
+    Output::success();
 }
 
 
@@ -623,7 +611,7 @@ function updateIncident() {
 
     $db->query($query);
 
-    echo json_encode( array("success" => true ));
+    Output::success();
 }
 
 ?>
