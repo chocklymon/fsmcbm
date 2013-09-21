@@ -24,8 +24,8 @@ var bm = {
         
         // Javascript files needed by the ban manger.
         script = [
-            'jquery-ui-1.10.2.custom.min.js',
-            'ban-manager.js'
+            'js/jquery-ui-1.10.2.custom.min.js',
+            'js/ban-manager.js'
         ];
     
     // Attach the CSS
