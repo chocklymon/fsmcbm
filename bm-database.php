@@ -8,7 +8,7 @@ class Database {
     
     private $conn;
     
-    public function Database() {
+    public function __construct() {
         // Attempt to establish a connection to the database
         $this->conn = mysqli_connect(
             DB_HOST,
@@ -27,6 +27,11 @@ class Database {
         if (!$this->conn->set_charset("utf8")) {
             Output::error("Unable to set utf8 character set.");
         }
+    }
+    
+    public function __destruct() {
+        // Be sure to the close the database connection
+        @$this->close();
     }
     
     /**
