@@ -2,13 +2,10 @@
  * Main JavaScript file.
  */
 
-// TODO make a better way to handle different domains than this
-// Create the bm object if we don't have it.
-if (window.bm == null)
-    bm = {};
-if (bm.url == null)
-    bm.url = '';
-
+// Make sure that there is a bm object
+if (!window.bm) {
+    alert("Ban manager failed to load correctly and will not function correctly.");
+}
 
 // If there is no console, make a fake one
 if (!window.console || !window.console.log) {

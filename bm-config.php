@@ -14,3 +14,11 @@ define("BM_COOKIE", 'fsmcbm');
  * user in as an admin, as well as output additional debugging information.
  */
 define("DEBUG_MODE", true);
+
+/**
+ * This is the base URL for ban manager. This needs to be pointing to the
+ * folder where the ban manager files stored are on the server. It can be an
+ * absolote or relative URL. If relative, it should be relative to the webpage
+ * that is displaying the ban manager, in most cases that will be index.php. 
+ */
+$url = "";

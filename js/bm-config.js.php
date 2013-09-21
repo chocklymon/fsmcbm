@@ -429,7 +429,8 @@ Output::reply();
     if (window.bm == null) {
         window.bm = {};
     }
-    window.bm.user = user;
-    window.bm.incident = incident;
-    window.bm.appeal = appeal;
+    bm.user = user;
+    bm.incident = incident;
+    bm.appeal = appeal;
+    bm.url = <?php echo "'$url'"; ?>;
 })();
