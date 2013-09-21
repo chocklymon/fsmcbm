@@ -242,11 +242,23 @@ function autoComplete() {
  * Performs the provided query and builds a table of users from the results.
  * @param string $query The query to retrieve the data, needs to return the
  * user name, rank, and notes.
+ * @param array $headers The table headers and output IDs.
+ * @param string $id_key The ID key to use for the table rows.
  */
-function buildTable($query) {
+function buildTable($query, $headers = array(), $id_key = 'user_id') {
     global $db;
     
     Output::setHTMLMode(true);
+    
+    if (empty($headers)) {
+        $headers = array(
+            'username' => 'Name',
+            'incident_date' => 'Last Incident Date',
+            'incident_type' => 'Last Incident Type',
+            'action_taken'  => 'Last Action Taken'
+        );
+    }
+    $keys   = array_keys($headers);
     
     $res = $db->query($query);
     
@@ -257,16 +269,18 @@ function buildTable($query) {
     } else {
     
         // Place the results into the table
-        Output::append("<table class='list'><thead><tr><th>Name</th><th>Last Incident Date</th><th>Last Incident Type</th><th>Last Action Taken</th></tr></thead><tbody>");
+        Output::append('<table class="list"><thead><tr>');
+        foreach ($keys as $key) {
+            Output::append('<th>' . Output::prepareHTML($headers[$key]) . '</th>');
+        }
+        Output::append('</tr></thead><tbody>');
 
         while($row = $res->fetch_assoc()){
-            Output::append(
-                "<tr id='id-" . $row['user_id'] . "'><td>"
-               . Output::prepareHTML($row['username'])            . "</td><td>"
-               . Output::prepareHTML($row['incident_date'])       . "</td><td>"
-               . Output::prepareHTML($row['incident_type'], true) . "</td><td>"
-               . Output::prepareHTML($row['action_taken'], true)  . "</td></tr>"
-            );
+            Output::append("<tr id='id-{$row[$id_key]}'>");
+            foreach ($keys as $key) {
+                Output::append('<td>' . Output::prepareHTML($row[$key], true) . '</td>');
+            }
+            Output::append('</tr>');
         }
         
         Output::append("</tbody></table>");
@@ -443,35 +457,63 @@ SQL;
 function search() {
     global $db;
     
+    Output::setHTMLMode(true);
     if( strlen($_GET['search']) < 2) {
         // Searches must contain at least two characters
-        Output::setHTMLMode(true);
         Output::error("Search string to short.");
     }
     
     $search = $db->sanitize($_GET['search']);
     
-    // TODO this query needs to be re-written, probably make it three queries.
-    // and then return three tables. One for users, another for incidents, and finally one for appeals.
-    $query = "SELECT * FROM (
-                SELECT u.user_id, u.username, u.banned, i.incident_date, i.incident_type, i.action_taken
-                FROM users AS u, incident AS i
-                WHERE u.user_id = i.user_id
-                    AND (i.notes LIKE '%$search%'
-                    OR i.incident_type LIKE '%$search%'
-                    OR i.action_taken LIKE '%$search%')
-                UNION
-                SELECT u.user_id, u.username, u.banned, u.modified_date AS incident_date, r.name, u.relations
-                FROM users AS u
-                LEFT JOIN `rank` AS r ON (u.`rank` = r.`rank_id`)
-                WHERE u.username LIKE '%$search%'
-                    OR u.relations LIKE '%$search%'
-                    OR u.notes LIKE '%$search%'
-                ORDER BY incident_date DESC
-                ) AS results
-        GROUP BY results.user_id";
     
-    buildTable($query);
+    // Get users matching the search
+    Output::append('<h4>Players</h4>');
+    
+    $query = <<<SQL
+SELECT u.user_id, u.username, u.banned, r.name AS rank, u.relations, u.notes
+FROM `users` AS u
+LEFT JOIN
+  `rank` AS r ON (u.rank = r.rank_id)
+WHERE
+      u.username LIKE '%$search%'
+   OR u.relations LIKE '%$search%'
+   OR u.notes LIKE '%$search%'
+SQL;
+    
+    $headers = array(
+        'username'  => 'Name',
+        'banned'    => 'Banned',
+        'rank'      => 'Rank',
+        'relations' => 'Relations',
+        'notes'     => 'Notes'
+    );
+    
+    buildTable($query, $headers);
+    
+    
+    // Get incidents matching the search
+    Output::clear();
+    Output::append('<h4>Incidents</h4>');
+    
+    $query = <<<SQL
+SELECT  u.user_id, u.username, i.incident_date, i.incident_type, i.action_taken
+FROM `incident` AS i
+LEFT JOIN
+  `users` AS u ON (i.user_id = u.user_id)
+WHERE
+      i.notes LIKE '%$search%'
+   OR i.incident_type LIKE '%$search%'
+   OR i.action_taken LIKE '%$search%'
+SQL;
+    
+    $headers = array(
+        'username'      => 'Player',
+        'incident_date' => 'Date',
+        'incident_type' => 'Type',
+        'action_taken'  => 'Action Taken'
+    );
+    
+    buildTable($query, $headers);
 }
 
 
