@@ -96,7 +96,7 @@ Manage Users
 }
 
 
-#user-add-permanent-box, #user-info-permanent-box {
+.user-info-permanent-box {
     display: none;
 }
 

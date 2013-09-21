@@ -25,6 +25,7 @@ var bm = {
         // Javascript files needed by the ban manger.
         script = [
             'js/jquery-ui-1.10.2.custom.min.js',
+            'js/bm-config.js.php',
             'js/ban-manager.js'
         ];
     

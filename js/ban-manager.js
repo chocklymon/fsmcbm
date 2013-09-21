@@ -4,22 +4,17 @@
 
 // TODO make a better way to handle different domains than this
 // Create the bm object if we don't have it.
-if (window.bm == null || bm.url == null) {
-    var bm = {
-        url : ''
-    };
-}
+if (window.bm == null)
+    bm = {};
+if (bm.url == null)
+    bm.url = '';
+
 
 // If there is no console, make a fake one
 if (!window.console || !window.console.log) {
-    window.console = {
+    console = {
         log : function(msg) {}
     };
-}
-
-var ajaxCommands = {
-    updateUser     : 'update=user',
-    updateIncident : 'update=incident'
 }
 
 /**
@@ -30,431 +25,16 @@ var ajaxCommands = {
 (function($, empty) {
     
     /* ----------------------------- *
-     *  VARIABLES AND CONFIGURATION  *
+     *          VARIABLES            *
      * ----------------------------- */
-    var 
-        // Data structure, see documentation below
-        info,
-        DataStructure,
-        
-        // Data structure for the user
-        user,
-        
-        // Data structure for incidents
-        incident,
-        
-        // Used internally by add incident functions
-        attachNewUser = false;
+    var
+        // Used by the add incident functions
+        attachNewUser = false,
+        // Used to store the timeout IDs
+        timeouts = [];
 
-        
-    /* ----------------------------- *
-     *   DATA STRUCTURE OBJECT       *
-     * ----------------------------- */
-    
-    /**
-     * Convenience constructor for a DataStructure.
-     * @param {Object} options The options/settings for the DataStructure.
-     * Options:
-     * type {String} Type of the DataStructure valid type strings: text, date, textarea, select, int, checkbox. Default is text.
-     * disabled {boolean} Whether this field should be disabled. Default is false.
-     * name {String} The name of the Data Stucture. Used when ouptuing it's form label.
-     * after {Mixed} The element to insert after the DataStructure when it is generated. Default is "<br/>"
-     * options {Array} An array of Strings or objects to use as the options when the type is select. Objects need label and value properties.
-     * showEmpty {Mixed} Indicates if this DataStructure should be generated when it has no value. Accepts boolean or a function that returns true. The function is passed the id number of the html field.
-     * special {Function} This function is called immediatly after the HTML is generated and is passed the jQuery object that contains the HTML for the datastructure. Used to attach special handlers to the field or provided additional features to the html structure. The returned value is used for insertion into the DOM. Default is null.
-     * serialize {Function} This function is called when the field is serialized. It is passed in the jQuery object containing the datastructure's node in the DOM, it should return the data/object to be serialized or false if the field shouldn't be serialized. When null the field will use the default serialization method. Default is null.
-     */
-    info = function(options) {
-        return new DataStructure(options);
-    };
-    
-    /**
-     * DataStructure Constructor.
-     * See the info documentation for information about datastructures.
-     */
-    DataStructure = function(options) {
-        var datum, i;
-        
-        datum = $.extend(
-            {
-                // Default Options
-                type      : "text",
-                disabled  : false,
-                name      : null,
-                after     : "<br/>",
-                options   : [],
-                showEmpty : true,
-                special   : null,
-                serialize : null
-            },
-            options
-        );
-        
-        // Attach each option to the data structure
-        for ( i in datum ) {
-            this[i] = datum[i];
-        }
-        
-        return this;
-    };
-    
-    // Define the data structure API
-    info.fn = DataStructure.prototype = {
-        
-        // Data Structure Functions
 
-        /**
-         * Takes a data structre and turns into into a set of HTML tags.
-         * @parm {String} value The value of the data structure.
-         * @parm {String} name The name of the data structure.
-         * @parm {int} idNum An ID number to attach to the html tags.
-         * @return A jQuery object containing the HTML nodes for the data structure.
-         */
-        toHTML : function(value, name, idNum) {
-            /* Types:
-             * - text
-             * - date
-             * - textarea
-             * - select
-             * - int
-             * - checkbox
-             */
-            var showEmpty,
-                label,
-                field,
-                id = name + "_" + idNum;
-            
-            // See if this field should be shown when empty
-            if (typeof this.showEmpty == 'function') {
-                showEmpty = this.showEmpty(idNum);
-            } else {
-                showEmpty = this.showEmpty;
-            }
-            
-            if (!showEmpty && (value == null || value == '')) {
-                // Don't show empty fields
-                return '';
-            }
-            
-            value = this.formatValue(value);
-            
-            label = $("<label>").text(this.name + ":").attr("for", id);
-            
-            if(this.type == 'textarea') {
-                // Text area
-                field = $("<textarea>").text(value);
-                
-            } else if(this.type == 'select') {
-                // Drop Down
-                field = $("<select>")
-                
-                // Attach each of the options
-                var i;
-                for(i in this.options) {
-                    i = this.options[i];
-                    if(i.label == null) {
-                        field.append($("<option>").text(i));
-                    } else {
-                        field.append($("<option>").attr("value", i.value).text(i.label));
-                    }
-                }
-                
-                field.val(value);
-                
-            } else if(this.type == "text" || this.type == "int" || this.type == "date") {
-                // Text, date, and int types
-                field = $("<input>").attr('type', 'text').val(value);
-                
-                if(this.type == "int") {
-                    label.addClass("int");
-                    field.addClass("int");
-                }
-                
-            } else if(this.type == "checkbox") {
-                // Checkbox
-                field = $("<input>").attr({
-                    'type' : 'checkbox'
-                });
-                
-                if(value == 1) {
-                    // Check the checkbox
-                    field.prop("checked", true);
-                }
-                
-            } else {
-                // Unknown
-                console.log("Unkown Type: " + this.type);
-                return '';
-            }
-            
-            // Add common attributes to the field
-            field.attr({
-                'name' : name,
-                'id'   : id
-            });
-            
-            // Attach the date picker to dates
-            if( this.disabled ) {
-                // Disabled field
-                field.prop('readonly', true);
-                
-                // Date check part of this if else so that disabled fields don't have the datpicker attached.
-            } else if(this.type == "date") {
-                field.datepicker({
-                   showOn: "both",
-                   buttonImage: bm.url + "calendar-month.png",// TODO get the button image to actually work
-                   buttonImageOnly : true,
-                   dateFormat : "yy-mm-dd",
-                   maxDate : 0
-                });
-            }
-            
-            field = label.add(field).add(this.after);
-            
-            if (typeof this.special == 'function') {
-                field = this.special(field);
-            }
-            
-            return field;
-        },
-        
-        formatValue : function(value) {
-            // Null should be empty strings
-            if(value == null)
-                return '';
-            
-            if(this.type == "date") {
-                // Do date formating (change from yy-mm-dd hh:mm:ss to yy-mm-dd)
-                var index = value.indexOf(" ");
-                if(index > 0) {
-                    value = value.substring(0, index);
-                }
-                return value;
-            }
-            
-            // No formating needed, return the value
-            return value;
-        }
-    };
-    
-    
-    
-    /* ----------------------------- *
-     *      DATA STRUCTURES          *
-     * ----------------------------- */
-    
-    
-    /**
-     * Contains the data structures for a user.
-     */
-    user = {
-        username : info({
-            name : "Username",
-            disabled : true,
-            after : "",
-            special : function(field) {
-                
-                // When the user name field is double clicked make it editable
-                $(field[1]).dblclick(function(){
-                    $(this).prop('readonly', false);
-                })
-                // Store the orginal username
-                .data("orginal", $(field[1]).val());
-                
-                return field;
-            },
-            serialize : function(field) {
-                // TODO
-                if (!field.prop("readonly")) {
-                    var original = field.data("orginal");
-                    if (original != field.val() && confirm("Are you sure that you wish to change the username?\nPress OK to have the username changed.")) {
-                        return field.val();
-                    } else {
-                        field.val(original);
-                    }
-                }
-                return false;
-            }
-        }),
-        modified_date : info({
-            name : "Modified Date",
-            disabled : true,
-            type : "date"
-        }),
-        banned : info({
-            name : "Banned",
-            type : "checkbox",
-            after : ""
-        }),
-        permanent : info({
-            name : "Permanent",
-            type : "checkbox",
-            after: "",
-            special : function(field) {
-                return field.wrapAll("<span id='user-info-permanent-box' />").parent().add("<br/>");
-            }
-        }),
-        rank : info({
-            name : "Rank",
-            type : "select",
-            options : [{
-                        value:1,
-                        label:"Everyone"
-                    },{
-                        value:2,
-                        label:"Regular"
-                    },{
-                        value:3,
-                        label:"Donor"
-                    },{
-                        value:4,
-                        label:"Builder"
-                    },{
-                        value:5,
-                        label:"Engineer"
-                    },{
-                        value:6,
-                        label:"Moderator"
-                    },{
-                        value:7,
-                        label:"Admin"
-                    },{
-                        value:8,
-                        label:"Default"
-                    }]
-        }),
-        relations : info({
-            name : "Relations",
-            type : "textarea"
-        }),
-        notes : info({
-            name : "Notes",
-            type : "textarea"
-        })
-    };
-    
-    /**
-     * Contains the Data Structures for incidents.
-     */
-    incident = {
-        moderator : info({
-            name:"Moderator",
-            disabled: true
-        }),
-        created_date : info({
-            type:"date",
-            disabled: true,
-            name:"Created Date",
-            after:""
-        }),
-        modified_date : info({
-           type:"date",
-           disabled: true,
-           name: "Last Modified"
-        }),
-        incident_type : info({
-            name: "Incident Type",
-            after: ""
-        }),
-        incident_date : info({
-            type:"date",
-            name:"Incident Date"
-        }),
-        notes : info({
-            name: "Notes",
-            type: "textarea"
-        }),
-        action_taken : info({
-            type:"textarea",
-            name:"Action Taken",
-            after:"<br/>Key Location<br/>"
-        }),
-        world : info({
-            name: "World",
-            type: "select",
-            options:[{
-                        value:"",
-                        label:""
-                    },
-                    {
-                        value:"world",
-                        label:"Alpha"
-                    },
-                    {
-                        value:"world3",
-                        label:"Delta"
-                    },
-                    {
-                        value:"world4",
-                        label:"Gamma"
-                    },
-                    {
-                        value:"world_nether",
-                        label:"Alpha Nether"
-                    },
-                    {
-                        value:"world3_nether",
-                        label:"Delta Nether"
-                    },
-                    {
-                        value:"world4_nether",
-                        label:"Gamma Nether"
-                    },
-                    {
-                        value:"world_the_end",
-                        label:"The End"
-                    },
-                    {
-                        value:"custom",
-                        label:"Custom"
-                    },
-                    {
-                        value:"dev",
-                        label:"Dev"
-                    },
-                    {
-                        value:"outworld",
-                        label:"Outworld"
-                    }],
-            after: ""
-        }),
-        coord_x : info({
-            type: "int",
-            name: "X",
-            after:""
-        }),
-        coord_y : info({
-            type: "int",
-            name: "Y",
-            after:""
-        }),
-        coord_z : info({
-            type: "int",
-            name: "Z"
-        }),
-        appeal_date : info({
-            type    : "date",
-            disabled: true,
-            name:  "Appeal Date",
-            showEmpty:false
-        }),
-        appeal : info({
-            name: "Appeal",
-            type: "textarea",
-            disabled: true,
-            showEmpty:false
-        }),
-        appeal_response : info({
-            type: "textarea",
-            name: "Appeal Response",
-            showEmpty: function(idNum) {
-                return $("#appeal_" + idNum).length > 0;
-            }
-        })
-    };
-    
-    
-    
+
     /* ----------------------------- *
      *          FUNCTIONS            *
      * ----------------------------- */
@@ -480,7 +60,7 @@ var ajaxCommands = {
         $("#highlight").slideDown();
         
         // Display for four seconds
-        setTimeout(
+        timeouts['messages'] = setTimeout(
             function() {
                 $("#highlight").slideUp();// TODO have a way to hide the message earlier.
             },
@@ -513,14 +93,13 @@ var ajaxCommands = {
                 // Fill in the fields //
 
                 // Attach the user data
-                $.each(user, function(index, value) {
-                    el = value.toHTML(data.user[index], index, "info");
+                $.each(bm.user, function(dsName, ds) {
+                    el = ds.toHTML(data.user[dsName], dsName, "info");
                     userInfo.append( el );
                 });
 
                 // Update the permanent banned state
-                $("#banned_info").change({id:"#user-info-permanent-box"}, togglePermanentBox);
-                $("#banned_info").change();
+                $("#banned_info").change(togglePermanentBox).change();
 
                 // Attach the save button
                 userInfo.append($("<button>").text("Save").click(function() {
@@ -528,13 +107,13 @@ var ajaxCommands = {
 
                     // Verify that there is a user
                     var user_id = $("#lookup-user_id").val();
-                    if(user_id == null || user_id == "") {
+                    if (user_id == '') {
                         displayMessage("Please select a user.");
                         return;
                     }
 
                     // Serialize the user information
-                    var datum = serialize(user, "info");
+                    var datum = serialize(bm.user, "info");
 
                     datum.id = user_id;
 
@@ -558,8 +137,8 @@ var ajaxCommands = {
                         el = $("<div>").addClass("form").attr("id", "i-" + datum.incident_id);
                         el.appendTo(incidents);
 
-                        $.each(incident, function(index, value) {
-                            el.append(value.toHTML(datum[index], index, datum.incident_id));
+                        $.each(bm.incident, function(dsName, ds) {
+                            el.append(ds.toHTML(datum[dsName], dsName, datum.incident_id));
                         });
 
                         // Add the save button
@@ -569,7 +148,7 @@ var ajaxCommands = {
                             var id = $(this).addClass("disabled").prop("disabled", true).attr('id').substring(4);
 
                             // Serialize the incident fields
-                            var datum = serialize(incident, id);
+                            var datum = serialize(bm.incident, id);
 
                             datum.id = id;
 
@@ -578,10 +157,12 @@ var ajaxCommands = {
                                 datum,
                                 '?update=incident',
                                 function(data) {
-                                    // Re-enable the button
-                                    $("#i-s-" + id).removeClass("disabled").prop("disabled", false); // TODO alway re-enable the button, not just on success
                                     // Success
                                     displayMessage("Incident updated.");
+                                },
+                                function() {
+                                    // Re-enable the save button when the AJAX completes
+                                    $("#i-s-" + id).removeClass("disabled").prop("disabled", false);
                                 }
                             );
                         }));
@@ -627,7 +208,12 @@ var ajaxCommands = {
         $("#error").slideDown();
         
         // Display for six seconds
-        setTimeout(function() {$("#error").slideUp();}, 6000);
+        timeouts['errors'] = setTimeout(
+            function() {
+                $("#error").slideUp();
+            },
+            6000
+        );
     }
     
     
@@ -645,11 +231,13 @@ var ajaxCommands = {
      */
     function lookup(input, value, callback, emptyLabel, emptyCallback) {
         $(input).autocomplete({
-            source : function (request, response) {
+            source : function (payload, response) {
+                // Request the autocomplete matching terms
                 request(
-                    {term: request.term},
+                    {term: payload.term},
                     function (data) {
                         if (data.length === 0) {
+                            // Nothing returned, create the custom empty option
                             data.push({
                                 'value': 0,
                                 'label': emptyLabel
@@ -662,14 +250,16 @@ var ajaxCommands = {
             minLength : 2,
             select : function( event, ui  ) {
                 if(ui.item.value == 0) {
-                    if(emptyCallback != null) {
+                    // Empty option selected
+                    if(typeof emptyCallback == 'function') {
                         emptyCallback();
                     }
                 } else {
+                    // Option selected
                     $(this).val(ui.item.label);
                     $(value).val(ui.item.value);
 
-                    if(callback != null) {
+                    if(typeof callback == 'function') {
                         callback();
                     }
                 }
@@ -687,18 +277,22 @@ var ajaxCommands = {
     }
     
     
-    function request(payload, callback, type, urlExtra) {
-        if (type === empty) {
-            type = 'get';
+    function request(payload, callback, completed, urlExtra, method, dataType) {
+        if (method === empty) {
+            method = 'get';
         }
         if (urlExtra === empty) {
             urlExtra = '';
         }
+        if (dataType === empty) {
+            dataType = 'json';
+        }
         $.ajax({
             url      : bm.url + "ban-manager.php" + urlExtra,
             data     : payload,
-            dataType : 'json',
-            type     : type,
+            dataType : dataType,
+            type     : method,
+            complete : completed,
             error    : function(jqXHR, textStatus, errorThrown) {
                 console.log(jqXHR);
                 console.log(textStatus);
@@ -707,54 +301,42 @@ var ajaxCommands = {
                 handleError("Problem with request to server.");
             },
             success  : function(data) {
-                if (data.error === empty) {
-                    // Success, call the calback function
-                    if (typeof callback == 'function') {
-                        callback(data);
-                    }
-                } else {
+                if (dataType == 'json' && data.error !== empty) {
                     // An error has occured
                     handleError(data.error);
+                } else if (typeof callback == 'function') {
+                    // Success, call the calback function
+                    callback(data);
                 }
             }
         });
     }
     
-    function send(payload, command, callback) {
+    function send(payload, command, callback, completed) {
         if (command.charAt(0) != '?')
             command = '?' + command + '=true';
-        request(payload, callback, 'post', command);
+        request(payload, callback, completed, command, 'post');
     }
     
     /**
      * Performs a lookup on a user based on which table row was clicked.
      */
     function rowLookup() {
+        console.log(this);
         $("#lookup-user_id").val($(this).attr("id").substring(3));
         getInformation();
     }
     
     
     function search() {
-        if( $("#search").val().length < 2) {
+        if ($("#search").val().length < 2) {
 
             displayMessage("Search must be two or more characters long.");
 
         } else {
-            // TODO find a way to replace this with request()
-            $.get(bm.url + "ban-manager.php",
-                { search : $("#search").val() },
+            request(
+                {search : $("#search").val()},
                 function(data) {
-                    // Check for error with the search
-                    try {
-                        $.parseJSON(data);
-                        if(data.error != null) {
-                            handleError(data.error);
-                            return;
-                        }
-                    // Catch and ignore any errors thrown by parseJSON (since HTML is returned it will error out).
-                    } catch(ignore) { }
-
                     // Set the tab contents
                     $("#search-tab").html(data);
 
@@ -764,7 +346,11 @@ var ajaxCommands = {
                     // Re-enable the search tab, and switch to it.
                     $("#tabs").tabs("enable", 3).tabs("option", "active", 3);
                 },
-                'html' );
+                empty,
+                empty,
+                empty,
+                'html'
+            );
         }
     }
     
@@ -791,7 +377,7 @@ var ajaxCommands = {
                 // Handle checkboxes
                datum[index] = field.is(":checked") ? "true" : "false";
             } else {
-                // Generic type, get it's value
+                // Generic type, get its value
                 datum[index] = field.val();
             }
         });
@@ -800,8 +386,12 @@ var ajaxCommands = {
     }
     
     
-    function togglePermanentBox(event) {
-        $(event.data.id).css("display", $(this).prop("checked") ? "inline" : "none");
+    function togglePermanentBox() {
+        var cb = $(this);
+        cb.next('.user-info-permanent-box').css(
+            'display',
+            cb.prop('checked') ? 'inline' : 'none'
+        );
     }
     
     
@@ -815,56 +405,48 @@ var ajaxCommands = {
         
         // Save variables
         var incidentForm = $("#add-incident-form"),
-            addUserForm = $("#add-user-form"),
-            temp;
+            addUserForm = $("#add-user-form");
             
         // Build the add incident dialog form
-        $.each(incident, function(index, value) {
+        $.each(bm.incident, function(index, value) {
             // Don't attach read only fields
-            if( ! value.disabled ) {
+            if (!value.disabled) {
                 incidentForm.append(value.toHTML("", index, "add"));
             }
         });
         
         // Build the add user dialog form
-        $.each(user, function(index, value) {
+        $.each(bm.user, function(index, value) {
             // Don't attach read only fields
-            if( ! value.disabled ) {
-                temp = value.toHTML("", index, "add_u");
-                
-                // Handle the special case for the permanent checkbox
-                if(index === "permanent") {
-                    temp = $("<span id='user-add-permanent-box' />").append(temp).after("<br>");
-                }
-                
-                addUserForm.append(temp);
+            if (!value.disabled) {
+                addUserForm.append(value.toHTML("", index, "add_u"));
             }
         });
         
         // Set up the tabs
         $("#tabs").tabs({
-            beforeLoad: function(event, ui) {
+            beforeLoad : function(event, ui) {
                 // Set up error handling
                 ui.jqXHR.error(function() {
                    ui.panel.html("Couldn't load this tab."); 
                 });
             },
-            load: function(event, ui) {
+            load       : function(event, ui) {
                 $(ui.panel).find("tr").click(rowLookup);
             },
-            disabled: [3]// Search tab is disabled by default
+            disabled   : [3]// Search tab is disabled by default
         });
 
         // Set up the dialogs
         $("#dialog-add-user").dialog({
-            autoOpen: false,
-            modal: true,
-            height: 450,
-            width: 540,
-            buttons: {
-                Save : function() {
+            autoOpen : false,
+            modal    : true,
+            height   : 450,
+            width    : 540,
+            buttons  : {
+                Save   : function() {
                     // Verify that we have a username
-                    if( $("#user_add_username").val() == "" ) {
+                    if ($("#user_add_username").val() == '') {
                         displayMessage("Please provide a username.");
                         return;
                     }
@@ -891,25 +473,24 @@ var ajaxCommands = {
 
                     $(this).dialog("close");
                 },
-
                 Cancel : function() {
                     $(this).dialog("close");
                 }
             }
         });
         $("#dialog-add-incident").dialog({
-            autoOpen: false,
-            modal: true,
-            height: 480,
-            width: 645,
-            buttons: {
-                Save : function() {
+            autoOpen : false,
+            modal    : true,
+            height   : 480,
+            width    : 645,
+            buttons  : {
+                Save   : function() {
                     // Verify that we have data
-                    if( $("#user_id").val() == "" ) {
+                    if ($("#user_id").val() == '') {
                         displayMessage("Please enter a user.");
                         return;
-                    } else if( $("#notes_add").val() == "" ) {
-                        if( ! confirm("You didn't enter any notes!\n\nPress OK to save this incident anyways.") ) {
+                    } else if ($("#notes_add").val() == '') {
+                        if (!confirm("You didn't enter any notes!\n\nPress OK to save this incident anyways.")) {
                             return;
                         }
                     }
@@ -950,7 +531,7 @@ var ajaxCommands = {
         });
         
         // Permanent banned checkbox display
-        $("#banned_add").change({id:"#user-add-permanent-box"}, togglePermanentBox);
+        $("#banned_add_u").change(togglePermanentBox);
         
         // Search box
         $("#search-button").click(search);
@@ -961,6 +542,15 @@ var ajaxCommands = {
             }
         });
         
+        // Message boxes
+        $("#highlight").click(function(){
+            clearTimeout(timeouts['messages']);
+            $(this).slideUp(200);
+        });
+        $("#error").click(function(){
+            clearTimeout(timeouts['errors']);
+            $(this).slideUp(200);
+        });
     });
 
 })(jQuery);
