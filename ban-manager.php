@@ -101,7 +101,7 @@ if(isset($_GET['term'])){
     
     updateUser();
     
-} else if(isset($_GET['update_incident']))
+} else if(isset($_GET['update_incident'])) {
     
     updateIncident();
 
@@ -495,6 +495,11 @@ function updateUser() {
     $relations = $db->sanitize($_POST['relations']);
     $notes = $db->sanitize($_POST['notes']);
     $today = getNow();
+    
+    // If the user is no longer banned, make sure the permanent flag is unchecked
+    if (!$banned && $permanent) {
+        $permanent = false;
+    }
     
     // See if we need to update the ban history
     $query = "SELECT * FROM `users` WHERE `users`.`user_id` = $id";
