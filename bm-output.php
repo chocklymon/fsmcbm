@@ -13,6 +13,11 @@ class Output {
      * Send the output message to the browser.
      */
     public static function reply() {
+        if (!headers_sent()) {
+            // Set the correct content-type header now
+            header('Content-Type:' . (self::$outputAsHtml ? 'text/html' : 'application/json'));
+        }
+        
         if (self::$outputAsHtml) {
             echo self::$html_response;
         } else {

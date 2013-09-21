@@ -5,7 +5,10 @@ require_once '../bm-database.php';
 
 $db = new Database();
 
-header('Content-Type:text/javascript');
+header('Content-Type: text/javascript');
+// Since this won't change very often, set the cache to store this for two days
+header('Cache-Control: public, max-age=172800');
+flush();
 ?>
 (function() {
     /* ----------------------------- *
