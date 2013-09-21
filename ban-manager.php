@@ -97,17 +97,14 @@ if(isset($_GET['term'])){
     
     search();
     
-} else if(isset($_GET['update'])) {
-    // Update requested
+} else if(isset($_GET['update_user'])) {
     
-    if($_GET['update'] == "user") {
-        
-        updateUser();
-        
-    } else if($_GET['update'] == "incident") {
-        
-        updateIncident();
-    }
+    updateUser();
+    
+} else if(isset($_GET['update_incident']))
+    
+    updateIncident();
+
 }
 
 $db->close();

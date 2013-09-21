@@ -117,7 +117,7 @@ if (!window.console || !window.console.log) {
                     // Send in the changes
                     send(
                         datum,
-                        '?update=user',
+                        'update_user',
                         function(data) {
                             displayMessage("User updated.");
                         }
@@ -152,7 +152,7 @@ if (!window.console || !window.console.log) {
                             // Post in the updated incident
                             send(
                                 datum,
-                                '?update=incident',
+                                'update_incident',
                                 function(data) {
                                     // Success
                                     displayMessage("Incident updated.");
@@ -310,8 +310,7 @@ if (!window.console || !window.console.log) {
     }
     
     function send(payload, command, callback, completed) {
-        if (command.charAt(0) != '?')
-            command = '?' + command + '=true';
+        command = '?' + command + '=true';
         request(payload, callback, completed, command, 'post');
     }
     
