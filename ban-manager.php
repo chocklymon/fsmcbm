@@ -370,12 +370,17 @@ function getModeratorInfo() {
  * attached to them.
  */
 function getWatchlist() {
-    $query = "SELECT u.user_id, u.username, i.incident_date, i.incident_type, i.action_taken
-            FROM users AS u, incident AS i
-            WHERE u.banned = FALSE
-            AND u.user_id = i.user_id
-            GROUP BY u.user_id
-            ORDER BY i.incident_date DESC ";
+    $query = <<<SQL
+SELECT u.user_id, u.username, i.incident_date, i.incident_type, i.action_taken
+FROM incident AS i
+LEFT OUTER JOIN
+ incident AS i2 ON (i2.user_id = i.user_id AND i.incident_date < i2.incident_date)
+LEFT JOIN
+ users AS u ON (i.user_id = u.user_id)
+WHERE i2.user_id IS NULL
+  AND u.banned = FALSE
+ORDER BY i.incident_date DESC
+SQL;
     
     buildTable($query);
 }
