@@ -1,5 +1,5 @@
-/* Final Score MC Ban Manager
- * 
+/* Ban Manager
+ * Main JavaScript file.
  */
 
 // TODO make a better way to handle different domains than this
@@ -10,7 +10,24 @@ if (window.bm == null || bm.url == null) {
     };
 }
 
-(function($) {
+// If there is no console, make a fake one
+if (!window.console || !window.console.log) {
+    window.console = {
+        log : function(msg) {}
+    };
+}
+
+var ajaxCommands = {
+    updateUser     : 'update=user',
+    updateIncident : 'update=incident'
+}
+
+/**
+ * Anonymous wrapper for the code.
+ * @param {jQuery} $ The jQuery instance.
+ * @param {undefined} empty Not set so we can compare for undefined.
+ */
+(function($, empty) {
     
     /* ----------------------------- *
      *  VARIABLES AND CONFIGURATION  *
@@ -58,17 +75,20 @@ if (window.bm == null || bm.url == null) {
     DataStructure = function(options) {
         var datum, i;
         
-        datum = $.extend({
-            // Default Options
-            type:"text",
-            disabled: false,
-            name:null,
-            after:"<br/>",
-            options:[],
-            showEmpty:true,
-            special:null,
-            serialize:null
-        }, options);
+        datum = $.extend(
+            {
+                // Default Options
+                type      : "text",
+                disabled  : false,
+                name      : null,
+                after     : "<br/>",
+                options   : [],
+                showEmpty : true,
+                special   : null,
+                serialize : null
+            },
+            options
+        );
         
         // Attach each option to the data structure
         for ( i in datum ) {
@@ -105,28 +125,26 @@ if (window.bm == null || bm.url == null) {
                 id = name + "_" + idNum;
             
             // See if this field should be shown when empty
-            if( typeof(this.showEmpty) == 'function' ) {
+            if (typeof this.showEmpty == 'function') {
                 showEmpty = this.showEmpty(idNum);
             } else {
                 showEmpty = this.showEmpty;
             }
             
-            if( ! showEmpty ) {
-                if(value == null || value == "") {
-                    // Don't show empty fields
-                    return "";
-                }
+            if (!showEmpty && (value == null || value == '')) {
+                // Don't show empty fields
+                return '';
             }
             
             value = this.formatValue(value);
             
             label = $("<label>").text(this.name + ":").attr("for", id);
             
-            if(this.type == "textarea") {
+            if(this.type == 'textarea') {
                 // Text area
                 field = $("<textarea>").text(value);
                 
-            } else if(this.type == "select") {
+            } else if(this.type == 'select') {
                 // Drop Down
                 field = $("<select>")
                 
@@ -166,13 +184,13 @@ if (window.bm == null || bm.url == null) {
             } else {
                 // Unknown
                 console.log("Unkown Type: " + this.type);
-                return "";
+                return '';
             }
             
             // Add common attributes to the field
             field.attr({
-                "name": name,
-                "id"  : id
+                'name' : name,
+                'id'   : id
             });
             
             // Attach the date picker to dates
@@ -184,7 +202,7 @@ if (window.bm == null || bm.url == null) {
             } else if(this.type == "date") {
                 field.datepicker({
                    showOn: "both",
-                   buttonImage: bm.url + "calendar-month.png",
+                   buttonImage: bm.url + "calendar-month.png",// TODO get the button image to actually work
                    buttonImageOnly : true,
                    dateFormat : "yy-mm-dd",
                    maxDate : 0
@@ -193,7 +211,7 @@ if (window.bm == null || bm.url == null) {
             
             field = label.add(field).add(this.after);
             
-            if (this.special != null && typeof(this.special) == 'function') {
+            if (typeof this.special == 'function') {
                 field = this.special(field);
             }
             
@@ -203,7 +221,7 @@ if (window.bm == null || bm.url == null) {
         formatValue : function(value) {
             // Null should be empty strings
             if(value == null)
-                return "";
+                return '';
             
             if(this.type == "date") {
                 // Do date formating (change from yy-mm-dd hh:mm:ss to yy-mm-dd)
@@ -462,7 +480,12 @@ if (window.bm == null || bm.url == null) {
         $("#highlight").slideDown();
         
         // Display for four seconds
-        setTimeout(function() {$("#highlight").slideUp();}, 4000);
+        setTimeout(
+            function() {
+                $("#highlight").slideUp();// TODO have a way to hide the message earlier.
+            },
+            4000
+        );
     }
     
     
@@ -471,137 +494,122 @@ if (window.bm == null || bm.url == null) {
      *  users tab.
      */
     function getInformation() {
-        $.get(
-            bm.url + "ban-manager.php",
-            { 'lookup': $("#lookup-user_id").val() },
+        request(
+            {'lookup' : $("#lookup-user_id").val()},
             function(data) {
-                if(data.error == null) {
-                    
-                    // Empty out any previous incidents and save the incidents div
-                    var incidents = $("#incident-info").empty(),
-                    
-                        // Empty out an previous ban history and save the element
-                        history = $("#ban-history").empty(),
-                        
-                        // Emtpy out the previous user field and save the element
-                        userInfo = $("#user-info").empty(),
-                        
-                        // Misc Variables
-                        datum, el, i;
-                    
-                    
-                    // Fill in the fields //
-                    
-                    // Attach the user data
-                    $.each(user, function(index, value) {
-                        el = value.toHTML(data.user[index], index, "info");
-                        userInfo.append( el );
-                    });
-                    
-                    // Update the permanent banned state
-                    $("#banned_info").change({id:"#user-info-permanent-box"}, togglePermanentBox);
-                    $("#banned_info").change();
-                    
-                    // Attach the save button
-                    userInfo.append($("<button>").text("Save").click(function() {
-                        // Save the user information //
-                        
-                        // Verify that there is a user
-                        var user_id = $("#lookup-user_id").val();
-                        if(user_id == null || user_id == "") {
-                            displayMessage("Please select a user.");
-                            return;
+                // Empty out any previous incidents and save the incidents div
+                var incidents = $("#incident-info").empty(),
+
+                    // Empty out an previous ban history and save the element
+                    history = $("#ban-history").empty(),
+
+                    // Emtpy out the previous user field and save the element
+                    userInfo = $("#user-info").empty(),
+
+                    // Misc Variables
+                    datum, el, i;
+
+
+                // Fill in the fields //
+
+                // Attach the user data
+                $.each(user, function(index, value) {
+                    el = value.toHTML(data.user[index], index, "info");
+                    userInfo.append( el );
+                });
+
+                // Update the permanent banned state
+                $("#banned_info").change({id:"#user-info-permanent-box"}, togglePermanentBox);
+                $("#banned_info").change();
+
+                // Attach the save button
+                userInfo.append($("<button>").text("Save").click(function() {
+                    // Save the user information //
+
+                    // Verify that there is a user
+                    var user_id = $("#lookup-user_id").val();
+                    if(user_id == null || user_id == "") {
+                        displayMessage("Please select a user.");
+                        return;
+                    }
+
+                    // Serialize the user information
+                    var datum = serialize(user, "info");
+
+                    datum.id = user_id;
+
+                    // Send in the changes
+                    send(
+                        datum,
+                        '?update=user',
+                        function(data) {
+                            displayMessage("User updated.");
                         }
+                    );
+                }));
 
-                        // Serialize the user information
-                        var datum = serialize(user, "info");
 
-                        datum.id = user_id;
+                if(data.incident != null) {
 
-                        // Send in the changes
-                        $.post( bm.url + "ban-manager.php?update=user",
-                            datum,
-                            function(data) {
-                                if(data.error == null) {
-                                    displayMessage("User updated.");
-                                } else {
-                                    handleError(data.error);
+                    // Attach all the incidents
+                    for(i=0; i<data.incident.length; i++) {
+                        datum = data.incident[i];
+
+                        el = $("<div>").addClass("form").attr("id", "i-" + datum.incident_id);
+                        el.appendTo(incidents);
+
+                        $.each(incident, function(index, value) {
+                            el.append(value.toHTML(datum[index], index, datum.incident_id));
+                        });
+
+                        // Add the save button
+                        el.append($("<button>").text("Save").attr("id","i-s-" + datum.incident_id).click(function() {
+
+                            // Get the ID and disable the button (to prevent repeatedly clicking the button)
+                            var id = $(this).addClass("disabled").prop("disabled", true).attr('id').substring(4);
+
+                            // Serialize the incident fields
+                            var datum = serialize(incident, id);
+
+                            datum.id = id;
+
+                            // Post in the updated incident
+                            send(
+                                datum,
+                                '?update=incident',
+                                function(data) {
+                                    // Re-enable the button
+                                    $("#i-s-" + id).removeClass("disabled").prop("disabled", false); // TODO alway re-enable the button, not just on success
+                                    // Success
+                                    displayMessage("Incident updated.");
                                 }
-                            },
-                            'json' );
-                    }));
-                    
-                    
-                    if(data.incident != null) {
-                        
-                        // Attach all the incidents
-                        for(i=0; i<data.incident.length; i++) {
-                            datum = data.incident[i];
-
-                            el = $("<div>").addClass("form").attr("id", "i-" + datum.incident_id);
-                            el.appendTo(incidents);
-
-                            $.each(incident, function(index, value) {
-                                el.append(value.toHTML(datum[index], index, datum.incident_id));
-                            });
-
-                            // Add the save button
-                            el.append($("<button>").text("Save").attr("id","i-s-" + datum.incident_id).click(function() {
-
-                                // Get the ID and disable the button (to prevent repeatedly clicking the button)
-                                var id = $(this).addClass("disabled").prop("disabled", true).attr('id').substring(4);
-                                
-                                // Serialize the incident fields
-                                var datum = serialize(incident, id);
-
-                                datum.id = id;
-                                
-                                // Post in the updated incident
-                                $.post(bm.url + "ban-manager.php?update=incident",
-                                    datum,
-                                    function(data) {
-                                        // Re-enable the button
-                                        $("#i-s-" + id).removeClass("disabled").prop("disabled", false);
-                                        if(data.error == null) {
-                                            // Success
-                                            displayMessage("Incident updated.");
-                                        } else {
-                                            // Error occured
-                                            handleError(data.error);
-                                        }
-                                    },
-                                    'json');
-                            }));
-                        }
+                            );
+                        }));
                     }
-                    
-                    // Attach the ban history
-                    if(data.history != null) {
-                        el = $("<table>");
-                        el.append("<tr><th>Moderator</th><th>Date</th><th>Banned</th><th>Permanent</th></tr>");
-                        
-                        for(i=0; i < data.history.length; i++) {
-                            datum = data.history[i];
-                            el.append("<tr><td>" + datum.moderator + "</td><td>" + datum.date + "</td><td>" + (datum.banned == 1 ? "Yes" : "") + "</td><td>" + (datum.permanent == 1 ? "Yes" : "") + "</td></tr>");
-                        }
-                        
-                        history.append( $("<h3>").text("Ban History") ).append(el);
-                    }
-                    
-                    // Attach the cancel button, if needed
-                    if($("#cancel").length === 0) {
-                        $("<button>").attr('id','cancel').text("Cancel").click(getInformation).appendTo("#manage");
-                    }
-                    
-                    // Switch to the manage tab
-                    $("#tabs").tabs("option", "active", 0);
-                    
-                } else {
-                    // Error
-                    handleError(data.error);
                 }
-            },
-            'json'
+
+                // Attach the ban history
+                if(data.history != null) {
+                    el = $("<table>");
+                    el.append("<tr><th>Moderator</th><th>Date</th><th>Banned</th><th>Permanent</th></tr>");
+
+                    for(i=0; i < data.history.length; i++) {
+                        datum = data.history[i];
+                        el.append("<tr><td>" + datum.moderator + "</td><td>" + datum.date + "</td><td>" + (datum.banned == 1 ? "Yes" : "") + "</td><td>" + (datum.permanent == 1 ? "Yes" : "") + "</td></tr>");
+                    }
+
+                    history.append( $("<h3>").text("Ban History") ).append(el);
+                }
+
+                // Attach the cancel button, if needed
+                if($("#cancel").length === 0) {
+                    $("<button>").attr('id','cancel').text("Cancel").click(getInformation).appendTo("#manage");
+                }
+
+                // Switch to the manage tab
+                $("#tabs").tabs("option", "active", 0);
+
+            }
         );
     }
     
@@ -638,17 +646,18 @@ if (window.bm == null || bm.url == null) {
     function lookup(input, value, callback, emptyLabel, emptyCallback) {
         $(input).autocomplete({
             source : function (request, response) {
-                $.get(bm.url + "ban-manager.php",{
-                        term: request.term
-                    }, function (data) {
-                        if (data.length == 0) {
+                request(
+                    {term: request.term},
+                    function (data) {
+                        if (data.length === 0) {
                             data.push({
                                 'value': 0,
                                 'label': emptyLabel
                             });
                         }
                         response(data);
-                    }, 'json');
+                    }
+                );
             },
             minLength : 2,
             select : function( event, ui  ) {
@@ -678,6 +687,45 @@ if (window.bm == null || bm.url == null) {
     }
     
     
+    function request(payload, callback, type, urlExtra) {
+        if (type === empty) {
+            type = 'get';
+        }
+        if (urlExtra === empty) {
+            urlExtra = '';
+        }
+        $.ajax({
+            url      : bm.url + "ban-manager.php" + urlExtra,
+            data     : payload,
+            dataType : 'json',
+            type     : type,
+            error    : function(jqXHR, textStatus, errorThrown) {
+                console.log(jqXHR);
+                console.log(textStatus);
+                console.log(errorThrown);
+                
+                handleError("Problem with request to server.");
+            },
+            success  : function(data) {
+                if (data.error === empty) {
+                    // Success, call the calback function
+                    if (typeof callback == 'function') {
+                        callback(data);
+                    }
+                } else {
+                    // An error has occured
+                    handleError(data.error);
+                }
+            }
+        });
+    }
+    
+    function send(payload, command, callback) {
+        if (command.charAt(0) != '?')
+            command = '?' + command + '=true';
+        request(payload, callback, 'post', command);
+    }
+    
     /**
      * Performs a lookup on a user based on which table row was clicked.
      */
@@ -693,6 +741,7 @@ if (window.bm == null || bm.url == null) {
             displayMessage("Search must be two or more characters long.");
 
         } else {
+            // TODO find a way to replace this with request()
             $.get(bm.url + "ban-manager.php",
                 { search : $("#search").val() },
                 function(data) {
@@ -733,7 +782,7 @@ if (window.bm == null || bm.url == null) {
 
         $.each(structure, function(index, value) {
             var field = $("#" + index + "_" + id);
-            if (value.serialize != null && typeof(value.serialize) == 'function') {
+            if (typeof value.serialize == 'function') {
                 var result = value.serialize(field);
                 if (result === false)
                     return;
@@ -821,29 +870,23 @@ if (window.bm == null || bm.url == null) {
                     }
                     
                     // Save the user
-                    $.post(
-                        bm.url + "ban-manager.php?add_user=true",
+                    send(
                         $("#add-user-form").serialize(),
+                        'add_user',
                         function(data) {
-                            if(data.error == null) {
-                                // Success
-                                displayMessage("User added succesfully.");
-                                
-                                // See if the user needs to be attached to an incident
-                                if(attachNewUser) {
-                                    $("#user_name").val($("#user_add_username").val());
-                                    $("#user_id").val(data.user_id);
-                                    attachNewUser = false;
-                                }
-                                
-                                // Reset the add user fields
-                                $("#add-user-form")[0].reset();
-                                
-                            } else {
-                                // Error occured
-                                handleError(data.error);
+                            // Success
+                            displayMessage("User added succesfully.");
+
+                            // See if the user needs to be attached to an incident
+                            if(attachNewUser) {
+                                $("#user_name").val($("#user_add_username").val());
+                                $("#user_id").val(data.user_id);
+                                attachNewUser = false;
                             }
-                        }, 'json'
+
+                            // Reset the add user fields
+                            $("#add-user-form")[0].reset();
+                        }
                     );
 
                     $(this).dialog("close");
@@ -872,21 +915,16 @@ if (window.bm == null || bm.url == null) {
                     }
                     
                     // Save the incident.
-                    $.post(
-                        bm.url + "ban-manager.php?add_incident=true",
+                    send(
                         $("#add-incident-form").serialize(),
+                        'add_incident',
                         function(data) {
-                            if(data.error == null) {
-                                // Success
-                                displayMessage("Incident added.");
-                                
-                                // Reset the add incident fields
-                                $("#add-incident-form")[0].reset();
-                            } else {
-                                // Error occured
-                                handleError(data.error);
-                            }
-                        }, 'json'
+                            // Success
+                            displayMessage("Incident added.");
+
+                            // Reset the add incident fields
+                            $("#add-incident-form")[0].reset();
+                        }
                     );
                     
                     $(this).dialog("close");
