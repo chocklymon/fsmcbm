@@ -10,6 +10,14 @@ class Output {
     private static $outputAsHtml = false;
     
     /**
+     * Clears any output currently stored.
+     */
+    public static function clear() {
+        self::$html_response = '';
+        self::$js_response = array();
+    }
+    
+    /**
      * Send the output message to the browser.
      */
     public static function reply() {
