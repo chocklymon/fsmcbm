@@ -111,12 +111,12 @@ class Output {
     public static function error($message = 'Unkown error', $debug_extra = array(), $fatal = true) {
         if (self::$outputAsHtml) {
             self::$html_response .= '<div class="error">' . self::prepareHTML($message) . "</div>";
-            if (DEBUG_MODE) {
+            if (DEBUG_MODE && !is_null($debug_extra)) {
                 self::$html_response .= "<div style='display:none'><pre>" . print_r($debug_extra, true) . "</pre><pre>" . print_r(debug_backtrace(), true) . "</pre></div>";
             }
         } else {
             self::$js_response['error'] = $message;
-            if (DEBUG_MODE) {
+            if (DEBUG_MODE && !is_null($debug_extra)) {
                 self::$js_response['debug'] = $debug_extra;
                 self::$js_response['stacktrace'] = debug_backtrace();
             }
