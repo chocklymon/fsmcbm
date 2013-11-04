@@ -9,6 +9,11 @@ require_once '../bm-output.php';
  */
 class OutputTest extends PHPUnit_Framework_TestCase {
     
+    protected function tearDown() {
+        // Clear any residual output in the buffer
+        Output::clear();
+    }
+    
     public function testAppend_html() {
         $s1 = "<div>Hello World</div>";
         $s2 = "<p>This is a paragraph.</p>";
@@ -19,9 +24,6 @@ class OutputTest extends PHPUnit_Framework_TestCase {
         Output::append($s2);
         
         Output::reply();
-        
-        // Cleanup
-        Output::clear();
     }
     
     public function testAppend_json() {
@@ -33,9 +35,6 @@ class OutputTest extends PHPUnit_Framework_TestCase {
         Output::append(array('world'=>'hi'));
         
         Output::reply();
-        
-        // Cleanup
-        Output::clear();
     }
     
     public function testAppend_json_subkey() {
@@ -47,9 +46,6 @@ class OutputTest extends PHPUnit_Framework_TestCase {
         Output::append(array('cheddar','colby'), 'cheese');
         
         Output::reply();
-        
-        // Cleanup
-        Output::clear();
     }
     
     public function testAppend_json_subarray() {
@@ -61,9 +57,6 @@ class OutputTest extends PHPUnit_Framework_TestCase {
         Output::append('colby', 'cheese', true);
         
         Output::reply();
-        
-        // Cleanup
-        Output::clear();
     }
     
     public function testClear() {
@@ -88,9 +81,35 @@ class OutputTest extends PHPUnit_Framework_TestCase {
         Output::setHTMLMode(true);
         Output::error($message, null, false);
         Output::reply();
+    }
+    
+    public function testError_json() {
+        $message = 'PHP Unit Testing Error';
+        $expected = '{"error":"' . $message . '"}';
+        $this->expectOutputString($expected);
         
-        // Cleanup
-        Output::clear();
+        Output::setHTMLMode(false);
+        Output::error($message, null, false);
+        Output::reply();
+    }
+    
+    public function testPrepareHTML_notruncate() {
+        // This string is 135 characters long, truncate goes at 120
+        $string   = 'I <i>like</i> cheese & pickles. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis in nisl sem. Donec quis imperdiet nibh.';
+        $expected = 'I &lt;i&gt;like&lt;/i&gt; cheese &amp; pickles. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis in nisl sem. Donec quis imperdiet nibh.';
+        
+        $actual = Output::prepareHTML($string);
+        
+        $this->assertEquals($expected, $actual);
+    }
+    
+    public function testPrepareHTML_truncate() {
+        $string   = 'I <i>like</i> cheese & pickles. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis in nisl sem. Donec quis imperdiet nibh.';
+        $expected = 'I &lt;i&gt;like&lt;/i&gt; cheese &amp; pickles. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis in nisl se ...';
+        
+        $actual = Output::prepareHTML($string, true);
+        
+        $this->assertEquals($expected, $actual);
     }
     
 }
