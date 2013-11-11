@@ -64,11 +64,11 @@ class MockDatabase extends Database {
      */
     public function &query($sql, $error_message = 'Nothing found.') {
         $this->queries[] = $sql;
-        if ($this->query_count >= count($this->respond_with)) {
+        if ($this->query_count >= count($this->responses)) {
             // Reached the end of the array, just return an empty result
             $response = new FakeQueryResult();
         } else {
-            $response = $this->respond_with[$this->query_count];
+            $response = $this->responses[$this->query_count];
         }
         $this->query_count++;
         return $response;
@@ -180,7 +180,7 @@ class MockDatabase extends Database {
  */
 class FakeQueryResult extends mysqli_result {
     private $results;
-    private $current_field;
+    public $current_field;
     public $num_rows;
     
     /**
