@@ -13,7 +13,7 @@ class Controller {
     private $db;
     
     public function __construct(&$database) {
-        $this->db &= $database;
+        $this->db = $database;
     }
     
     /**
