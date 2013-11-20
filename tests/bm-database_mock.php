@@ -1,5 +1,7 @@
 <?php
 
+require_once 'src/bm-database.php';
+
 /**
  * Acts as a mock for the database class.
  * @author Curtis Oakley

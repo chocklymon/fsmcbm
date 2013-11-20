@@ -1,9 +1,8 @@
 <?php
 
-require_once '../bm-database.php';
-require_once '../bm-output.php';
+require_once 'src/bm-output.php';
 require_once 'bm-database_mock.php';
-require_once '../bm-controller.php';
+require_once 'src/bm-controller.php';
 
 /**
  * Test the Ban Manager action controller

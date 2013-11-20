@@ -1,7 +1,7 @@
 <?php
 
-require_once '../bm-config.php';
-require_once '../bm-output.php';
+require_once 'src/bm-config.php';
+require_once 'src/bm-output.php';
 
 /**
  * Test the Output class.
