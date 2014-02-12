@@ -123,7 +123,7 @@ class Output {
         }
         if ($fatal) {
             self::reply();
-            exit();
+            //exit();
         }
     }
 }

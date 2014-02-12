@@ -20,18 +20,18 @@ $moderator = 0;
  * =============================
  */
 
-if (DEBUG_MODE) {
+if (Config::debugMode()) {
     // Debugging mode on, auto login as the first user
     $moderator = 1;
 } else {
     if( getLoggedInName() === FALSE ) {
         // User is not logged in, set the ban manager cookie as expired.
-        setcookie(BM_COOKIE, "", time() - 3600);
+        setcookie(Config::cookieName(), "", time() - 3600);
         Output::error("Not logged in.");
 
-    } else if( isset($_COOKIE[BM_COOKIE]) ) {
+    } else if( isset($_COOKIE[Config::cookieName()]) ) {
 
-        $user_info = explode("|", $_COOKIE[BM_COOKIE]);
+        $user_info = explode("|", $_COOKIE[Config::cookieName()]);
 
         // Check if the user has changed
         if($user_info[2] == getLoggedInName())

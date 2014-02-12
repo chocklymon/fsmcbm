@@ -36,6 +36,7 @@ class Controller {
         // Verify that we have a user id
         if($user_id === null || $user_id <= 0) {
             Output::error("Please provide a user for this incident.");
+            return;
         }
 
         // Check if we have an incident date.
