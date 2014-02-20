@@ -1,0 +1,27 @@
+<phpunit stopOnFailure="false"
+         colors="true"
+         backupGlobals="false"
+         backupStaticAttributes="false">
+	<filter>
+        <blacklist>
+		    <!-- ignore the tests for code coverage -->
+            <directory>tests</directory>
+        </blacklist>
+    </filter>
+    <testsuites>
+        <testsuite name="all-tests">
+            <file>tests/bm-controller_test.php</file>
+			<file>tests/bm-output_test.php</file>
+        </testsuite>
+    </testsuites>
+    <logging>
+        <!-- for humans -->
+        <log type="coverage-html" target="test-results/report" charset="UTF-8" yui="true" highlight="true" />
+        <log type="tap" target="test-results/tap.txt" />
+        <log type="testdox-text" target="test-results/testdox.txt" />
+
+        <!-- for computers -->
+        <log type="coverage-clover" target="test-results/clover.xml" />
+        <log type="junit" target="test-results/tests.xml" />
+    </logging>
+</phpunit>

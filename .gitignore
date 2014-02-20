@@ -1,0 +1,17 @@
+# Compressed versions of CSS and JS
+*.min.js
+*.min.css
+# Keep the jQuery UI compressed JS
+!jquery-ui-1.10.2.custom.min.js
+
+# jQuery source files (included via CDN)
+jquery-1.9.1.js
+
+# Tests
+test-results/
+phpunit.xml
+
+# Misc file types
+*.gz
+*.log
+*.zip
