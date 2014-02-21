@@ -1,4 +1,25 @@
 <?php
+/* Copyright (c) 2014 Curtis Oakley
+ * http://chockly.org/
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
 
 /**
  * Handles output to the browser.
@@ -108,15 +129,16 @@ class Output {
      * @param boolean $fatal When true the script will exit after outputing the
      * message.
      */
-    public static function error($message = 'Unkown error', $debug_extra = array(), $fatal = true) {
+    public static function error($message = 'Unkown error', $debug_extra = array(), $fatal = true)
+    {
         if (self::$outputAsHtml) {
             self::$html_response .= '<div class="error">' . self::prepareHTML($message) . "</div>";
-            if (DEBUG_MODE && !is_null($debug_extra)) {
+            if (Settings::debugMode() && !is_null($debug_extra)) {
                 self::$html_response .= "<div style='display:none'><pre>" . print_r($debug_extra, true) . "</pre><pre>" . print_r(debug_backtrace(), true) . "</pre></div>";
             }
         } else {
             self::$js_response['error'] = $message;
-            if (DEBUG_MODE && !is_null($debug_extra)) {
+            if (Settings::debugMode() && !is_null($debug_extra)) {
                 self::$js_response['debug'] = $debug_extra;
                 self::$js_response['stacktrace'] = debug_backtrace();
             }

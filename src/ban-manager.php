@@ -5,7 +5,7 @@
  * =============================
  */
 
-require_once 'bm-config.php';
+require_once 'bm-settings.php';
 require_once 'bm-output.php';
 require_once 'bm-database.php';
 require_once 'bm-controller.php';
@@ -20,18 +20,18 @@ $moderator = 0;
  * =============================
  */
 
-if (Config::debugMode()) {
+if (Settings::debugMode()) {
     // Debugging mode on, auto login as the first user
     $moderator = 1;
 } else {
     if( getLoggedInName() === FALSE ) {
         // User is not logged in, set the ban manager cookie as expired.
-        setcookie(Config::cookieName(), "", time() - 3600);
+        setcookie(Settings::cookieName(), "", time() - 3600);
         Output::error("Not logged in.");
 
-    } else if( isset($_COOKIE[Config::cookieName()]) ) {
+    } else if (isset($_COOKIE[Settings::cookieName()])) {
 
-        $user_info = explode("|", $_COOKIE[Config::cookieName()]);
+        $user_info = explode("|", $_COOKIE[Settings::cookieName()]);
 
         // Check if the user has changed
         if($user_info[2] == getLoggedInName())
