@@ -7,6 +7,9 @@
 # jQuery source files (included via CDN)
 jquery-1.9.1.js
 
+# The configuration file
+bm-config.php
+
 # Tests
 test-results/
 phpunit.xml
