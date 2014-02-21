@@ -34,8 +34,8 @@ class Settings {
      */
     public static function generateSettings()
     {
-        if (file_exists('bm-settings.php')) {
-            require_once('bm-settings.php');
+        if (file_exists('bm-config.php')) {
+            require_once('bm-config.php');
             global $settings;
         } else {
             $settings = array();
