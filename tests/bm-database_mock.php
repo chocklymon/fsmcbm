@@ -68,7 +68,7 @@ class MockDatabase extends Database
      */
     public function close()
     {
-        // No op
+        unset($this->responses);
     }
 
     /**
@@ -259,6 +259,6 @@ class FakeQueryResult extends mysqli_result
     
     public function free()
     {
-        // No op
+        unset($this->results, $this->current_field, $this->num_rows);
     }
 }
