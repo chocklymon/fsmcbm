@@ -24,7 +24,8 @@
 /**
  * Handles output to the browser.
  */
-class Output {
+class Output
+{
     
     private static $js_response = array();
     private static $html_response = '';
@@ -33,7 +34,8 @@ class Output {
     /**
      * Clears any output currently stored.
      */
-    public static function clear() {
+    public static function clear()
+    {
         self::$html_response = '';
         self::$js_response = array();
     }
@@ -41,7 +43,8 @@ class Output {
     /**
      * Send the output message to the browser.
      */
-    public static function reply() {
+    public static function reply()
+    {
         if (!headers_sent()) {
             // Set the correct content-type header now
             header('Content-Type:' . (self::$outputAsHtml ? 'text/html' : 'application/json'));
@@ -57,7 +60,8 @@ class Output {
     /**
      * Sends the success message.
      */
-    public static function success() {
+    public static function success()
+    {
         if (self::$outputAsHtml) {
             self::$html_response .= '<div class="success">Success!</div>';
         } else {
@@ -76,7 +80,8 @@ class Output {
      * and the key is set, the value of key is treated as an array and the
      * $message is pushed onto the end of it. Defaults to false.
      */
-    public static function append($message, $key = null, $subarray = false) {
+    public static function append($message, $key = null, $subarray = false)
+    {
         if (self::$outputAsHtml) {
             self::$html_response .= $message;
         } else {
@@ -97,7 +102,8 @@ class Output {
      * @param boolean $htmlOutput Whether or not reply should output HTML or
      * a JSON object.
      */
-    public static function setHTMLMode($htmlOutput) {
+    public static function setHTMLMode($htmlOutput)
+    {
         self::$outputAsHtml = (boolean) $htmlOutput;
     }
     
@@ -110,7 +116,8 @@ class Output {
      * Defaults to false.
      * @return string The truncated string.
      */
-    public static function &prepareHTML($message, $truncate = false) {
+    public static function &prepareHTML($message, $truncate = false)
+    {
         $string = htmlspecialchars($message);
         
         if ($truncate && strlen($string) > 120){

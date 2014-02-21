@@ -1,20 +1,44 @@
 <?php
+/* Copyright (c) 2014 Curtis Oakley
+ * http://chockly.org/
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
 
-require_once 'src/bm-config.php';
+require_once 'src/bm-settings.php';
 require_once 'src/bm-output.php';
 
 /**
  * Test the Output class.
  * @author Curtis Oakley
  */
-class OutputTest extends PHPUnit_Framework_TestCase {
+class OutputTest extends PHPUnit_Framework_TestCase
+{
     
-    protected function tearDown() {
+    protected function tearDown()
+    {
         // Clear any residual output in the buffer
         Output::clear();
     }
     
-    public function testAppend_html() {
+    public function testAppend_html()
+    {
         $s1 = "<div>Hello World</div>";
         $s2 = "<p>This is a paragraph.</p>";
         $this->expectOutputString($s1 . $s2);
@@ -26,7 +50,8 @@ class OutputTest extends PHPUnit_Framework_TestCase {
         Output::reply();
     }
     
-    public function testAppend_json() {
+    public function testAppend_json()
+    {
         $expected = '[{"hello":"hi"},{"world":"hi"}]';
         $this->expectOutputString($expected);
         
@@ -37,7 +62,8 @@ class OutputTest extends PHPUnit_Framework_TestCase {
         Output::reply();
     }
     
-    public function testAppend_json_subkey() {
+    public function testAppend_json_subkey()
+    {
         $expected = '{"hello":"world","cheese":["cheddar","colby"]}';
         $this->expectOutputString($expected);
         
@@ -48,7 +74,8 @@ class OutputTest extends PHPUnit_Framework_TestCase {
         Output::reply();
     }
     
-    public function testAppend_json_subarray() {
+    public function testAppend_json_subarray()
+    {
         $expected = '{"cheese":["cheddar","colby"]}';
         $this->expectOutputString($expected);
         
@@ -59,7 +86,8 @@ class OutputTest extends PHPUnit_Framework_TestCase {
         Output::reply();
     }
     
-    public function testClear() {
+    public function testClear()
+    {
         // Setup
         Output::setHTMLMode(false);
         Output::append(array("hello"=>"world"));
@@ -73,7 +101,8 @@ class OutputTest extends PHPUnit_Framework_TestCase {
         Output::reply();
     }
     
-    public function testError_html() {
+    public function testError_html()
+    {
         $message = 'PHP Unit Testing Error';
         $expected = '<div class="error">' . $message . '</div>';
         $this->expectOutputString($expected);
@@ -83,7 +112,8 @@ class OutputTest extends PHPUnit_Framework_TestCase {
         Output::reply();
     }
     
-    public function testError_json() {
+    public function testError_json()
+    {
         $message = 'PHP Unit Testing Error';
         $expected = '{"error":"' . $message . '"}';
         $this->expectOutputString($expected);
@@ -93,7 +123,8 @@ class OutputTest extends PHPUnit_Framework_TestCase {
         Output::reply();
     }
     
-    public function testPrepareHTML_notruncate() {
+    public function testPrepareHTML_notruncate()
+    {
         // This string is 135 characters long, truncate goes at 120
         $string   = 'I <i>like</i> cheese & pickles. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis in nisl sem. Donec quis imperdiet nibh.';
         $expected = 'I &lt;i&gt;like&lt;/i&gt; cheese &amp; pickles. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis in nisl sem. Donec quis imperdiet nibh.';
@@ -103,7 +134,8 @@ class OutputTest extends PHPUnit_Framework_TestCase {
         $this->assertEquals($expected, $actual);
     }
     
-    public function testPrepareHTML_truncate() {
+    public function testPrepareHTML_truncate()
+    {
         $string   = 'I <i>like</i> cheese & pickles. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis in nisl sem. Donec quis imperdiet nibh.';
         $expected = 'I &lt;i&gt;like&lt;/i&gt; cheese &amp; pickles. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis in nisl se ...';
         

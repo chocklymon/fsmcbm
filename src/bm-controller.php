@@ -1,10 +1,32 @@
 <?php
+/* Copyright (c) 2014 Curtis Oakley
+ * http://chockly.org/
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
 
 /**
  * Controlls interactions with the database and output to the user.
  * @author Curtis Oakley
  */
-class Controller {
+class Controller
+{
     
     /**
      * The database class.
@@ -12,7 +34,8 @@ class Controller {
      */
     private $db;
     
-    public function __construct(&$database) {
+    public function __construct(&$database)
+    {
         $this->db = $database;
     }
     
@@ -21,7 +44,8 @@ class Controller {
      * Uses the data posted into the page to create the incident.
      * @param int $moderator_id The id of the logged in moderator.
      */
-    public function addIncident($moderator_id) {
+    public function addIncident($moderator_id)
+    {
         $user_id       = $this->db->sanitize($_POST['user_id'], true);
         $today         = $this->getNow();
         $incident_date = $this->db->sanitize($_POST['incident_date']);
@@ -59,7 +83,8 @@ class Controller {
      * Adds a new user to the database.
      * User information is gathered from the data posted into this page.
      */
-    public function addUser() {
+    public function addUser()
+    {
         if( !isset($_POST['username'])){
             Output::error("Username required");
         }
@@ -107,7 +132,8 @@ class Controller {
     /**
      * Finds possible user names to autocomplete a term provided to this page.
      */
-    public function autoComplete() {
+    public function autoComplete()
+    {
         // Make sure that the term is at least two characters long
         if(strlen($_GET['term']) < 2) {
             Output::error('Invalid autocomplete term.');
@@ -139,7 +165,8 @@ class Controller {
      * @param array $headers The table headers and output IDs.
      * @param string $id_key The ID key to use for the table rows.
      */
-    public function buildTable($query, $headers = array(), $id_key = 'user_id') {
+    public function buildTable($query, $headers = array(), $id_key = 'user_id')
+    {
         Output::setHTMLMode(true);
 
         if (empty($headers)) {
@@ -187,7 +214,8 @@ class Controller {
     /**
      * Retrieves a list of all banned users.
      */
-    public function getBans() {
+    public function getBans()
+    {
         $query = "SELECT u.user_id, u.username, i.incident_date, i.incident_type, i.action_taken
                 FROM users AS u
                 LEFT JOIN (
@@ -207,7 +235,8 @@ class Controller {
      * @return mixed FALSE if the user is not not logged into wordpress, otherwise 
      * it return an unsanitized string contain the logged in user's name. 
      */
-    public function getLoggedInName() {
+    public function getLoggedInName()
+    {
         // Search the wordpress cookies for the logged in user name
         $keys = array_keys($_COOKIE);
         foreach($keys as &$key) {
@@ -227,7 +256,8 @@ class Controller {
      * field (Y-m-d H:i:s).
      * @return string The current time as a string.
      */
-    public function getNow() {
+    public function getNow()
+    {
         return date('Y-m-d H:i:s');
     }
 
@@ -238,7 +268,8 @@ class Controller {
      * wordpress, otherwise it return an array where index zero is the user id,
      * index one is the user's rank, and index two is the user's name.
      */
-    public function getModeratorInfo() {
+    public function getModeratorInfo()
+    {
         $info = FALSE;
 
         // Get the moderators name from the cookie
@@ -273,7 +304,8 @@ class Controller {
      * The watchlist is defined as a user that isn't banned, but has an incident
      * attached to them.
      */
-    public function getWatchlist() {
+    public function getWatchlist()
+    {
         $query = <<<SQL
 SELECT u.user_id, u.username, i.incident_date, i.incident_type, i.action_taken
 FROM incident AS i
@@ -293,7 +325,8 @@ SQL;
      * Retrieves the information for a user.
      * This includes all the users incidents (if any) and their user information.
      */
-    public function retrieveUserData() {
+    public function retrieveUserData()
+    {
         $lookup = $this->db->sanitize($_GET['lookup'], true);
 
         if($lookup <= 0) {
@@ -342,7 +375,8 @@ SQL;
     /**
      * Searches the text fields in the database for the provided search keyword.
      */
-    public function search() {
+    public function search()
+    {
         Output::setHTMLMode(true);
         if( strlen($_GET['search']) < 2) {
             // Searches must contain at least two characters
@@ -407,7 +441,8 @@ SQL;
      * Updates an exisiting user with new data.
      * The data is retrieved from the data posted into this page.
      */
-    public function updateUser() {
+    public function updateUser()
+    {
         // Sanitize the inputs
         $id = $this->db->sanitize($_POST['id'], true);
 
@@ -467,7 +502,8 @@ SQL;
      * @param boolean $banned Whether or not the user is banned.
      * @param boolean $permanent Wether or not the user is banned permanently.
      */
-    public function updateBanHistory($user_id, $banned, $permanent) {
+    public function updateBanHistory($user_id, $banned, $permanent)
+    {
         global $moderator;
 
         // Be sure the inputs are what the are supposed to be.
@@ -486,7 +522,8 @@ SQL;
      * Updates an incident with new data.
      * Data is retrieved from the data posted into this page.
      */
-    public function updateIncident() {
+    public function updateIncident()
+    {
         $id = $this->db->sanitize($_POST['id'], true);
 
         // Verify that we have an incident id

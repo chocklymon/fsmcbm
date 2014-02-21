@@ -25,8 +25,13 @@
  * Used to access the configurations settings.
  * @author Curtis Oakley
  */
-class Settings {
+class Settings
+{
     
+    /**
+     * An array containing the settings.
+     * @var array
+     */
     private static $settings;
     
     /**

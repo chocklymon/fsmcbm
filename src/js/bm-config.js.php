@@ -1,5 +1,5 @@
 <?php
-require_once '../bm-config.php';
+require_once '../bm-settings.php';
 require_once '../bm-output.php';
 require_once '../bm-database.php';
 

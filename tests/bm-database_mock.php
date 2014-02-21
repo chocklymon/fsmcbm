@@ -1,4 +1,25 @@
 <?php
+/* Copyright (c) 2014 Curtis Oakley
+ * http://chockly.org/
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
 
 require_once 'src/bm-database.php';
 
@@ -6,7 +27,8 @@ require_once 'src/bm-database.php';
  * Acts as a mock for the database class.
  * @author Curtis Oakley
  */
-class MockDatabase extends Database {
+class MockDatabase extends Database
+{
     
     private $queries;
     private $responses;
@@ -17,7 +39,8 @@ class MockDatabase extends Database {
      * @param array $responses An array of responses that should be returned
      * for the requests.
      */
-    public function __construct($responses) {
+    public function __construct($responses)
+    {
         $this->queries = array();
         $this->responses = $responses;
     }
@@ -26,7 +49,8 @@ class MockDatabase extends Database {
      * Returns the last query that was sent to the mock database.
      * @return string The last query.
      */
-    public function getLastQuery() {
+    public function getLastQuery()
+    {
         return $this->queries[$this->query_count - 1];
     }
     
@@ -34,14 +58,16 @@ class MockDatabase extends Database {
      * Returns all the queries that have been run against this mock database.
      * @return array An array containing the query strings.
      */
-    public function getQueries() {
+    public function getQueries()
+    {
         return $this->queries;
     }
     
     /**
      * Closes the database connection.
      */
-    public function close() {
+    public function close()
+    {
         // No op
     }
 
@@ -51,7 +77,8 @@ class MockDatabase extends Database {
      * @param string $column The column to look for.
      * @return boolean True if the column exists.
      */
-    public function columnExists($table, $column) {
+    public function columnExists($table, $column)
+    {
         return $this->query($table);
     }
     
@@ -64,7 +91,8 @@ class MockDatabase extends Database {
      * this will return a mysqli_result object. For other successful queries
      * this will return TRUE. 
      */
-    public function &query($sql, $error_message = 'Nothing found.') {
+    public function &query($sql, $error_message = 'Nothing found.')
+    {
         $this->queries[] = $sql;
         if ($this->query_count >= count($this->responses)) {
             // Reached the end of the array, just return an empty result
@@ -84,7 +112,8 @@ class MockDatabase extends Database {
      * the query fails.
      * @return array An array containing associative arrays of each row.
      */
-    public function &queryRows($sql, $error_message = 'Nothing found.') {
+    public function &queryRows($sql, $error_message = 'Nothing found.')
+    {
         return $this->query($sql);
     }
     
@@ -97,7 +126,8 @@ class MockDatabase extends Database {
      * @param string $error_message An optional error message to output if
      * the query fails.
      */
-    public function queryRowsIntoOutput($sql, $key, $error_message = 'Nothing found.') {
+    public function queryRowsIntoOutput($sql, $key, $error_message = 'Nothing found.')
+    {
         return $this->query($sql);
     }
     
@@ -108,7 +138,8 @@ class MockDatabase extends Database {
      * the query fails.
      * @return array The associative array of the returned row.
      */
-    public function querySingleRow($sql, $error_message = 'Nothing found.') {
+    public function querySingleRow($sql, $error_message = 'Nothing found.')
+    {
         return $this->query($sql);
     }
     
@@ -118,7 +149,8 @@ class MockDatabase extends Database {
      * @return The value of the AUTO_INCREMENT field that was updated by the
      * query. Returns zero if the query did not update an AUTO_INCREMENT value. 
      */
-    public function insert($sql) {
+    public function insert($sql)
+    {
         return $this->query($sql);
     }
     
@@ -137,8 +169,8 @@ class MockDatabase extends Database {
      * to true. If the $input is not set or null, returns null, unless $integer
      * is true, then it return 0.
      */
-    public function sanitize($input, $integer = false) {
-
+    public function sanitize($input, $integer = false)
+    {
        if (isset($input) && $input !== null) {
            if ($integer) {
                // Sanitize as a number
@@ -172,15 +204,18 @@ class MockDatabase extends Database {
      * @param string $table The name of the table.
      * @return boolean True if the table is in the database.
      */
-    public function tableExits($table) {
+    public function tableExits($table)
+    {
         return $this->query($table);
     }
+    
 }
 
 /**
  * Fakes a mysqli_result from the database.
  */
-class FakeQueryResult extends mysqli_result {
+class FakeQueryResult extends mysqli_result
+{
     private $results;
     public $current_field;
     public $num_rows;
@@ -189,34 +224,41 @@ class FakeQueryResult extends mysqli_result {
      * Construct a fake query result.
      * @param array $results An array of results.
      */
-    public function __construct($results = array()) {
+    public function __construct($results = array())
+    {
         $this->results = $results;
         $this->current_field = 0;
         $this->num_rows = count($this->results);
     }
     
-    public function data_seek($offset) {
+    public function data_seek($offset)
+    {
         $this->current_field = $offset;
         return true;
     }
     
-    public function fetch_all($resulttype = MYSQLI_NUM) {
+    public function fetch_all($resulttype = MYSQLI_NUM)
+    {
         return $this->results;
     }
     
-    public function fetch_array($resulttype = MYSQLI_BOTH) {
+    public function fetch_array($resulttype = MYSQLI_BOTH)
+    {
         return $this->results[$this->current_field++];
     }
     
-    public function fetch_assoc() {
+    public function fetch_assoc()
+    {
         return fetch_array();
     }
     
-    public function fetch_row() {
+    public function fetch_row()
+    {
         return fetch_array();
     }
     
-    public function free() {
+    public function free()
+    {
         // No op
     }
 }

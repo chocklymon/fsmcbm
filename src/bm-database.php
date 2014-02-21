@@ -25,7 +25,8 @@
  * Acts as a wrapper around an SQL database connection.
  * @author Curtis Oakley
  */
-class Database {
+class Database
+{
     
     /**
      * The MySQL database connection.
@@ -55,7 +56,8 @@ class Database {
         }
     }
     
-    public function __destruct() {
+    public function __destruct()
+    {
         // Be sure to the close the database connection
         @$this->close();
     }
@@ -63,7 +65,8 @@ class Database {
     /**
      * Closes the database connection.
      */
-    public function close() {
+    public function close()
+    {
         $this->conn->close();
     }
     
@@ -73,7 +76,8 @@ class Database {
      * @param string $column The column to look for.
      * @return boolean True if the column exists.
      */
-    public function columnExists($table, $column) {
+    public function columnExists($table, $column)
+    {
         $table = $this->sanitize($table);
         $column = $this->sanitize($column);
         $result = $this->query("SHOW COLUMNS FROM `$table` LIKE '$column'");
@@ -93,7 +97,8 @@ class Database {
      * this will return a mysqli_result object. For other successful queries
      * this will return TRUE. 
      */
-    public function &query($sql, $error_message = 'Nothing found.') {
+    public function &query($sql, $error_message = 'Nothing found.')
+    {
         $result = $this->conn->query($sql);
         
         if($result === false){
@@ -118,7 +123,8 @@ class Database {
      * the query fails.
      * @return array An array containing associative arrays of each row.
      */
-    public function &queryRows($sql, $error_message = 'Nothing found.') {
+    public function &queryRows($sql, $error_message = 'Nothing found.')
+    {
         $result = $this->query($sql, $error_message);
         
         $rows = array();
@@ -140,7 +146,8 @@ class Database {
      * @param string $error_message An optional error message to output if
      * the query fails.
      */
-    public function queryRowsIntoOutput($sql, $key, $error_message = 'Nothing found.') {
+    public function queryRowsIntoOutput($sql, $key, $error_message = 'Nothing found.')
+    {
         $result = $this->query($sql, $error_message);
         
         while($row = $result->fetch_assoc()){
@@ -156,7 +163,8 @@ class Database {
      * the query fails.
      * @return array The associative array of the returned row.
      */
-    public function querySingleRow($sql, $error_message = 'Nothing found.') {
+    public function querySingleRow($sql, $error_message = 'Nothing found.')
+    {
         $result = $this->query($sql, $error_message);
         
         if ($result->num_rows == 0) {
@@ -175,7 +183,8 @@ class Database {
      * @return The value of the AUTO_INCREMENT field that was updated by the
      * query. Returns zero if the query did not update an AUTO_INCREMENT value. 
      */
-    public function insert($sql) {
+    public function insert($sql)
+    {
         $this->query($sql);
 
         // Return the id
@@ -193,8 +202,8 @@ class Database {
      * to true. If the $input is not set or null, returns null, unless $integer
      * is true, then it return 0.
      */
-    public function sanitize($input, $integer = false) {
-
+    public function sanitize($input, $integer = false)
+    {
        if (isset($input) && $input !== null) {
            if ($integer) {
                // Sanitize as a number
@@ -226,7 +235,8 @@ class Database {
      * @param string $table The name of the table.
      * @return boolean True if the table is in the database.
      */
-    public function tableExits($table) {
+    public function tableExits($table)
+    {
         $table = $this->sanitize($table);
         $result = $this->query("SHOW TABLES LIKE '$table'");
         
