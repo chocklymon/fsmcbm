@@ -39,7 +39,7 @@ class MockDatabase extends Database
      * @param array $responses An array of responses that should be returned
      * for the requests.
      */
-    public function __construct($responses)
+    public function __construct($responses = array())
     {
         $this->queries = array();
         $this->responses = $responses;
@@ -214,7 +214,7 @@ class MockDatabase extends Database
 /**
  * Fakes a mysqli_result from the database.
  */
-class FakeQueryResult extends mysqli_result
+class FakeQueryResult /* extends mysqli_result */
 {
     private $results;
     public $current_field;

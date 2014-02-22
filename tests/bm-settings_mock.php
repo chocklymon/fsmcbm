@@ -22,7 +22,7 @@
  */
 
 /**
- * Used to access the configurations settings.
+ * Fake setting class so that Unit Tests can modify settings
  * @author Curtis Oakley
  */
 class Settings
@@ -37,20 +37,12 @@ class Settings
     /**
      * Load the settings from the configuration file.
      */
-    public static function generateSettings()
+    public static function generateSettings($settings = array())
     {
-        if (file_exists('bm-config.php')) {
-            require_once('bm-config.php');
-            global $settings;
-        } else {
-            $settings = array();
-        }
-        
         $defaults = array(
             'cookie_name' => 'bm',
             'debug' => false,
             'debug.stacktrace' => false,
-            'debug.exit_on_failure' => true,
         );
         self::$settings = array_merge($defaults, $settings);
     }
@@ -110,6 +102,15 @@ class Settings
     }
     
     /**
+     * Set the debug mode flag.
+     * @param boolean $debug_mode The debug mode flag
+     */
+    public static function setDebugMode($debug_mode)
+    {
+        self::$settings['debug'] = $debug_mode;
+    }
+    
+    /**
      * Get a specific setting by name.
      * @param string $setting_name The name of the setting.
      * @return mixed The setting, or <tt>null</tt> if the setting doesn't
@@ -124,7 +125,14 @@ class Settings
         }
     }
     
+    /**
+     * Set a specific setting by name.
+     * @param string $setting_name The name of the setting.
+     * @param mixed $value The value to set the setting to.
+     */
+    public static function setSetting($setting_name, $value)
+    {
+        self::$settings[$setting_name] = $value;
+    }
+    
 }
-
-// Initalize the settings when this file loads
-Settings::generateSettings();

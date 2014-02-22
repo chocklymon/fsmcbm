@@ -85,22 +85,20 @@ class Controller
      */
     public function addUser()
     {
-        if( !isset($_POST['username'])){
+        // Make sure that the user name isn't empty
+        if (empty($_POST['username'])) {
             Output::error("Username required");
+            return;
         }
 
         $username = $this->db->sanitize($_POST['username']);
 
-        // Make sure that the user name isn't empty
-        if(strlen($username) == 0) {
-            Output::error("Please provide a user name.");
-        }
-
         // See if this user is a duplicate
         $res = $this->db->query("SELECT `user_id` FROM `users` WHERE `username` = '$username'");
-        if($res->num_rows == 1) {
+        if ($res->num_rows == 1) {
             // Username already in the database
             Output::error("User already exists.");
+            return;
         }
         $res->free();
 
@@ -110,7 +108,7 @@ class Controller
         $notes     = $this->db->sanitize($_POST['notes']);
         $banned    = (isset($_POST['banned']) && $_POST['banned'] == 'on') ? '1' : '0';
         $permanent = (isset($_POST['permanent']) && $_POST['permanent'] == 'on') ? '1' : '0';
-        $today     = getNow();
+        $today     = $this->getNow();
 
         // Insert the user
         $user_id = $this->db->insert(
@@ -119,8 +117,8 @@ class Controller
         );
 
         // See if we need to add to the ban history
-        if($banned === true) {
-            updateBanHistory($user_id, $banned, $permanent);
+        if ($banned) {
+            $this->updateBanHistory($user_id, $banned, $permanent);
         }
 
         // Return the new users ID
@@ -511,10 +509,10 @@ SQL;
         $banned = (boolean) $banned;
         $permanent = (boolean) $permanent;
 
-        $today = getNow();
+        $today = $this->getNow();
 
         $this->db->query("INSERT INTO `ban_history` (`user_id`, `moderator_id`, `date`, `banned`, `permanent`)
-                VALUES ('$user_id', '$moderator', '$today', '$banned', '$permanent');");
+                VALUES ('$user_id', '$moderator', '$today', '$banned', '$permanent')");
     }
 
 

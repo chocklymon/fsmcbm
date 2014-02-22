@@ -140,19 +140,25 @@ class Output
     {
         if (self::$outputAsHtml) {
             self::$html_response .= '<div class="error">' . self::prepareHTML($message) . "</div>";
-            if (Settings::debugMode() && !is_null($debug_extra)) {
-                self::$html_response .= "<div style='display:none'><pre>" . print_r($debug_extra, true) . "</pre><pre>" . print_r(debug_backtrace(), true) . "</pre></div>";
+            if (Settings::debugMode() && !empty($debug_extra)) {
+                self::$html_response .= "<div style='display:none'><pre>" . print_r($debug_extra, true) . "</pre></div>";
             }
         } else {
             self::$js_response['error'] = $message;
-            if (Settings::debugMode() && !is_null($debug_extra)) {
-                self::$js_response['debug'] = $debug_extra;
-                self::$js_response['stacktrace'] = debug_backtrace();
+            if (Settings::debugMode()) {
+                if (!empty($debug_extra)) {
+                    self::$js_response['debug'] = $debug_extra;
+                }
+                if (Settings::getSetting('debug.stacktrace')) {
+                    self::$js_response['stacktrace'] = debug_backtrace();
+                }
             }
         }
         if ($fatal) {
             self::reply();
-            //exit();
+            if (Settings::debugMode() && Settings::getSetting('debug.exit_on_failure')) {
+                exit();
+            }
         }
     }
 }

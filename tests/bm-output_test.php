@@ -21,11 +21,18 @@
  * THE SOFTWARE.
  */
 
-require_once 'src/bm-settings.php';
+// Use the mock settings
+require_once 'bm-settings_mock.php';
 require_once 'src/bm-output.php';
 
 /**
  * Test the Output class.
+ * 
+ * Two parts of the output class can't be tested.
+ * 1) The exit on fatal error. Obviously calling exit kills the tests.
+ * 2) The set headers. While this should be able to be tested, it consistently
+ * fails.
+ * 
  * @author Curtis Oakley
  */
 class OutputTest extends PHPUnit_Framework_TestCase
@@ -35,6 +42,9 @@ class OutputTest extends PHPUnit_Framework_TestCase
     {
         // Clear any residual output in the buffer
         Output::clear();
+        
+        // Reset the debug mode to off
+        Settings::setDebugMode(false);
     }
     
     public function testAppend_html()
@@ -112,6 +122,19 @@ class OutputTest extends PHPUnit_Framework_TestCase
         Output::reply();
     }
     
+    public function testError_html_debugOn()
+    {
+        Settings::setDebugMode(true);
+        $message = 'PHP Unit Testing Error';
+        $debug_message = 'A super fatal error has occured';
+        $expected = "<div class=\"error\">{$message}</div><div style='display:none'><pre>{$debug_message}</pre></div>";
+        $this->expectOutputString($expected);
+        
+        Output::setHTMLMode(true);
+        Output::error($message, $debug_message, false);
+        Output::reply();
+    }
+    
     public function testError_json()
     {
         $message = 'PHP Unit Testing Error';
@@ -121,6 +144,37 @@ class OutputTest extends PHPUnit_Framework_TestCase
         Output::setHTMLMode(false);
         Output::error($message, null, false);
         Output::reply();
+    }
+    
+    public function testError_json_debugOn()
+    {
+        Settings::setDebugMode(true);
+        $message = 'PHP Unit Testing Error';
+        $debug_message = 'A super fatal error has occured';
+        $expected = '{"error":"' . $message . '","debug":"' . $debug_message . '"}';
+        $this->expectOutputString($expected);
+        
+        Output::setHTMLMode(false);
+        Output::error($message, $debug_message, false);
+        Output::reply();
+    }
+    
+    public function testSuccess_html()
+    {
+        $expected = '<div class="success">Success!</div>';
+        $this->expectOutputString($expected);
+        
+        Output::setHTMLMode(true);
+        Output::success();
+    }
+    
+    public function testSuccess_json()
+    {
+        $expected = '{"success":true}';
+        $this->expectOutputString($expected);
+        
+        Output::setHTMLMode(false);
+        Output::success();
     }
     
     public function testPrepareHTML_notruncate()

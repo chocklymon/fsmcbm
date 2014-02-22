@@ -31,6 +31,7 @@ require_once 'src/bm-controller.php';
  */
 class BanManagerTest extends PHPUnit_Framework_TestCase
 {
+    const USERNAME = 'Joe12';
 
     public static function setUpBeforeClass()
     {
@@ -40,12 +41,21 @@ class BanManagerTest extends PHPUnit_Framework_TestCase
             'user_id'       => '5',
             'incident_date' => '',
             'incident_type' => 'Hi',
-            'notes'         => "Don't worry, just have some cheese.",
             'action_taken'  => 'Banned',
             'world'         => 'world',
             'coord_x'       => '150',
             'coord_y'       => '250',
-            'coord_z'       => '-25'
+            'coord_z'       => '-25',
+            
+            // User post fields
+            'username'      => self::USERNAME,
+            'rank'          => '2',
+            'relations'     => 'Friends with Jane12',
+            'banned'        => 'on',
+            'permanent'     => 'off',
+            
+            // Shared
+            'notes'         => "Don't worry, just have some cheese.",
         );
     }
     
@@ -103,6 +113,86 @@ class BanManagerTest extends PHPUnit_Framework_TestCase
         
         // Test that there was no query //
         $this->assertEquals('', $db->getLastQuery());
+    }
+    
+    public function testAddUser()
+    {
+        // Set Up //
+        $expectedOutput = '{"user_id":29}';
+        $this->expectOutputString($expectedOutput);
+        
+        // Construct the database
+        $new_user_id = 29;
+        $db = new MockDatabase(array(new FakeQueryResult(), $new_user_id));
+        
+        // Create the controller
+        $controller = new Controller($db);
+        $now = date('Y-m-d H:i:s');
+        
+        
+        // Run the test //
+        $controller->addUser();
+        
+        
+        // Test that the query was constructed correctly //
+        $expected_user = "INSERT INTO `users` (`username`, `modified_date`, `rank`, `relations`, `notes`, `banned`, `permanent`)
+            VALUES ('" . self::USERNAME . "', '{$now}', '2', 'Friends with Jane12', 'Don\\'t worry, just have some cheese.', 1, 0)";
+        $expected_ban_history = "INSERT INTO `ban_history` (`user_id`, `moderator_id`, `date`, `banned`, `permanent`)
+                VALUES ('{$new_user_id}', '', '{$now}', '1', '')";
+        
+        $queries = $db->getQueries();
+        $this->assertEquals($expected_user, $queries[1]);
+        $this->assertEquals($expected_ban_history, $queries[2]);
+    }
+
+    public function testAddUser_noUsername()
+    {
+        // Set Up //
+        $expectedOutput = '{"error":"Username required"}';
+        $this->expectOutputString($expectedOutput);
+        
+        // The user id needs to not be empty
+        $_POST['username'] = null;
+        
+        // Construct the database
+        $db = new MockDatabase();
+        
+        // Create the controller
+        $controller = new Controller($db);
+        
+        
+        // Run the test //
+        $controller->addUser();
+        
+        
+        // Test that there was no query //
+        $this->assertEquals('', $db->getLastQuery());
+        
+        // Restore the username
+        $_POST['username'] = self::USERNAME;
+    }
+    
+    public function testAddUser_userExists()
+    {
+        // Set Up //
+        $expectedOutput = '{"error":"User already exists."}';
+        $this->expectOutputString($expectedOutput);
+        
+        // Construct the database
+        $db = new MockDatabase(array(new FakeQueryResult(array(1))));
+        
+        // Create the controller
+        $controller = new Controller($db);
+        
+        
+        // Run the test //
+        $controller->addUser();
+        
+        
+        // Test that the query was constructed correctly //
+        $expected = "SELECT `user_id` FROM `users` WHERE `username` = '" . self::USERNAME . "'";
+        
+        $this->assertEquals($expected, $db->getLastQuery());
     }
     
 }
