@@ -21,17 +21,14 @@
  * THE SOFTWARE.
  */
 
-// Use the mock settings
-require_once 'bm-settings_mock.php';
-require_once 'src/bm-output.php';
+require_once('bm-settings_mock.php');
+require_once('src/bm-output.php');
 
 /**
  * Test the Output class.
  * 
- * Two parts of the output class can't be tested.
- * 1) The exit on fatal error. Obviously calling exit kills the tests.
- * 2) The set headers. While this should be able to be tested, it consistently
- * fails.
+ * Unable to test setting the headers. While this should be able to be tested,
+ * it consistently fails.
  * 
  * @author Curtis Oakley
  */
@@ -157,6 +154,31 @@ class OutputTest extends PHPUnit_Framework_TestCase
         Output::setHTMLMode(false);
         Output::error($message, $debug_message, false);
         Output::reply();
+    }
+    
+    public function testException()
+    {
+        $message = 'PHP Unit Testing Error';
+        $expected = '{"error":"' . $message . '"}';
+        $this->expectOutputString($expected);
+        $ex = new Exception($message);
+        
+        Output::setHTMLMode(false);
+        Output::exception($ex);
+    }
+    
+    public function testException_debugOn()
+    {
+        Settings::setDebugMode(true);
+        $message = 'PHP Unit Testing Error';
+        $ex = new Exception($message);
+        $stack = json_encode($ex->getTrace());
+        $expected = '{"error":"' . $message . '","debug":{"stacktrace":' . $stack . '}}';
+        $this->expectOutputString($expected);
+        
+        
+        Output::setHTMLMode(false);
+        Output::exception($ex);
     }
     
     public function testSuccess_html()

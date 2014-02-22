@@ -157,11 +157,7 @@ class Output
     public static function exception(Exception $exception, $extra = array())
     {
         if (Settings::debugMode()) {
-            $extra['file'] = $exception->getFile();
-            $extra['line'] = $exception->getLine();
-            if (Settings::getSetting('debug.stacktrace')) {
-                $extra['stacktrace'] = $exception->getTrace();
-            }
+            $extra['stacktrace'] = $exception->getTrace();
         }
         self::error($exception->getMessage(), $extra, true);
     }

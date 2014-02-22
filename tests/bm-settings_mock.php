@@ -42,7 +42,6 @@ class Settings
         $defaults = array(
             'cookie_name' => 'bm',
             'debug' => false,
-            'debug.stacktrace' => false,
         );
         self::$settings = array_merge($defaults, $settings);
     }
@@ -108,21 +107,6 @@ class Settings
     public static function setDebugMode($debug_mode)
     {
         self::$settings['debug'] = $debug_mode;
-    }
-    
-    /**
-     * Get a specific setting by name.
-     * @param string $setting_name The name of the setting.
-     * @return mixed The setting, or <tt>null</tt> if the setting doesn't
-     * exist.
-     */
-    public static function getSetting($setting_name)
-    {
-        if (isset(self::$settings[$setting_name])) {
-            return self::$settings[$setting_name];
-        } else {
-            return null;
-        }
     }
     
     /**
