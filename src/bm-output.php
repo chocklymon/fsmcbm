@@ -133,10 +133,10 @@ class Output
      * @param string $message The error message. If HTML output mode is enabled
      * this message is HTML special chars encoded.
      * @param array $debug_extra Any extra debugging to include.
-     * @param boolean $fatal When true the script will exit after outputing the
+     * @param boolean $reply_now When true the output will be output immediatly.
      * message.
      */
-    public static function error($message = 'Unkown error', $debug_extra = array(), $fatal = true)
+    public static function error($message = 'Unkown error', $debug_extra = array(), $reply_now = true)
     {
         if (self::$outputAsHtml) {
             self::$html_response .= '<div class="error">' . self::prepareHTML($message) . "</div>";
@@ -145,20 +145,25 @@ class Output
             }
         } else {
             self::$js_response['error'] = $message;
-            if (Settings::debugMode()) {
-                if (!empty($debug_extra)) {
-                    self::$js_response['debug'] = $debug_extra;
-                }
-                if (Settings::getSetting('debug.stacktrace')) {
-                    self::$js_response['stacktrace'] = debug_backtrace();
-                }
+            if (Settings::debugMode() && !empty($debug_extra)) {
+                self::$js_response['debug'] = $debug_extra;
             }
         }
-        if ($fatal) {
+        if ($reply_now) {
             self::reply();
-            if (Settings::debugMode() && Settings::getSetting('debug.exit_on_failure')) {
-                exit();
-            }
         }
     }
+
+    public static function exception(Exception $exception, $extra = array())
+    {
+        if (Settings::debugMode()) {
+            $extra['file'] = $exception->getFile();
+            $extra['line'] = $exception->getLine();
+            if (Settings::getSetting('debug.stacktrace')) {
+                $extra['stacktrace'] = $exception->getTrace();
+            }
+        }
+        self::error($exception->getMessage(), $extra, true);
+    }
+
 }

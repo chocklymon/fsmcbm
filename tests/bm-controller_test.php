@@ -21,9 +21,10 @@
  * THE SOFTWARE.
  */
 
-require_once 'src/bm-output.php';
-require_once 'bm-database_mock.php';
-require_once 'src/bm-controller.php';
+require_once('bm-database_mock.php');
+require_once('bm-settings_mock.php');
+require_once('src/bm-output.php');
+require_once('src/bm-controller.php');
 
 /**
  * Test the Ban Manager action controller
@@ -34,6 +35,11 @@ class BanManagerTest extends PHPUnit_Framework_TestCase
     const USERNAME = 'Joe12';
 
     public static function setUpBeforeClass()
+    {
+        Settings::generateSettings();
+    }
+    
+    protected function setUp()
     {
         // Set up a fake post
         $_POST = array(
@@ -90,29 +96,18 @@ class BanManagerTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($expected, $db->getLastQuery());
     }
 
+    /**
+     * @expectedException InvalidArgumentException
+     */
     public function testAddIncident_invalidUserId()
     {
         // Set Up //
-        $expectedOutput = '{"error":"Please provide a user for this incident."}';
-        $this->expectOutputString($expectedOutput);
-        
         // The user id needs to be a positive number greater than zero.
         $_POST['user_id'] = 0;
-        
-        // Construct the database
-        $db = new MockDatabase(array(29));
-        
-        // Create the controller
-        $controller = new Controller($db);
-        $now = date('Y-m-d H:i:s');
-        
+        $controller = new Controller(new MockDatabase());
         
         // Run the test //
         $controller->addIncident(1);
-        
-        
-        // Test that there was no query //
-        $this->assertEquals('', $db->getLastQuery());
     }
     
     public function testAddUser()
@@ -145,54 +140,31 @@ class BanManagerTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($expected_ban_history, $queries[2]);
     }
 
+    /**
+     * @expectedException InvalidArgumentException
+     */
     public function testAddUser_noUsername()
     {
         // Set Up //
-        $expectedOutput = '{"error":"Username required"}';
-        $this->expectOutputString($expectedOutput);
-        
         // The user id needs to not be empty
         $_POST['username'] = null;
-        
-        // Construct the database
-        $db = new MockDatabase();
-        
-        // Create the controller
-        $controller = new Controller($db);
-        
+        $controller = new Controller(new MockDatabase());
         
         // Run the test //
         $controller->addUser();
-        
-        
-        // Test that there was no query //
-        $this->assertEquals('', $db->getLastQuery());
-        
-        // Restore the username
-        $_POST['username'] = self::USERNAME;
     }
     
+    /**
+     * @expectedException InvalidArgumentException
+     */
     public function testAddUser_userExists()
     {
         // Set Up //
-        $expectedOutput = '{"error":"User already exists."}';
-        $this->expectOutputString($expectedOutput);
-        
-        // Construct the database
         $db = new MockDatabase(array(new FakeQueryResult(array(1))));
-        
-        // Create the controller
         $controller = new Controller($db);
-        
         
         // Run the test //
         $controller->addUser();
-        
-        
-        // Test that the query was constructed correctly //
-        $expected = "SELECT `user_id` FROM `users` WHERE `username` = '" . self::USERNAME . "'";
-        
-        $this->assertEquals($expected, $db->getLastQuery());
     }
     
 }

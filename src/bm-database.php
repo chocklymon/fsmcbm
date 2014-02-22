@@ -34,6 +34,14 @@ class Database
      */
     private $conn;
     
+    /**
+     * Construct a Database.
+     * 
+     * Handles communication with the database.
+     * 
+     * @throws DatabaseException If there was a error setting up
+     * a connection to the database.
+     */
     public function __construct()
     {
         // Attempt to establish a connection to the database
@@ -44,15 +52,15 @@ class Database
             Settings::databaseName()
         );
 
-        if($this->conn->connect_errno){
-            Output::error(
-                "Unable to connect to the database.",
-                array($this->conn->connect_errno)
+        if ($this->conn->connect_errno) {
+            throw new DatabaseException(
+                "Unabled to connect to the database.",
+                $this->conn->connect_errno
             );
         }
         
         if (!$this->conn->set_charset("utf8")) {
-            Output::error("Unable to set utf8 character set.");
+            throw new DatabaseException("Unable to set utf8 character set.");
         }
     }
     
@@ -75,6 +83,7 @@ class Database
      * @param string $table The table to check.
      * @param string $column The column to look for.
      * @return boolean True if the column exists.
+     * @throws DatabaseException If the query fails.
      */
     public function columnExists($table, $column)
     {
@@ -95,20 +104,19 @@ class Database
      * the query fails.
      * @return mixed For successful SELECT, SHOW, DESCRIBE or EXPLAIN queries
      * this will return a mysqli_result object. For other successful queries
-     * this will return TRUE. 
+     * this will return TRUE.
+     * @throws DatabaseException If the query fails.
      */
     public function &query($sql, $error_message = 'Nothing found.')
     {
         $result = $this->conn->query($sql);
         
         if($result === false){
-            Output::error(
+            throw new DatabaseException(
                 $error_message,
-                array(
-                    'errno' => $this->conn->errno,
-                    'error' => $this->conn->error,
-                    'query' => $sql
-                )
+                $this->conn->errno,
+                $this->conn->error,
+                $sql
             );
         }
         
@@ -122,6 +130,7 @@ class Database
      * @param string $error_message An optional error message to output if
      * the query fails.
      * @return array An array containing associative arrays of each row.
+     * @throws DatabaseException If the query fails.
      */
     public function &queryRows($sql, $error_message = 'Nothing found.')
     {
@@ -145,6 +154,7 @@ class Database
      * @param string $key The array key to use for storing the results.
      * @param string $error_message An optional error message to output if
      * the query fails.
+     * @throws DatabaseException If the query fails.
      */
     public function queryRowsIntoOutput($sql, $key, $error_message = 'Nothing found.')
     {
@@ -162,13 +172,14 @@ class Database
      * @param string $error_message An optional error message to output if
      * the query fails.
      * @return array The associative array of the returned row.
+     * @throws DatabaseException If the query fails, or doesn't return any rows.
      */
     public function querySingleRow($sql, $error_message = 'Nothing found.')
     {
         $result = $this->query($sql, $error_message);
         
         if ($result->num_rows == 0) {
-            Output::error($error_message);
+            throw new DatabaseException($error_message, 0, "", $sql);
         }
         
         $row = $result->fetch_assoc();
@@ -181,7 +192,8 @@ class Database
      * Runs the provided SQL query and returns the ID of the inserted row.
      * @param string $sql The query string.
      * @return The value of the AUTO_INCREMENT field that was updated by the
-     * query. Returns zero if the query did not update an AUTO_INCREMENT value. 
+     * query. Returns zero if the query did not update an AUTO_INCREMENT value.
+     * @throws DatabaseException If the query fails.
      */
     public function insert($sql)
     {
@@ -234,6 +246,7 @@ class Database
      * Indicates if the given table exits in the database.
      * @param string $table The name of the table.
      * @return boolean True if the table is in the database.
+     * @throws DatabaseException If the query fails.
      */
     public function tableExits($table)
     {

@@ -7,8 +7,12 @@
 # jQuery source files (included via CDN)
 jquery-1.9.1.js
 
-# The configuration file
+# Configuration files
 bm-config.php
+phpunit.xml
+
+# IDE Files
+nbproject/
 
 # Tests
 test-results/

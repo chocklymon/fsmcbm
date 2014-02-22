@@ -59,8 +59,7 @@ class Controller
 
         // Verify that we have a user id
         if($user_id === null || $user_id <= 0) {
-            Output::error("Please provide a user for this incident.");
-            return;
+            throw new InvalidArgumentException("Please provide a user for this incident.");
         }
 
         // Check if we have an incident date.
@@ -87,8 +86,7 @@ class Controller
     {
         // Make sure that the user name isn't empty
         if (empty($_POST['username'])) {
-            Output::error("Username required");
-            return;
+            throw new InvalidArgumentException("Username required.");
         }
 
         $username = $this->db->sanitize($_POST['username']);
@@ -97,8 +95,7 @@ class Controller
         $res = $this->db->query("SELECT `user_id` FROM `users` WHERE `username` = '$username'");
         if ($res->num_rows == 1) {
             // Username already in the database
-            Output::error("User already exists.");
-            return;
+            throw new InvalidArgumentException("User already exits.");
         }
         $res->free();
 
@@ -134,7 +131,7 @@ class Controller
     {
         // Make sure that the term is at least two characters long
         if(strlen($_GET['term']) < 2) {
-            Output::error('Invalid autocomplete term.');
+            throw new InvalidArgumentException("AutoComplete term must be longer than one.");
         }
 
         $term = $this->db->sanitize( $_GET['term'] );
@@ -329,7 +326,7 @@ SQL;
 
         if($lookup <= 0) {
             // Invalid lookup
-            Output::error("Invalid user ID.");
+            throw new InvalidArgumentException("Invalid user ID.");
         }
 
 
@@ -378,7 +375,7 @@ SQL;
         Output::setHTMLMode(true);
         if( strlen($_GET['search']) < 2) {
             // Searches must contain at least two characters
-            Output::error("Search string to short.");
+            throw new InvalidArgumentException("Search string must be longer than one.");
         }
 
         $search = $this->db->sanitize($_GET['search']);
@@ -446,7 +443,7 @@ SQL;
 
         // Verify that we have a valid user id
         if($id <= 0) {
-            Output::error("Invalid user ID.");
+            throw new InvalidArgumentException("Invalid user ID.");
         }
 
         $username = null;
@@ -526,7 +523,7 @@ SQL;
 
         // Verify that we have an incident id
         if($id <= 0) {
-            Output::error("Invalid incident id.");
+            throw new InvalidArgumentException("Invalid incident ID.");
         }
 
         $now = getNow();

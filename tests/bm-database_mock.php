@@ -51,7 +51,12 @@ class MockDatabase extends Database
      */
     public function getLastQuery()
     {
-        return $this->queries[$this->query_count - 1];
+        $query_num = $this->query_count - 1;
+        if ($query_num < 0) {
+            return "";
+        } else {
+            return $this->queries[$this->query_count - 1];
+        }
     }
     
     /**

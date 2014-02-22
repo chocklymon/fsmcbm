@@ -49,7 +49,7 @@ if (Settings::debugMode()) {
         // User is not logged in, set the ban manager cookie as expired.
         setcookie(Settings::cookieName(), "", time() - 3600);
         Output::error("Not logged in.");
-
+        exit();
     } else if (isset($_COOKIE[Settings::cookieName()])) {
 
         $user_info = explode("|", $_COOKIE[Settings::cookieName()]);
@@ -68,6 +68,7 @@ if (Settings::debugMode()) {
         if($user_info === FALSE) {
             // Not a moderator
             Output::error("Not logged in.");
+            exit();
         } else {
             // Mark the user as logged into the ban manager
             setcookie(BM_COOKIE, implode("|", $user_info), 0, "/", "finalscoremc.com");
@@ -84,52 +85,67 @@ if (Settings::debugMode()) {
  * =============================
  */
 
-// Get the connection to the database
-$db = new Database();
-$actions = new Controller($db);
+$db = null;
 
-if(isset($_GET['term'])){
-    
-    $actions->autoComplete();
-    
-} else if(isset($_GET['lookup'])){
-    
-    $actions->retrieveUserData();
-    
-} else if(isset($_GET['add_user'])){
-    
-    $actions->addUser();
-    
-} else if(isset($_GET['add_incident'])){
-    
-    $actions->addIncident($moderator);
-    
-} else if(isset($_GET['get'])){
-    // Tab contents requested
-    
-    if($_GET['get'] == 'bans'){
-        
-        $actions->getBans();
-        
-    } else if($_GET['get'] == 'watchlist'){
-        
-        $actions->getWatchlist();
-        
+try {
+    // Get the connection to the database
+    $db = new Database();
+    $actions = new Controller($db);
+
+    if(isset($_GET['term'])){
+
+        $actions->autoComplete();
+
+    } else if(isset($_GET['lookup'])){
+
+        $actions->retrieveUserData();
+
+    } else if(isset($_GET['add_user'])){
+
+        $actions->addUser();
+
+    } else if(isset($_GET['add_incident'])){
+
+        $actions->addIncident($moderator);
+
+    } else if(isset($_GET['get'])){
+        // Tab contents requested
+
+        if($_GET['get'] == 'bans'){
+
+            $actions->getBans();
+
+        } else if($_GET['get'] == 'watchlist'){
+
+            $actions->getWatchlist();
+
+        }
+    } else if(isset($_GET['search'])){
+
+        $actions->search();
+
+    } else if(isset($_GET['update_user'])) {
+
+        $actions->updateUser();
+
+    } else if(isset($_GET['update_incident'])) {
+
+        $actions->updateIncident();
+
     }
-} else if(isset($_GET['search'])){
-    
-    $actions->search();
-    
-} else if(isset($_GET['update_user'])) {
-    
-    $actions->updateUser();
-    
-} else if(isset($_GET['update_incident'])) {
-    
-    $actions->updateIncident();
-
+} catch (DatabaseException $ex) {
+    Output::exception(
+        $ex,
+        array(
+            'errno' => $ex->getCode(),
+            'error' => $ex->getErrorMessage(),
+            'query' => $ex->getQuery(),
+        )
+    );
+} catch (InvalidArgumentException $ex) {
+    Output::exception($ex);
 }
 
-$db->close();
-
-?>
+if (!is_null($db)) {
+    $db->close();
+}
