@@ -21,6 +21,8 @@
  * THE SOFTWARE.
  */
 
+require_once('DatabaseException.php');
+
 /**
  * Acts as a wrapper around an SQL database connection.
  * @author Curtis Oakley
@@ -54,7 +56,7 @@ class Database
             $settings->getDatabaseName()
         );
 
-        if ($this->conn->connect_errno) {
+        if (!$this->conn || $this->conn->connect_errno) {
             throw new DatabaseException(
                 "Unabled to connect to the database.",
                 $this->conn->connect_errno

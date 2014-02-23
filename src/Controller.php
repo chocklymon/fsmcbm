@@ -234,7 +234,7 @@ class Controller
                 GROUP BY u.user_id
                 ORDER BY i.incident_date DESC";
 
-        buildTable($query);
+        $this->buildTable($query);
     }
 
     /**
@@ -254,7 +254,7 @@ class Controller
             }
         }
 
-        return FALSE;
+        return false;
     }
 
 
@@ -277,13 +277,13 @@ class Controller
      */
     public function getModeratorInfo()
     {
-        $info = FALSE;
+        $info = false;
 
         // Get the moderators name from the cookie
-        $moderator_name = getLoggedInName();
+        $moderator_name = $this->getLoggedInName();
 
-        if($moderator_name === FALSE) {
-            return FALSE;
+        if($moderator_name === false) {
+            return false;
         }
 
         $moderator_name = $this->db->sanitize($moderator_name);
@@ -298,7 +298,7 @@ class Controller
         );
 
         // Only store the information of admins/moderators
-        if($row['rank'] == 'Admin' || $row['rank'] == 'Moderator') {
+        if ($row['rank'] == 'Admin' || $row['rank'] == 'Moderator') {
             $info = array($row['id'], $row['rank'], $moderator_name);
         }
 
@@ -325,7 +325,7 @@ WHERE i2.user_id IS NULL
 ORDER BY i.incident_date DESC
 SQL;
 
-        buildTable($query);
+        $this->buildTable($query);
     }
 
     /**
@@ -415,7 +415,7 @@ SQL;
             'notes'     => 'Notes'
         );
 
-        buildTable($query, $headers);
+        $this->buildTable($query, $headers);
 
 
         // Get incidents matching the search
@@ -440,7 +440,7 @@ SQL;
             'action_taken'  => 'Action Taken'
         );
 
-        buildTable($query, $headers);
+        $this->buildTable($query, $headers);
     }
 
 
@@ -467,7 +467,7 @@ SQL;
         $permanent = $_POST['permanent'] == "true";
         $relations = $this->db->sanitize($_POST['relations']);
         $notes = $this->db->sanitize($_POST['notes']);
-        $today = getNow();
+        $today = $this->getNow();
 
         // If the user is no longer banned, make sure the permanent flag is unchecked
         if (!$banned && $permanent) {
@@ -479,7 +479,7 @@ SQL;
         $row = $this->db->querySingleRow($query, "Failed to retrieve incident.");
 
         if($row['banned'] != $banned || $row['permanent'] != $permanent) {
-            updateBanHistory($id, $banned, $permanent);
+            $this->updateBanHistory($id, $banned, $permanent);
         }
 
         // Perform the udpate
@@ -538,7 +538,7 @@ SQL;
             throw new InvalidArgumentException("Invalid incident ID.");
         }
 
-        $now = getNow();
+        $now = $this->getNow();
         $incident_date = $this->db->sanitize($_POST['incident_date']);
         $incident_type = $this->db->sanitize($_POST['incident_type']);
         $notes         = $this->db->sanitize($_POST['notes']);

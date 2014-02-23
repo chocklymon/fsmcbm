@@ -47,7 +47,11 @@ class MockSettings extends Settings
         );
         
         // Allow the settings to be overriden by a test.ini file
-        $settings = parse_ini_file('test.ini');
+        if (is_readable('test.ini')) {
+            $settings = parse_ini_file('test.ini');
+        } else {
+            $settings = array();
+        }
         
         $this->settings = array_merge($defaults, $settings);
     }

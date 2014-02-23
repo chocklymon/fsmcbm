@@ -5,7 +5,7 @@
         <title>Final Score MC Ban Manager</title>
         <link href="css/custom-theme/jquery-ui-1.10.2.custom.min.css" type="text/css" rel="stylesheet" />
         <link href="css/main.css" type="text/css" rel="stylesheet" />
-        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js" ></script>
+        <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js" ></script>
         <script type="text/javascript" src="js/jquery-ui-1.10.2.custom.min.js"></script>
         <script type="text/javascript" src="js/bm-config.js.php"></script>
         <script type="text/javascript" src="js/ban-manager.js"></script>

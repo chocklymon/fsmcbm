@@ -1,9 +1,11 @@
 <?php
-require_once '../bm-settings.php';
-require_once '../bm-output.php';
-require_once '../bm-database.php';
+require_once '../Settings.php';
+require_once '../Output.php';
+require_once '../Database.php';
 
-$db = new Database();
+$settings = new Settings();
+$output = new Output($settings);
+$db = new Database($settings);
 
 header('Content-Type: text/javascript');
 // Since this won't change very often, set the cache to store this for two days
@@ -288,12 +290,12 @@ SQL;
 $rows = $db->queryRows($sql);
 
 foreach($rows as $rank) {
-    Output::append(
+    $output->append(
         array('value'=>$rank['rank_id'], 'label'=>$rank['name'])
     );
 }
 
-Output::reply();
+$output->reply();
 ?>
         }),
         relations : info({

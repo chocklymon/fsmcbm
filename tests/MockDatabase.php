@@ -249,17 +249,23 @@ class FakeQueryResult /* extends mysqli_result */
     
     public function fetch_array($resulttype = MYSQLI_BOTH)
     {
-        return $this->results[$this->current_field++];
+        if ($this->current_field < count($this->results)) {
+            $value = $this->results[$this->current_field];
+            $this->current_field++;
+        } else {
+            $value = false;
+        }
+        return $value;
     }
     
     public function fetch_assoc()
     {
-        return fetch_array();
+        return $this->fetch_array();
     }
     
     public function fetch_row()
     {
-        return fetch_array();
+        return $this->fetch_array();
     }
     
     public function free()
