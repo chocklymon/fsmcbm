@@ -21,10 +21,10 @@
  * THE SOFTWARE.
  */
 
-require_once('bm-database_mock.php');
-require_once('bm-settings_mock.php');
-require_once('src/bm-output.php');
-require_once('src/bm-controller.php');
+require_once('MockDatabase.php');
+require_once('MockSettings.php');
+require_once('src/Output.php');
+require_once('src/Controller.php');
 
 /**
  * Test the Ban Manager action controller
@@ -33,12 +33,23 @@ require_once('src/bm-controller.php');
 class BanManagerTest extends PHPUnit_Framework_TestCase
 {
     const USERNAME = 'Joe12';
-
+    
+    /**
+     * @var MockSettings
+     */
+    private static $settings;
+    
+    /**
+     * @var Output
+     */
+    private static $output;
+    
     public static function setUpBeforeClass()
     {
-        Settings::generateSettings();
+        self::$settings = new MockSettings();
+        self::$output = new Output(self::$settings);
     }
-    
+
     protected function setUp()
     {
         // Set up a fake post
@@ -68,7 +79,7 @@ class BanManagerTest extends PHPUnit_Framework_TestCase
     protected function tearDown()
     {
         // Clear any residual output in the buffer
-        Output::clear();
+        self::$output->clear();
     }
     
     public function testAddIncident()
@@ -81,7 +92,7 @@ class BanManagerTest extends PHPUnit_Framework_TestCase
         $db = new MockDatabase(array(29));
         
         // Create the controller
-        $controller = new Controller($db);
+        $controller = new Controller($db, self::$output);
         $now = date('Y-m-d H:i:s');
         
         
@@ -104,7 +115,7 @@ class BanManagerTest extends PHPUnit_Framework_TestCase
         // Set Up //
         // The user id needs to be a positive number greater than zero.
         $_POST['user_id'] = 0;
-        $controller = new Controller(new MockDatabase());
+        $controller = new Controller(new MockDatabase(), self::$output);
         
         // Run the test //
         $controller->addIncident(1);
@@ -121,7 +132,7 @@ class BanManagerTest extends PHPUnit_Framework_TestCase
         $db = new MockDatabase(array(new FakeQueryResult(), $new_user_id));
         
         // Create the controller
-        $controller = new Controller($db);
+        $controller = new Controller($db, self::$output);
         $now = date('Y-m-d H:i:s');
         
         
@@ -148,7 +159,7 @@ class BanManagerTest extends PHPUnit_Framework_TestCase
         // Set Up //
         // The user id needs to not be empty
         $_POST['username'] = null;
-        $controller = new Controller(new MockDatabase());
+        $controller = new Controller(new MockDatabase(), self::$output);
         
         // Run the test //
         $controller->addUser();
@@ -161,7 +172,7 @@ class BanManagerTest extends PHPUnit_Framework_TestCase
     {
         // Set Up //
         $db = new MockDatabase(array(new FakeQueryResult(array(1))));
-        $controller = new Controller($db);
+        $controller = new Controller($db, self::$output);
         
         // Run the test //
         $controller->addUser();

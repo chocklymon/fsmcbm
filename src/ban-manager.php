@@ -26,10 +26,10 @@
  * =============================
  */
 
-require_once 'bm-settings.php';
-require_once 'bm-output.php';
-require_once 'bm-database.php';
-require_once 'bm-controller.php';
+require_once('Settings.php');
+require_once('Output.php');
+require_once('Database.php');
+require_once('Controller.php');
 
 /** The ID of the current user. */
 $moderator = 0;
@@ -40,19 +40,21 @@ $moderator = 0;
  *        VERIFY USER
  * =============================
  */
+$settings = new Settings();
+$output = new Output($settings);
 
-if (Settings::debugMode()) {
+if ($settings->debugMode()) {
     // Debugging mode on, auto login as the first user
     $moderator = 1;
 } else {
     if( getLoggedInName() === FALSE ) {
         // User is not logged in, set the ban manager cookie as expired.
-        setcookie(Settings::cookieName(), "", time() - 3600);
-        Output::error("Not logged in.");
+        setcookie($settings->getCookieName(), "", time() - 3600);
+        $output->error("Not logged in.");
         exit();
-    } else if (isset($_COOKIE[Settings::cookieName()])) {
+    } else if (isset($_COOKIE[$settings->getCookieName()])) {
 
-        $user_info = explode("|", $_COOKIE[Settings::cookieName()]);
+        $user_info = explode("|", $_COOKIE[$settings->getCookieName()]);
 
         // Check if the user has changed
         if($user_info[2] == getLoggedInName())
@@ -67,7 +69,7 @@ if (Settings::debugMode()) {
 
         if($user_info === FALSE) {
             // Not a moderator
-            Output::error("Not logged in.");
+            $output->error("Not logged in.");
             exit();
         } else {
             // Mark the user as logged into the ban manager
@@ -89,52 +91,52 @@ $db = null;
 
 try {
     // Get the connection to the database
-    $db = new Database();
-    $actions = new Controller($db);
+    $db = new Database($settings);
+    $actions = new Controller($db, $output);
 
-    if(isset($_GET['term'])){
+    if (isset($_GET['term'])) {
 
         $actions->autoComplete();
 
-    } else if(isset($_GET['lookup'])){
+    } else if (isset($_GET['lookup'])) {
 
         $actions->retrieveUserData();
 
-    } else if(isset($_GET['add_user'])){
+    } else if (isset($_GET['add_user'])) {
 
         $actions->addUser();
 
-    } else if(isset($_GET['add_incident'])){
+    } else if (isset($_GET['add_incident'])) {
 
         $actions->addIncident($moderator);
 
-    } else if(isset($_GET['get'])){
+    } else if (isset($_GET['get'])) {
         // Tab contents requested
 
-        if($_GET['get'] == 'bans'){
+        if ($_GET['get'] == 'bans') {
 
             $actions->getBans();
 
-        } else if($_GET['get'] == 'watchlist'){
+        } else if ($_GET['get'] == 'watchlist') {
 
             $actions->getWatchlist();
 
         }
-    } else if(isset($_GET['search'])){
+    } else if (isset($_GET['search'])) {
 
         $actions->search();
 
-    } else if(isset($_GET['update_user'])) {
+    } else if (isset($_GET['update_user'])) {
 
         $actions->updateUser();
 
-    } else if(isset($_GET['update_incident'])) {
+    } else if (isset($_GET['update_incident'])) {
 
         $actions->updateIncident();
 
     }
 } catch (DatabaseException $ex) {
-    Output::exception(
+    $output->exception(
         $ex,
         array(
             'errno' => $ex->getCode(),
@@ -143,7 +145,7 @@ try {
         )
     );
 } catch (InvalidArgumentException $ex) {
-    Output::exception($ex);
+    $output->exception($ex);
 }
 
 if (!is_null($db)) {

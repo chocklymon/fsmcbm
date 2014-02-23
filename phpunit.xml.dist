@@ -2,16 +2,16 @@
          colors="true"
          backupGlobals="false"
          backupStaticAttributes="false">
-	<filter>
+    <filter>
         <blacklist>
-		    <!-- ignore the tests for code coverage -->
+            <!-- ignore the tests for code coverage -->
             <directory>tests</directory>
         </blacklist>
     </filter>
     <testsuites>
         <testsuite name="all-tests">
-            <file>tests/bm-controller_test.php</file>
-			<file>tests/bm-output_test.php</file>
+            <file>tests/ControllerTest.php</file>
+            <file>tests/OutputTest.php</file>
         </testsuite>
     </testsuites>
     <logging>

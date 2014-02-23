@@ -21,53 +21,51 @@
  * THE SOFTWARE.
  */
 
+require_once 'src/Database.php';
+
 /**
- * Acts as a wrapper around an SQL database connection.
+ * Acts as a mock for the database class.
  * @author Curtis Oakley
  */
-class Database
+class MockDatabase extends Database
 {
     
-    /**
-     * The MySQL database connection.
-     * @var mysqli
-     */
-    private $conn;
+    private $queries;
+    private $responses;
+    private $query_count = 0;
     
     /**
-     * Construct a Database.
-     * 
-     * Handles communication with the database.
-     * 
-     * @throws DatabaseException If there was a error setting up
-     * a connection to the database.
+     * Constructs a new database mock.
+     * @param array $responses An array of responses that should be returned
+     * for the requests.
      */
-    public function __construct()
+    public function __construct($responses = array())
     {
-        // Attempt to establish a connection to the database
-        $this->conn = mysqli_connect(
-            Settings::databaseHost(),
-            Settings::databaseUsername(),
-            Settings::databasePassword(),
-            Settings::databaseName()
-        );
-
-        if ($this->conn->connect_errno) {
-            throw new DatabaseException(
-                "Unabled to connect to the database.",
-                $this->conn->connect_errno
-            );
-        }
-        
-        if (!$this->conn->set_charset("utf8")) {
-            throw new DatabaseException("Unable to set utf8 character set.");
+        $this->queries = array();
+        $this->responses = $responses;
+    }
+    
+    /**
+     * Returns the last query that was sent to the mock database.
+     * @return string The last query.
+     */
+    public function getLastQuery()
+    {
+        $query_num = $this->query_count - 1;
+        if ($query_num < 0) {
+            return "";
+        } else {
+            return $this->queries[$this->query_count - 1];
         }
     }
     
-    public function __destruct()
+    /**
+     * Returns all the queries that have been run against this mock database.
+     * @return array An array containing the query strings.
+     */
+    public function getQueries()
     {
-        // Be sure to the close the database connection
-        @$this->close();
+        return $this->queries;
     }
     
     /**
@@ -75,26 +73,18 @@ class Database
      */
     public function close()
     {
-        $this->conn->close();
+        unset($this->responses);
     }
-    
+
     /**
      * Indicates if the specified column exits in the table.
      * @param string $table The table to check.
      * @param string $column The column to look for.
      * @return boolean True if the column exists.
-     * @throws DatabaseException If the query fails.
      */
     public function columnExists($table, $column)
     {
-        $table = $this->sanitize($table);
-        $column = $this->sanitize($column);
-        $result = $this->query("SHOW COLUMNS FROM `$table` LIKE '$column'");
-        
-        $exists = $result->num_rows != 0;
-        $result->free();
-        
-        return $exists;
+        return $this->query($table);
     }
     
     /**
@@ -104,23 +94,19 @@ class Database
      * the query fails.
      * @return mixed For successful SELECT, SHOW, DESCRIBE or EXPLAIN queries
      * this will return a mysqli_result object. For other successful queries
-     * this will return TRUE.
-     * @throws DatabaseException If the query fails.
+     * this will return TRUE. 
      */
     public function &query($sql, $error_message = 'Nothing found.')
     {
-        $result = $this->conn->query($sql);
-        
-        if($result === false){
-            throw new DatabaseException(
-                $error_message,
-                $this->conn->errno,
-                $this->conn->error,
-                $sql
-            );
+        $this->queries[] = $sql;
+        if ($this->query_count >= count($this->responses)) {
+            // Reached the end of the array, just return an empty result
+            $response = new FakeQueryResult();
+        } else {
+            $response = $this->responses[$this->query_count];
         }
-        
-        return $result;
+        $this->query_count++;
+        return $response;
     }
     
     /**
@@ -130,20 +116,10 @@ class Database
      * @param string $error_message An optional error message to output if
      * the query fails.
      * @return array An array containing associative arrays of each row.
-     * @throws DatabaseException If the query fails.
      */
     public function &queryRows($sql, $error_message = 'Nothing found.')
     {
-        $result = $this->query($sql, $error_message);
-        
-        $rows = array();
-        
-        while($row = $result->fetch_assoc()){
-            $rows[] = $row;
-        }
-        $result->free();
-        
-        return $rows;
+        return $this->query($sql);
     }
     
     /**
@@ -154,16 +130,10 @@ class Database
      * @param string $key The array key to use for storing the results.
      * @param string $error_message An optional error message to output if
      * the query fails.
-     * @throws DatabaseException If the query fails.
      */
     public function queryRowsIntoOutput($sql, $key, $error_message = 'Nothing found.')
     {
-        $result = $this->query($sql, $error_message);
-        
-        while($row = $result->fetch_assoc()){
-            Output::append($row, $key, true);
-        }
-        $result->free();
+        return $this->query($sql);
     }
     
     /**
@@ -172,40 +142,30 @@ class Database
      * @param string $error_message An optional error message to output if
      * the query fails.
      * @return array The associative array of the returned row.
-     * @throws DatabaseException If the query fails, or doesn't return any rows.
      */
     public function querySingleRow($sql, $error_message = 'Nothing found.')
     {
-        $result = $this->query($sql, $error_message);
-        
-        if ($result->num_rows == 0) {
-            throw new DatabaseException($error_message, 0, "", $sql);
-        }
-        
-        $row = $result->fetch_assoc();
-        $result->free();
-        
-        return $row;
+        return $this->query($sql);
     }
     
     /**
      * Runs the provided SQL query and returns the ID of the inserted row.
      * @param string $sql The query string.
      * @return The value of the AUTO_INCREMENT field that was updated by the
-     * query. Returns zero if the query did not update an AUTO_INCREMENT value.
-     * @throws DatabaseException If the query fails.
+     * query. Returns zero if the query did not update an AUTO_INCREMENT value. 
      */
     public function insert($sql)
     {
-        $this->query($sql);
-
-        // Return the id
-        return $this->conn->insert_id;
+        return $this->query($sql);
     }
     
     /**
      * Sanitizes input for use with the the database. All data that is from
      * user input needs to be sanitized before use in a SQL query.
+     * <b>Warning:</b>
+     * This function should only be used for testing since it doesn't escape
+     * characters correctly and is only meant for mocking the actual database
+     * object's method. Do NOT use for production.
      * @param string $input The string input to sanitize.
      * @param boolean $integer Whether or not the input should be treated as an
      * integer. When true, the input string will be returned as an integer.
@@ -233,7 +193,9 @@ class Database
                }
 
                // Sanitize as a string
-               return $this->conn->real_escape_string($input);
+               // Use add slashes since it escapes many of the characters that
+               // mysqli_real_escape_string does.
+               return addslashes($input);
            }
        } else if ($integer) {
            return 0;
@@ -246,17 +208,62 @@ class Database
      * Indicates if the given table exits in the database.
      * @param string $table The name of the table.
      * @return boolean True if the table is in the database.
-     * @throws DatabaseException If the query fails.
      */
     public function tableExits($table)
     {
-        $table = $this->sanitize($table);
-        $result = $this->query("SHOW TABLES LIKE '$table'");
-        
-        $exists = $result->num_rows != 0;
-        
-        $result->free();
-        
-        return $exists;
+        return $this->query($table);
+    }
+    
+}
+
+/**
+ * Fakes a mysqli_result from the database.
+ */
+class FakeQueryResult /* extends mysqli_result */
+{
+    private $results;
+    public $current_field;
+    public $num_rows;
+    
+    /**
+     * Construct a fake query result.
+     * @param array $results An array of results.
+     */
+    public function __construct($results = array())
+    {
+        $this->results = $results;
+        $this->current_field = 0;
+        $this->num_rows = count($this->results);
+    }
+    
+    public function data_seek($offset)
+    {
+        $this->current_field = $offset;
+        return true;
+    }
+    
+    public function fetch_all($resulttype = MYSQLI_NUM)
+    {
+        return $this->results;
+    }
+    
+    public function fetch_array($resulttype = MYSQLI_BOTH)
+    {
+        return $this->results[$this->current_field++];
+    }
+    
+    public function fetch_assoc()
+    {
+        return fetch_array();
+    }
+    
+    public function fetch_row()
+    {
+        return fetch_array();
+    }
+    
+    public function free()
+    {
+        unset($this->results, $this->current_field, $this->num_rows);
     }
 }

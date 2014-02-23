@@ -34,9 +34,21 @@ class Controller
      */
     private $db;
     
-    public function __construct(&$database)
+    /**
+     * The ouptut handler
+     * @var Output
+     */
+    private $output;
+    
+    /**
+     * Construct a new controller.
+     * @param Database $database The databse instance to use.
+     * @param Output $output The output instance to use.
+     */
+    public function __construct(Database $database, Output $output)
     {
         $this->db = $database;
+        $this->output = $output;
     }
     
     /**
@@ -73,8 +85,8 @@ class Controller
         $incident_id = $this->db->insert($query);
 
         // Return the id
-        Output::append($incident_id, 'incident_id');
-        Output::reply();
+        $this->output->append($incident_id, 'incident_id');
+        $this->output->reply();
     }
 
 
@@ -119,8 +131,8 @@ class Controller
         }
 
         // Return the new users ID
-        Output::append($user_id, 'user_id');
-        Output::reply();
+        $this->output->append($user_id, 'user_id');
+        $this->output->reply();
     }
 
 
@@ -142,14 +154,14 @@ class Controller
         );
 
         while($row = $res->fetch_assoc()){
-            Output::append(
+            $this->output->append(
                 array('label'=>$row['username'], 'value'=>$row['user_id'])
             );
         }
 
         $res->free();
 
-        Output::reply();
+        $this->output->reply();
     }
 
 
@@ -162,7 +174,7 @@ class Controller
      */
     public function buildTable($query, $headers = array(), $id_key = 'user_id')
     {
-        Output::setHTMLMode(true);
+        $this->output->setHTMLMode(true);
 
         if (empty($headers)) {
             $headers = array(
@@ -178,31 +190,31 @@ class Controller
 
         if($res->num_rows == 0){
             // Nothing found
-            Output::append("<div>Nothing Found</div>");
+            $this->output->append("<div>Nothing Found</div>");
 
         } else {
 
             // Place the results into the table
-            Output::append('<table class="list"><thead><tr>');
+            $this->output->append('<table class="list"><thead><tr>');
             foreach ($keys as $key) {
-                Output::append('<th>' . Output::prepareHTML($headers[$key]) . '</th>');
+                $this->output->append('<th>' . $this->output->prepareHTML($headers[$key]) . '</th>');
             }
-            Output::append('</tr></thead><tbody>');
+            $this->output->append('</tr></thead><tbody>');
 
             while($row = $res->fetch_assoc()){
-                Output::append("<tr id='id-{$row[$id_key]}'>");
+                $this->output->append("<tr id='id-{$row[$id_key]}'>");
                 foreach ($keys as $key) {
-                    Output::append('<td>' . Output::prepareHTML($row[$key], true) . '</td>');
+                    $this->output->append('<td>' . $this->output->prepareHTML($row[$key], true) . '</td>');
                 }
-                Output::append('</tr>');
+                $this->output->append('</tr>');
             }
 
-            Output::append("</tbody></table>");
+            $this->output->append("</tbody></table>");
         }
 
         $res->free();
 
-        Output::reply();
+        $this->output->reply();
     }
 
 
@@ -331,7 +343,7 @@ SQL;
 
 
         // Get the user
-        Output::append(
+        $this->output->append(
             $this->db->querySingleRow(
                 "SELECT * FROM users WHERE user_id = '$lookup'",
                 'User not found.'
@@ -363,7 +375,7 @@ SQL;
 
         $this->db->queryRowsIntoOutput($sql, 'history');
 
-        Output::reply();
+        $this->output->reply();
     }
 
 
@@ -372,7 +384,7 @@ SQL;
      */
     public function search()
     {
-        Output::setHTMLMode(true);
+        $this->output->setHTMLMode(true);
         if( strlen($_GET['search']) < 2) {
             // Searches must contain at least two characters
             throw new InvalidArgumentException("Search string must be longer than one.");
@@ -382,7 +394,7 @@ SQL;
 
 
         // Get users matching the search
-        Output::append('<h4>Players</h4>');
+        $this->output->append('<h4>Players</h4>');
 
         $query = <<<SQL
 SELECT u.user_id, u.username, u.banned, r.name AS rank, u.relations, u.notes
@@ -407,8 +419,8 @@ SQL;
 
 
         // Get incidents matching the search
-        Output::clear();
-        Output::append('<h4>Incidents</h4>');
+        $this->output->clear();
+        $this->output->append('<h4>Incidents</h4>');
 
         $query = <<<SQL
 SELECT  u.user_id, u.username, i.incident_date, i.incident_type, i.action_taken
@@ -486,7 +498,7 @@ SQL;
 
         $this->db->query($query);
 
-        Output::success();
+        $this->output->success();
     }
 
 
@@ -550,7 +562,7 @@ SQL;
 
         $this->db->query($query, 'Failed to update incident.');
 
-        Output::success();
+        $this->output->success();
     }
 
 }

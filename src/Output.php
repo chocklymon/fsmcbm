@@ -26,48 +26,80 @@
  */
 class Output
 {
+    /**
+     * Holds the data to be returned as JSON.
+     * @var array
+     */
+    private $js_response = array();
     
-    private static $js_response = array();
-    private static $html_response = '';
-    private static $outputAsHtml = false;
+    /**
+     * Holds the HTML to be returned.
+     * @var string
+     */
+    private $html_response = '';
+    
+    /**
+     * Indicates if this should output as HTML or JSON.
+     * When true, ouputs as HTML.
+     * @var boolean
+     */
+    private $output_as_html = false;
+    
+    /**
+     * Holds the configuration settings.
+     * @var Settings
+     */
+    private $settings;
+    
+    /**
+     * Construct a new output handler.
+     * @param Settings $settings The settings to use when outputing.
+     * @param boolean $output_as_html When true outputs the data as HTML,
+     * otherwise outputs as JSON.
+     */
+    public function __construct(Settings $settings, $output_as_html = false)
+    {
+        $this->settings = $settings;
+        $this->output_as_html = $output_as_html;
+    }
     
     /**
      * Clears any output currently stored.
      */
-    public static function clear()
+    public function clear()
     {
-        self::$html_response = '';
-        self::$js_response = array();
+        $this->html_response = '';
+        $this->js_response = array();
     }
     
     /**
      * Send the output message to the browser.
      */
-    public static function reply()
+    public function reply()
     {
         if (!headers_sent()) {
             // Set the correct content-type header now
-            header('Content-Type:' . (self::$outputAsHtml ? 'text/html' : 'application/json'));
+            header('Content-Type:' . ($this->output_as_html ? 'text/html' : 'application/json'));
         }
         
-        if (self::$outputAsHtml) {
-            echo self::$html_response;
+        if ($this->output_as_html) {
+            echo $this->html_response;
         } else {
-            echo json_encode(self::$js_response);
+            echo json_encode($this->js_response);
         }
     }
     
     /**
      * Sends the success message.
      */
-    public static function success()
+    public function success()
     {
-        if (self::$outputAsHtml) {
-            self::$html_response .= '<div class="success">Success!</div>';
+        if ($this->output_as_html) {
+            $this->html_response .= '<div class="success">Success!</div>';
         } else {
-            self::$js_response['success'] = true;
+            $this->js_response['success'] = true;
         }
-        Output::reply();
+        $this->reply();
     }
     
     /**
@@ -80,17 +112,17 @@ class Output
      * and the key is set, the value of key is treated as an array and the
      * $message is pushed onto the end of it. Defaults to false.
      */
-    public static function append($message, $key = null, $subarray = false)
+    public function append($message, $key = null, $subarray = false)
     {
-        if (self::$outputAsHtml) {
-            self::$html_response .= $message;
+        if ($this->output_as_html) {
+            $this->html_response .= $message;
         } else {
             if ($key == null) {
-                self::$js_response[] = $message;
+                $this->js_response[] = $message;
             } else if($subarray) {
-                self::$js_response[$key][] = $message;
+                $this->js_response[$key][] = $message;
             } else {
-                self::$js_response[$key] = $message;
+                $this->js_response[$key] = $message;
             }
         }
     }
@@ -99,12 +131,12 @@ class Output
      * Sets the output mode. When true, the the content will be output
      * as HTML, when false the content will be JSON encoded. Default mode
      * is to output as JSON.
-     * @param boolean $htmlOutput Whether or not reply should output HTML or
+     * @param boolean $output_as_html Whether or not reply should output HTML or
      * a JSON object.
      */
-    public static function setHTMLMode($htmlOutput)
+    public function setHTMLMode($output_as_html)
     {
-        self::$outputAsHtml = (boolean) $htmlOutput;
+        $this->output_as_html = (boolean) $output_as_html;
     }
     
     /**
@@ -116,7 +148,7 @@ class Output
      * Defaults to false.
      * @return string The truncated string.
      */
-    public static function &prepareHTML($message, $truncate = false)
+    public function prepareHTML($message, $truncate = false)
     {
         $string = htmlspecialchars($message);
         
@@ -136,30 +168,30 @@ class Output
      * @param boolean $reply_now When true the output will be output immediatly.
      * message.
      */
-    public static function error($message = 'Unkown error', $debug_extra = array(), $reply_now = true)
+    public function error($message = 'Unkown error', $debug_extra = array(), $reply_now = true)
     {
-        if (self::$outputAsHtml) {
-            self::$html_response .= '<div class="error">' . self::prepareHTML($message) . "</div>";
-            if (Settings::debugMode() && !empty($debug_extra)) {
-                self::$html_response .= "<div style='display:none'><pre>" . print_r($debug_extra, true) . "</pre></div>";
+        if ($this->output_as_html) {
+            $this->html_response .= '<div class="error">' . $this->prepareHTML($message) . "</div>";
+            if ($this->settings->debugMode() && !empty($debug_extra)) {
+                $this->html_response .= "<div style='display:none'><pre>" . print_r($debug_extra, true) . "</pre></div>";
             }
         } else {
-            self::$js_response['error'] = $message;
-            if (Settings::debugMode() && !empty($debug_extra)) {
-                self::$js_response['debug'] = $debug_extra;
+            $this->js_response['error'] = $message;
+            if ($this->settings->debugMode() && !empty($debug_extra)) {
+                $this->js_response['debug'] = $debug_extra;
             }
         }
         if ($reply_now) {
-            self::reply();
+            $this->reply();
         }
     }
 
-    public static function exception(Exception $exception, $extra = array())
+    public function exception(Exception $exception, $extra = array())
     {
-        if (Settings::debugMode()) {
+        if ($this->settings->debugMode()) {
             $extra['stacktrace'] = $exception->getTrace();
         }
-        self::error($exception->getMessage(), $extra, true);
+        $this->error($exception->getMessage(), $extra, true);
     }
 
 }

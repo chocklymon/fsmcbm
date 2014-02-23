@@ -22,101 +22,89 @@
  */
 
 /**
- * Fake setting class so that Unit Tests can modify settings
+ * Used to access the configurations settings.
  * @author Curtis Oakley
  */
 class Settings
 {
-    
     /**
      * An array containing the settings.
      * @var array
      */
-    private static $settings;
+    protected $settings;
     
     /**
-     * Load the settings from the configuration file.
+     * Construct a new settings
+     * @global array $settings Defined in the bm-config.php
      */
-    public static function generateSettings($settings = array())
+    public function __construct()
     {
+        if (file_exists('bm-config.php')) {
+            require_once('bm-config.php');
+            global $settings;
+        } else {
+            $settings = array();
+        }
+        
         $defaults = array(
             'cookie_name' => 'bm',
             'debug' => false,
         );
-        self::$settings = array_merge($defaults, $settings);
+        $this->settings = array_merge($defaults, $settings);
     }
     
     /**
      * Get the name of the cookie used to store the login information.
      * @return string
      */
-    public static function cookieName()
+    public function getCookieName()
     {
-        return self::$settings['cookie_name'];
+        return $this->settings['cookie_name'];
     }
     
     /**
      * Get the database host name.
      * @return string
      */
-    public static function databaseHost()
+    public function getDatabaseHost()
     {
-        return self::$settings['db_host'];
+        return $this->settings['db_host'];
     }
     
     /**
      * Get the name of the ban manager database.
      * @return string
      */
-    public static function databaseName()
+    public function getDatabaseName()
     {
-        return self::$settings['db_database'];
+        return $this->settings['db_database'];
     }
     
     /**
      * Get the database password
      * @return string
      */
-    public static function databasePassword()
+    public function getDatabasePassword()
     {
-        return self::$settings['db_password'];
+        return $this->settings['db_password'];
     }
     
     /**
      * Return the database username
      * @return string
      */
-    public static function databaseUsername()
+    public function getDatabaseUsername()
     {
-        return self::$settings['db_username'];
+        return $this->settings['db_username'];
     }
     
     /**
      * Indicates if the ban manager is being run in debugging mode.
      * @return boolean <tt>true</tt> when debug mode is on.
      */
-    public static function debugMode()
+    public function debugMode()
     {
-        return self::$settings['debug'];
-    }
-    
-    /**
-     * Set the debug mode flag.
-     * @param boolean $debug_mode The debug mode flag
-     */
-    public static function setDebugMode($debug_mode)
-    {
-        self::$settings['debug'] = $debug_mode;
-    }
-    
-    /**
-     * Set a specific setting by name.
-     * @param string $setting_name The name of the setting.
-     * @param mixed $value The value to set the setting to.
-     */
-    public static function setSetting($setting_name, $value)
-    {
-        self::$settings[$setting_name] = $value;
+        return $this->settings['debug'];
     }
     
 }

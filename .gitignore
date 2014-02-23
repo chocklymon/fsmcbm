@@ -10,13 +10,13 @@ jquery-1.9.1.js
 # Configuration files
 bm-config.php
 phpunit.xml
+test.ini
 
 # IDE Files
 nbproject/
 
-# Tests
+# Tests Results
 test-results/
-phpunit.xml
 
 # Misc file types
 *.gz

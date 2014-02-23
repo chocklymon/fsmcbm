@@ -21,8 +21,8 @@
  * THE SOFTWARE.
  */
 
-require_once('bm-settings_mock.php');
-require_once('src/bm-output.php');
+require_once('MockSettings.php');
+require_once('src/Output.php');
 
 /**
  * Test the Output class.
@@ -34,14 +34,30 @@ require_once('src/bm-output.php');
  */
 class OutputTest extends PHPUnit_Framework_TestCase
 {
+    /**
+     * @var MockSettings
+     */
+    private static $settings;
+    
+    /**
+     * @var Output
+     */
+    private $output;
+    
+    public static function setUpBeforeClass()
+    {
+        self::$settings = new MockSettings();
+    }
+    
+    public function setUP()
+    {
+        $this->output = new Output(self::$settings);
+    }
     
     protected function tearDown()
     {
-        // Clear any residual output in the buffer
-        Output::clear();
-        
         // Reset the debug mode to off
-        Settings::setDebugMode(false);
+        self::$settings->setDebugMode(false);
     }
     
     public function testAppend_html()
@@ -50,11 +66,11 @@ class OutputTest extends PHPUnit_Framework_TestCase
         $s2 = "<p>This is a paragraph.</p>";
         $this->expectOutputString($s1 . $s2);
         
-        Output::setHTMLMode(true);
-        Output::append($s1);
-        Output::append($s2);
+        $this->output->setHTMLMode(true);
+        $this->output->append($s1);
+        $this->output->append($s2);
         
-        Output::reply();
+        $this->output->reply();
     }
     
     public function testAppend_json()
@@ -62,11 +78,11 @@ class OutputTest extends PHPUnit_Framework_TestCase
         $expected = '[{"hello":"hi"},{"world":"hi"}]';
         $this->expectOutputString($expected);
         
-        Output::setHTMLMode(false);
-        Output::append(array('hello'=>'hi'));
-        Output::append(array('world'=>'hi'));
+        $this->output->setHTMLMode(false);
+        $this->output->append(array('hello'=>'hi'));
+        $this->output->append(array('world'=>'hi'));
         
-        Output::reply();
+        $this->output->reply();
     }
     
     public function testAppend_json_subkey()
@@ -74,11 +90,11 @@ class OutputTest extends PHPUnit_Framework_TestCase
         $expected = '{"hello":"world","cheese":["cheddar","colby"]}';
         $this->expectOutputString($expected);
         
-        Output::setHTMLMode(false);
-        Output::append('world', 'hello');
-        Output::append(array('cheddar','colby'), 'cheese');
+        $this->output->setHTMLMode(false);
+        $this->output->append('world', 'hello');
+        $this->output->append(array('cheddar','colby'), 'cheese');
         
-        Output::reply();
+        $this->output->reply();
     }
     
     public function testAppend_json_subarray()
@@ -86,26 +102,26 @@ class OutputTest extends PHPUnit_Framework_TestCase
         $expected = '{"cheese":["cheddar","colby"]}';
         $this->expectOutputString($expected);
         
-        Output::setHTMLMode(false);
-        Output::append('cheddar', 'cheese', true);
-        Output::append('colby', 'cheese', true);
+        $this->output->setHTMLMode(false);
+        $this->output->append('cheddar', 'cheese', true);
+        $this->output->append('colby', 'cheese', true);
         
-        Output::reply();
+        $this->output->reply();
     }
     
     public function testClear()
     {
         // Setup
-        Output::setHTMLMode(false);
-        Output::append(array("hello"=>"world"));
+        $this->output->setHTMLMode(false);
+        $this->output->append(array("hello"=>"world"));
         
         // Act
-        Output::clear();
+        $this->output->clear();
         
         // Verify
         // Since this is JSON, this should be an empty array after clear is called
         $this->expectOutputString('[]');
-        Output::reply();
+        $this->output->reply();
     }
     
     public function testError_html()
@@ -114,22 +130,22 @@ class OutputTest extends PHPUnit_Framework_TestCase
         $expected = '<div class="error">' . $message . '</div>';
         $this->expectOutputString($expected);
         
-        Output::setHTMLMode(true);
-        Output::error($message, null, false);
-        Output::reply();
+        $this->output->setHTMLMode(true);
+        $this->output->error($message, null, false);
+        $this->output->reply();
     }
     
     public function testError_html_debugOn()
     {
-        Settings::setDebugMode(true);
+        self::$settings->setDebugMode(true);
         $message = 'PHP Unit Testing Error';
         $debug_message = 'A super fatal error has occured';
         $expected = "<div class=\"error\">{$message}</div><div style='display:none'><pre>{$debug_message}</pre></div>";
         $this->expectOutputString($expected);
         
-        Output::setHTMLMode(true);
-        Output::error($message, $debug_message, false);
-        Output::reply();
+        $this->output->setHTMLMode(true);
+        $this->output->error($message, $debug_message, false);
+        $this->output->reply();
     }
     
     public function testError_json()
@@ -138,22 +154,22 @@ class OutputTest extends PHPUnit_Framework_TestCase
         $expected = '{"error":"' . $message . '"}';
         $this->expectOutputString($expected);
         
-        Output::setHTMLMode(false);
-        Output::error($message, null, false);
-        Output::reply();
+        $this->output->setHTMLMode(false);
+        $this->output->error($message, null, false);
+        $this->output->reply();
     }
     
     public function testError_json_debugOn()
     {
-        Settings::setDebugMode(true);
+        self::$settings->setDebugMode(true);
         $message = 'PHP Unit Testing Error';
         $debug_message = 'A super fatal error has occured';
         $expected = '{"error":"' . $message . '","debug":"' . $debug_message . '"}';
         $this->expectOutputString($expected);
         
-        Output::setHTMLMode(false);
-        Output::error($message, $debug_message, false);
-        Output::reply();
+        $this->output->setHTMLMode(false);
+        $this->output->error($message, $debug_message, false);
+        $this->output->reply();
     }
     
     public function testException()
@@ -163,13 +179,13 @@ class OutputTest extends PHPUnit_Framework_TestCase
         $this->expectOutputString($expected);
         $ex = new Exception($message);
         
-        Output::setHTMLMode(false);
-        Output::exception($ex);
+        $this->output->setHTMLMode(false);
+        $this->output->exception($ex);
     }
     
     public function testException_debugOn()
     {
-        Settings::setDebugMode(true);
+        self::$settings->setDebugMode(true);
         $message = 'PHP Unit Testing Error';
         $ex = new Exception($message);
         $stack = json_encode($ex->getTrace());
@@ -177,8 +193,8 @@ class OutputTest extends PHPUnit_Framework_TestCase
         $this->expectOutputString($expected);
         
         
-        Output::setHTMLMode(false);
-        Output::exception($ex);
+        $this->output->setHTMLMode(false);
+        $this->output->exception($ex);
     }
     
     public function testSuccess_html()
@@ -186,8 +202,8 @@ class OutputTest extends PHPUnit_Framework_TestCase
         $expected = '<div class="success">Success!</div>';
         $this->expectOutputString($expected);
         
-        Output::setHTMLMode(true);
-        Output::success();
+        $this->output->setHTMLMode(true);
+        $this->output->success();
     }
     
     public function testSuccess_json()
@@ -195,17 +211,17 @@ class OutputTest extends PHPUnit_Framework_TestCase
         $expected = '{"success":true}';
         $this->expectOutputString($expected);
         
-        Output::setHTMLMode(false);
-        Output::success();
+        $this->output->setHTMLMode(false);
+        $this->output->success();
     }
     
-    public function testPrepareHTML_notruncate()
+    public function testPrepareHTML()
     {
         // This string is 135 characters long, truncate goes at 120
         $string   = 'I <i>like</i> cheese & pickles. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis in nisl sem. Donec quis imperdiet nibh.';
         $expected = 'I &lt;i&gt;like&lt;/i&gt; cheese &amp; pickles. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis in nisl sem. Donec quis imperdiet nibh.';
         
-        $actual = Output::prepareHTML($string);
+        $actual = $this->output->prepareHTML($string);
         
         $this->assertEquals($expected, $actual);
     }
@@ -215,7 +231,7 @@ class OutputTest extends PHPUnit_Framework_TestCase
         $string   = 'I <i>like</i> cheese & pickles. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis in nisl sem. Donec quis imperdiet nibh.';
         $expected = 'I &lt;i&gt;like&lt;/i&gt; cheese &amp; pickles. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis in nisl se ...';
         
-        $actual = Output::prepareHTML($string, true);
+        $actual = $this->output->prepareHTML($string, true);
         
         $this->assertEquals($expected, $actual);
     }
