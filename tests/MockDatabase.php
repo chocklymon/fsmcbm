@@ -1,17 +1,17 @@
 <?php
 /* Copyright (c) 2014 Curtis Oakley
  * http://chockly.org/
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -29,11 +29,11 @@ require_once 'src/Database.php';
  */
 class MockDatabase extends Database
 {
-    
+
     private $queries;
     private $responses;
     private $query_count = 0;
-    
+
     /**
      * Constructs a new database mock.
      * @param array $responses An array of responses that should be returned
@@ -44,7 +44,27 @@ class MockDatabase extends Database
         $this->queries = array();
         $this->responses = $responses;
     }
-    
+
+    /**
+     * Connects to the mock database.
+     * Performs no actions, the mock database is always considered connected.
+     * @param Settings $settings The settings. Used to get the data needed to
+     * connect with the database.
+     */
+    public function connect(Settings $settings)
+    {
+        // No op
+    }
+
+    /**
+     * Get if the datbase is currently connected.
+     * @return boolean <tt>true</tt> if the database is connected.
+     */
+    public function isConnected()
+    {
+        return true;
+    }
+
     /**
      * Returns the last query that was sent to the mock database.
      * @return string The last query.
@@ -58,7 +78,7 @@ class MockDatabase extends Database
             return $this->queries[$this->query_count - 1];
         }
     }
-    
+
     /**
      * Returns all the queries that have been run against this mock database.
      * @return array An array containing the query strings.
@@ -67,7 +87,7 @@ class MockDatabase extends Database
     {
         return $this->queries;
     }
-    
+
     /**
      * Closes the database connection.
      */
@@ -86,15 +106,15 @@ class MockDatabase extends Database
     {
         return $this->query($table);
     }
-    
+
     /**
-     * Performs a query against the database. 
+     * Performs a query against the database.
      * @param string $sql The query string.
      * @param string $error_message An optional error message to output if
      * the query fails.
      * @return mixed For successful SELECT, SHOW, DESCRIBE or EXPLAIN queries
      * this will return a mysqli_result object. For other successful queries
-     * this will return TRUE. 
+     * this will return TRUE.
      */
     public function &query($sql, $error_message = 'Nothing found.')
     {
@@ -108,7 +128,7 @@ class MockDatabase extends Database
         $this->query_count++;
         return $response;
     }
-    
+
     /**
      * Performs a query against the database and returns all the rows returned
      * by the query as an array.
@@ -121,7 +141,7 @@ class MockDatabase extends Database
     {
         return $this->query($sql);
     }
-    
+
     /**
      * Performs a query against the database and stores all the rows returned
      * into the output as a subarray of the provided key.
@@ -135,7 +155,7 @@ class MockDatabase extends Database
     {
         return $this->query($sql);
     }
-    
+
     /**
      * Performs a query against the database and returns the first row returned.
      * @param string $sql The query string.
@@ -147,18 +167,18 @@ class MockDatabase extends Database
     {
         return $this->query($sql);
     }
-    
+
     /**
      * Runs the provided SQL query and returns the ID of the inserted row.
      * @param string $sql The query string.
      * @return The value of the AUTO_INCREMENT field that was updated by the
-     * query. Returns zero if the query did not update an AUTO_INCREMENT value. 
+     * query. Returns zero if the query did not update an AUTO_INCREMENT value.
      */
     public function insert($sql)
     {
         return $this->query($sql);
     }
-    
+
     /**
      * Sanitizes input for use with the the database. All data that is from
      * user input needs to be sanitized before use in a SQL query.
@@ -203,7 +223,7 @@ class MockDatabase extends Database
            return null;
        }
     }
-    
+
     /**
      * Indicates if the given table exits in the database.
      * @param string $table The name of the table.
@@ -213,7 +233,7 @@ class MockDatabase extends Database
     {
         return $this->query($table);
     }
-    
+
 }
 
 /**
@@ -224,7 +244,7 @@ class FakeQueryResult /* extends mysqli_result */
     private $results;
     public $current_field;
     public $num_rows;
-    
+
     /**
      * Construct a fake query result.
      * @param array $results An array of results.
@@ -235,18 +255,18 @@ class FakeQueryResult /* extends mysqli_result */
         $this->current_field = 0;
         $this->num_rows = count($this->results);
     }
-    
+
     public function data_seek($offset)
     {
         $this->current_field = $offset;
         return true;
     }
-    
+
     public function fetch_all($resulttype = MYSQLI_NUM)
     {
         return $this->results;
     }
-    
+
     public function fetch_array($resulttype = MYSQLI_BOTH)
     {
         if ($this->current_field < count($this->results)) {
@@ -257,17 +277,17 @@ class FakeQueryResult /* extends mysqli_result */
         }
         return $value;
     }
-    
+
     public function fetch_assoc()
     {
         return $this->fetch_array();
     }
-    
+
     public function fetch_row()
     {
         return $this->fetch_array();
     }
-    
+
     public function free()
     {
         unset($this->results, $this->current_field, $this->num_rows);

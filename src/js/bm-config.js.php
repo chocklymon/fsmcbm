@@ -5,7 +5,7 @@ require_once '../Database.php';
 
 $settings = new Settings();
 $output = new Output($settings);
-$db = new Database($settings);
+$db = new Database();
 
 header('Content-Type: text/javascript');
 // Since this won't change very often, set the cache to store this for two days
@@ -16,24 +16,24 @@ flush();
     /* ----------------------------- *
      *   Data Structure Variables    *
      * ----------------------------- */
-    var 
+    var
         // Data structure, see documentation below
         info,
         DataStructure,
-        
+
         // Data structure for the user
         user,
-        
+
         // Data structure for incidents
         incident,
-        
+
         // Data structure for appeals
         appeal;
-        
+
     /* ----------------------------- *
      *   DATA STRUCTURE OBJECT       *
      * ----------------------------- */
-    
+
     /**
      * Convenience constructor for a DataStructure.
      * @param {Object} options The options/settings for the DataStructure.
@@ -50,14 +50,14 @@ flush();
     info = function(options) {
         return new DataStructure(options);
     };
-    
+
     /**
      * DataStructure Constructor.
      * See the info documentation for information about datastructures.
      */
     DataStructure = function(options) {
         var datum, i;
-        
+
         datum = $.extend(
             {
                 // Default Options
@@ -72,18 +72,18 @@ flush();
             },
             options
         );
-        
+
         // Attach each option to the data structure
         for ( i in datum ) {
             this[i] = datum[i];
         }
-        
+
         return this;
     };
-    
+
     // Define the data structure API
     info.fn = DataStructure.prototype = {
-        
+
         // Data Structure Functions
 
         /**
@@ -106,31 +106,31 @@ flush();
                 label,
                 field,
                 id = name + "_" + idNum;
-            
+
             // See if this field should be shown when empty
             if (typeof this.showEmpty == 'function') {
                 showEmpty = this.showEmpty(idNum);
             } else {
                 showEmpty = this.showEmpty;
             }
-            
+
             if (!showEmpty && (value == null || value == '')) {
                 // Don't show empty fields
                 return '';
             }
-            
+
             value = this.formatValue(value);
-            
+
             label = $("<label>").text(this.name + ":").attr("for", id);
-            
+
             if(this.type == 'textarea') {
                 // Text area
                 field = $("<textarea>").text(value);
-                
+
             } else if(this.type == 'select') {
                 // Drop Down
                 field = $("<select>")
-                
+
                 // Attach each of the options
                 var i;
                 for(i in this.options) {
@@ -141,46 +141,46 @@ flush();
                         field.append($("<option>").attr("value", i.value).text(i.label));
                     }
                 }
-                
+
                 field.val(value);
-                
+
             } else if(this.type == "text" || this.type == "int" || this.type == "date") {
                 // Text, date, and int types
                 field = $("<input>").attr('type', 'text').val(value);
-                
+
                 if(this.type == "int") {
                     label.addClass("int");
                     field.addClass("int");
                 }
-                
+
             } else if(this.type == "checkbox") {
                 // Checkbox
                 field = $("<input>").attr({
                     'type' : 'checkbox'
                 });
-                
+
                 if(value == 1) {
                     // Check the checkbox
                     field.prop("checked", true);
                 }
-                
+
             } else {
                 // Unknown
                 console.log("Unkown Type: " + this.type);
                 return '';
             }
-            
+
             // Add common attributes to the field
             field.attr({
                 'name' : name,
                 'id'   : id
             });
-            
+
             // Attach the date picker to dates
             if( this.disabled ) {
                 // Disabled field
                 field.prop('readonly', true);
-                
+
                 // Date check part of this if else so that disabled fields don't have the datpicker attached.
             } else if(this.type == "date") {
                 field.datepicker({
@@ -191,21 +191,21 @@ flush();
                    maxDate : 0
                 });
             }
-            
+
             field = label.add(field).add(this.after);
-            
+
             if (typeof this.special == 'function') {
                 field = this.special(field);
             }
-            
+
             return field;
         },
-        
+
         formatValue : function(value) {
             // Null should be empty strings
             if(value == null)
                 return '';
-            
+
             if(this.type == "date") {
                 // Do date formating (change from yy-mm-dd hh:mm:ss to yy-mm-dd)
                 var index = value.indexOf(" ");
@@ -214,19 +214,19 @@ flush();
                 }
                 return value;
             }
-            
+
             // No formating needed, return the value
             return value;
         }
     };
-    
-    
-    
+
+
+
     /* ----------------------------- *
      *      DATA STRUCTURES          *
      * ----------------------------- */
-    
-    
+
+
     /**
      * Contains the data structures for a user.
      */
@@ -287,6 +287,7 @@ SELECT *
 FROM `rank`
 SQL;
 
+$db->connect($settings);
 $rows = $db->queryRows($sql);
 
 foreach($rows as $rank) {
@@ -294,6 +295,7 @@ foreach($rows as $rank) {
         array('value'=>$rank['rank_id'], 'label'=>$rank['name'])
     );
 }
+$db->close();
 
 $output->reply();
 ?>
@@ -307,7 +309,7 @@ $output->reply();
             type : "textarea"
         })
     };
-    
+
     /**
      * Contains the Data Structures for incidents.
      */
@@ -408,7 +410,7 @@ $output->reply();
             name: "Z"
         })
     };
-    
+
     // TODO refine the appeal object
     appeal = {
         author : info({
@@ -434,5 +436,4 @@ $output->reply();
     bm.user = user;
     bm.incident = incident;
     bm.appeal = appeal;
-    bm.url = <?php echo "'$url'"; ?>;
 })();

@@ -20,7 +20,7 @@ if (!window.console || !window.console.log) {
  * @param {undefined} empty Not set so we can compare for undefined.
  */
 (function($, empty) {
-    
+
     /* ----------------------------- *
      *          VARIABLES            *
      * ----------------------------- */
@@ -35,8 +35,8 @@ if (!window.console || !window.console.log) {
     /* ----------------------------- *
      *          FUNCTIONS            *
      * ----------------------------- */
-    
-    
+
+
     /**
      * Opens the add user dialog, and after the new user is saved, adds them to the incident.
      */
@@ -45,8 +45,8 @@ if (!window.console || !window.console.log) {
         $("#user_add_username").val($("#user_name").val());
         openAddUser();
     }
-    
-    
+
+
     /**
      * Displays a message to a user in a jQuery UI highlight box.
      * @param {String} message The message to display.
@@ -55,7 +55,7 @@ if (!window.console || !window.console.log) {
         // Display the message
         $("#highlight-msg").text(message);
         $("#highlight").slideDown();
-        
+
         // Display for four seconds
         timeouts['messages'] = setTimeout(
             function() {
@@ -64,8 +64,8 @@ if (!window.console || !window.console.log) {
             4000
         );
     }
-    
-    
+
+
     /**
      *  Retrieves the user information, and then displays it into the manage
      *  users tab.
@@ -190,7 +190,7 @@ if (!window.console || !window.console.log) {
             }
         );
     }
-    
+
 
     /**
      * Handles errors.
@@ -199,11 +199,11 @@ if (!window.console || !window.console.log) {
     function handleError(error) {
         // Log the error message
         console.error(error);
-        
+
         // Display the error message
         $("#error-msg").text(error);
         $("#error").slideDown();
-        
+
         // Display for six seconds
         timeouts['errors'] = setTimeout(
             function() {
@@ -212,8 +212,8 @@ if (!window.console || !window.console.log) {
             6000
         );
     }
-    
-    
+
+
     /**
      * Sets up an field to be an jQuery UI AutoComplete enabled field.
      * @param {String} input The jQuery selector to apply the autocomplete to.
@@ -264,16 +264,16 @@ if (!window.console || !window.console.log) {
             }
         });
     }
-    
-    
+
+
     /**
      * Opens the add user jQuery UI dialog.
      */
     function openAddUser() {
         $("#dialog-add-user").dialog("open");
     }
-    
-    
+
+
     function request(payload, callback, completed, urlExtra, method, dataType) {
         if (method === empty) {
             method = 'get';
@@ -285,7 +285,7 @@ if (!window.console || !window.console.log) {
             dataType = 'json';
         }
         $.ajax({
-            url      : bm.url + "ban-manager.php" + urlExtra,
+            url      : "ban-manager.php" + urlExtra,
             data     : payload,
             dataType : dataType,
             type     : method,
@@ -294,7 +294,7 @@ if (!window.console || !window.console.log) {
                 console.log(jqXHR);
                 console.log(textStatus);
                 console.log(errorThrown);
-                
+
                 handleError("Problem with request to server.");
             },
             success  : function(data) {
@@ -308,12 +308,12 @@ if (!window.console || !window.console.log) {
             }
         });
     }
-    
+
     function send(payload, command, callback, completed) {
         command = '?' + command + '=true';
         request(payload, callback, completed, command, 'post');
     }
-    
+
     /**
      * Performs a lookup on a user based on which table row was clicked.
      */
@@ -322,8 +322,8 @@ if (!window.console || !window.console.log) {
         $("#lookup-user_id").val($(this).attr("id").substring(3));
         getInformation();
     }
-    
-    
+
+
     function search() {
         if ($("#search").val().length < 2) {
 
@@ -349,8 +349,8 @@ if (!window.console || !window.console.log) {
             );
         }
     }
-    
-    
+
+
     /**
      * Takes a datastructure on the page and serializes it to an object.
      * @param {DataStructure} structure The data structure that is being serialized.
@@ -377,11 +377,11 @@ if (!window.console || !window.console.log) {
                 datum[index] = field.val();
             }
         });
-        
+
         return datum;
     }
-    
-    
+
+
     function togglePermanentBox() {
         var cb = $(this);
         cb.next('.user-info-permanent-box').css(
@@ -389,20 +389,20 @@ if (!window.console || !window.console.log) {
             cb.prop('checked') ? 'inline' : 'none'
         );
     }
-    
-    
-    
+
+
+
     /* ----------------------------- *
      *           INITALIZE           *
      * ----------------------------- */
 
     // Runs on document ready.
     $( function($) {
-        
+
         // Save variables
         var incidentForm = $("#add-incident-form"),
             addUserForm = $("#add-user-form");
-            
+
         // Build the add incident dialog form
         $.each(bm.incident, function(index, value) {
             // Don't attach read only fields
@@ -410,7 +410,7 @@ if (!window.console || !window.console.log) {
                 incidentForm.append(value.toHTML("", index, "add"));
             }
         });
-        
+
         // Build the add user dialog form
         $.each(bm.user, function(index, value) {
             // Don't attach read only fields
@@ -418,13 +418,13 @@ if (!window.console || !window.console.log) {
                 addUserForm.append(value.toHTML("", index, "add_u"));
             }
         });
-        
+
         // Set up the tabs
         $("#tabs").tabs({
             beforeLoad : function(event, ui) {
                 // Set up error handling
                 ui.jqXHR.error(function() {
-                   ui.panel.html("Couldn't load this tab."); 
+                   ui.panel.html("Couldn't load this tab.");
                 });
             },
             load       : function(event, ui) {
@@ -446,7 +446,7 @@ if (!window.console || !window.console.log) {
                         displayMessage("Please provide a username.");
                         return;
                     }
-                    
+
                     // Save the user
                     send(
                         $("#add-user-form").serialize(),
@@ -490,7 +490,7 @@ if (!window.console || !window.console.log) {
                             return;
                         }
                     }
-                    
+
                     // Save the incident.
                     send(
                         $("#add-incident-form").serialize(),
@@ -503,7 +503,7 @@ if (!window.console || !window.console.log) {
                             $("#add-incident-form")[0].reset();
                         }
                     );
-                    
+
                     $(this).dialog("close");
                 },
                 Cancel : function() {
@@ -517,18 +517,18 @@ if (!window.console || !window.console.log) {
         lookup("#user_name", "#user_id", null, "Not Found - Add New", attachNewUserToIncident);
 
         // Attach events \\
-        
+
         // Add user button
         $("#add-user").click(openAddUser);
-        
+
         // Add incident button
         $("#add-incident").click(function() {
             $("#dialog-add-incident").dialog("open");
         });
-        
+
         // Permanent banned checkbox display
         $("#banned_add_u").change(togglePermanentBox);
-        
+
         // Search box
         $("#search-button").click(search);
         $("#search").keyup(function(event) {
@@ -537,7 +537,7 @@ if (!window.console || !window.console.log) {
                 search();
             }
         });
-        
+
         // Message boxes
         $("#highlight").click(function(){
             clearTimeout(timeouts['messages']);

@@ -1,17 +1,17 @@
 <?php
 /* Copyright (c) 2014 Curtis Oakley
  * http://chockly.org/
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -27,19 +27,19 @@
  */
 class Controller
 {
-    
+
     /**
      * The database class.
-     * @var Database The database connection. 
+     * @var Database The database connection.
      */
     private $db;
-    
+
     /**
      * The ouptut handler
      * @var Output
      */
     private $output;
-    
+
     /**
      * Construct a new controller.
      * @param Database $database The databse instance to use.
@@ -50,7 +50,7 @@ class Controller
         $this->db = $database;
         $this->output = $output;
     }
-    
+
     /**
      * Adds a new incident to the database.
      * Uses the data posted into the page to create the incident.
@@ -226,7 +226,7 @@ class Controller
         $query = "SELECT u.user_id, u.username, i.incident_date, i.incident_type, i.action_taken
                 FROM users AS u
                 LEFT JOIN (
-                    SELECT * 
+                    SELECT *
                     FROM incident AS q
                     ORDER BY q.incident_date DESC
                 ) AS i ON u.user_id = i.user_id
@@ -238,27 +238,6 @@ class Controller
     }
 
     /**
-     * Gets name of the user logged into wordpress.
-     * @return mixed FALSE if the user is not not logged into wordpress, otherwise 
-     * it return an unsanitized string contain the logged in user's name. 
-     */
-    public function getLoggedInName()
-    {
-        // Search the wordpress cookies for the logged in user name
-        $keys = array_keys($_COOKIE);
-        foreach($keys as &$key) {
-            if (strncmp("wordpress_logged_in_", $key, 20) === 0) {
-                // Extract user name from the cookie
-                $value = $_COOKIE[$key];
-                return substr($value, 0, strpos($value, "|"));
-            }
-        }
-
-        return false;
-    }
-
-
-    /**
      * Gets the current time as a string ready for insertion into a MySQL datetime
      * field (Y-m-d H:i:s).
      * @return string The current time as a string.
@@ -267,44 +246,6 @@ class Controller
     {
         return date('Y-m-d H:i:s');
     }
-
-
-    /**
-     * Gets the information for the moderator using the ban manager.
-     * @return mixed FALSE if the user is not a moderator/admin or is not logged into
-     * wordpress, otherwise it return an array where index zero is the user id,
-     * index one is the user's rank, and index two is the user's name.
-     */
-    public function getModeratorInfo()
-    {
-        $info = false;
-
-        // Get the moderators name from the cookie
-        $moderator_name = $this->getLoggedInName();
-
-        if($moderator_name === false) {
-            return false;
-        }
-
-        $moderator_name = $this->db->sanitize($moderator_name);
-
-        // Request the user id from the database
-        $row = $this->db->querySingleRow(
-            "SELECT `users`.`user_id`, `rank`.`name` AS rank
-             FROM `users`
-             LEFT JOIN `rank` ON (`users`.`rank` = `rank`.`rank_id`)
-             WHERE `username` = '$moderator_name'",
-            'Moderator not found.'
-        );
-
-        // Only store the information of admins/moderators
-        if ($row['rank'] == 'Admin' || $row['rank'] == 'Moderator') {
-            $info = array($row['id'], $row['rank'], $moderator_name);
-        }
-
-        return $info;
-    }
-
 
     /**
      * Gets all the users on the watchlist.

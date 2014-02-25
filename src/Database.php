@@ -1,17 +1,17 @@
 <?php
 /* Copyright (c) 2014 Curtis Oakley
  * http://chockly.org/
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -29,59 +29,76 @@ require_once('DatabaseException.php');
  */
 class Database
 {
-    
+    /**
+     * Indicated if the database connection is active.
+     * @var boolean
+     */
+    private $connected = false;
+
     /**
      * The MySQL database connection.
      * @var mysqli
      */
     private $conn;
-    
+
     /**
      * Construct a Database connection handler.
-     * 
+     *
      * Handles communication with the database.
-     * 
+     */
+    public function __construct()
+    {
+    }
+
+    public function __destruct()
+    {
+        // Assures that the database connection is closed
+        if ($this->connected) {
+            @$this->close();
+        }
+    }
+
+    /**
+     * Connects to the database.
+     *
+     * This must be called before attempting any queries.
+     *
      * @param Settings $settings The settings. Used to get the data needed to
      * connect with the database.
      * @throws DatabaseException If there was a error setting up
      * a connection to the database.
      */
-    public function __construct(Settings $settings)
+    public function connect(Settings $settings)
     {
-        // Attempt to establish a connection to the database
-        $this->conn = mysqli_connect(
+        $this->conn = new mysqli(
             $settings->getDatabaseHost(),
             $settings->getDatabaseUsername(),
             $settings->getDatabasePassword(),
             $settings->getDatabaseName()
         );
 
-        if (!$this->conn || $this->conn->connect_errno) {
+        if ($this->conn->connect_errno) {
             throw new DatabaseException(
                 "Unabled to connect to the database.",
                 $this->conn->connect_errno
             );
         }
-        
+
         if (!$this->conn->set_charset("utf8")) {
             throw new DatabaseException("Unable to set utf8 character set.");
         }
+
+        $this->connected = true;
     }
-    
-    public function __destruct()
-    {
-        // Be sure to the close the database connection
-        @$this->close();
-    }
-    
+
     /**
      * Closes the database connection.
      */
     public function close()
     {
-        $this->conn->close();
+        $this->connected = !$this->conn->close();
     }
-    
+
     /**
      * Indicates if the specified column exits in the table.
      * @param string $table The table to check.
@@ -94,15 +111,24 @@ class Database
         $table = $this->sanitize($table);
         $column = $this->sanitize($column);
         $result = $this->query("SHOW COLUMNS FROM `$table` LIKE '$column'");
-        
+
         $exists = $result->num_rows != 0;
         $result->free();
-        
+
         return $exists;
     }
-    
+
     /**
-     * Performs a query against the database. 
+     * Get if the datbase is currently connected.
+     * @return boolean <tt>true</tt> if the database is connected.
+     */
+    public function isConnected()
+    {
+        return $this->connected;
+    }
+
+    /**
+     * Performs a query against the database.
      * @param string $sql The query string.
      * @param string $error_message An optional error message to output if
      * the query fails.
@@ -114,7 +140,7 @@ class Database
     public function &query($sql, $error_message = 'Nothing found.')
     {
         $result = $this->conn->query($sql);
-        
+
         if($result === false){
             throw new DatabaseException(
                 $error_message,
@@ -123,10 +149,10 @@ class Database
                 $sql
             );
         }
-        
+
         return $result;
     }
-    
+
     /**
      * Performs a query against the database and returns all the rows returned
      * by the query as an array.
@@ -139,17 +165,17 @@ class Database
     public function &queryRows($sql, $error_message = 'Nothing found.')
     {
         $result = $this->query($sql, $error_message);
-        
+
         $rows = array();
-        
+
         while($row = $result->fetch_assoc()){
             $rows[] = $row;
         }
         $result->free();
-        
+
         return $rows;
     }
-    
+
     /**
      * Performs a query against the database and stores all the rows returned
      * into the output as a subarray of the provided key.
@@ -163,13 +189,13 @@ class Database
     public function queryRowsIntoOutput($sql, $key, $error_message = 'Nothing found.')
     {
         $result = $this->query($sql, $error_message);
-        
+
         while($row = $result->fetch_assoc()){
             Output::append($row, $key, true);
         }
         $result->free();
     }
-    
+
     /**
      * Performs a query against the database and returns the first row returned.
      * @param string $sql The query string.
@@ -181,17 +207,17 @@ class Database
     public function querySingleRow($sql, $error_message = 'Nothing found.')
     {
         $result = $this->query($sql, $error_message);
-        
+
         if ($result->num_rows == 0) {
             throw new DatabaseException($error_message, 0, "", $sql);
         }
-        
+
         $row = $result->fetch_assoc();
         $result->free();
-        
+
         return $row;
     }
-    
+
     /**
      * Runs the provided SQL query and returns the ID of the inserted row.
      * @param string $sql The query string.
@@ -206,7 +232,7 @@ class Database
         // Return the id
         return $this->conn->insert_id;
     }
-    
+
     /**
      * Sanitizes input for use with the the database. All data that is from
      * user input needs to be sanitized before use in a SQL query.
@@ -245,7 +271,7 @@ class Database
            return null;
        }
     }
-    
+
     /**
      * Indicates if the given table exits in the database.
      * @param string $table The name of the table.
@@ -256,11 +282,11 @@ class Database
     {
         $table = $this->sanitize($table);
         $result = $this->query("SHOW TABLES LIKE '$table'");
-        
+
         $exists = $result->num_rows != 0;
-        
+
         $result->free();
-        
+
         return $exists;
     }
 }

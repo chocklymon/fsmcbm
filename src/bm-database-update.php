@@ -1,17 +1,17 @@
 <?php
 /* Copyright (c) 2014 Curtis Oakley
  * http://chockly.org/
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -22,24 +22,27 @@
  */
 
 /* *****************************************************************************
- * 
+ *
  * This script updates the ban manager database so that it is the correct
  * version in case the skeleton has been changed since the database was created.
- * 
+ *
  * This script should be able to run multiple times over the same database
  * without causing errors.
- * 
+ *
  * Assumes that the users has at least v1 of the database set up.
- * 
+ *
  * *****************************************************************************
  */
 
 // Set up for running the database update
-require_once 'bm-settings.php';
-require_once 'bm-database.php';
-require_once 'bm-output.php';
+require_once 'Settings.php';
+require_once 'Database.php';
+require_once 'Output.php';
 
+$settings = new Settings();
 $db = new Database();
+
+$db->connect($settings);
 
 // Begin database update code
 
@@ -68,7 +71,7 @@ $ranks = array(
 if ($db->columnExists('incident', 'moderator')) {
     $sql = <<<SQL
 ALTER TABLE `incident`
-CHANGE `moderator` `moderator_id` INT( 10 ) UNSIGNED NOT NULL 
+CHANGE `moderator` `moderator_id` INT( 10 ) UNSIGNED NOT NULL
 SQL;
     $db->query($sql);
 }
@@ -79,7 +82,7 @@ SQL;
 if ($db->columnExists('ban_history', 'moderator')) {
     $sql = <<<SQL
 ALTER TABLE `ban_history`
-CHANGE `moderator` `moderator_id` INT( 10 ) UNSIGNED NOT NULL 
+CHANGE `moderator` `moderator_id` INT( 10 ) UNSIGNED NOT NULL
 SQL;
     $db->query($sql);
 }
@@ -121,7 +124,7 @@ $result = $db->querySingleRow($sql);
 if ($result['CHARACTER_MAXIMUM_LENGTH'] != 30) {
     $sql = <<<SQL
 ALTER TABLE `incident`
-CHANGE `incident_type` `incident_type` VARCHAR( 30 ) NULL DEFAULT NULL  
+CHANGE `incident_type` `incident_type` VARCHAR( 30 ) NULL DEFAULT NULL
 SQL;
     $db->query($sql);
 }
@@ -157,16 +160,16 @@ FROM `incident`
 WHERE `appeal_date` IS NOT NULL
 SQL;
     $rows = $db->queryRows($sql);
-    
+
     $values = '';
-    
+
     foreach ($rows as $appeal) {
         $message = trim($appeal['appeal']);
         $response = trim($appeal['appeal_response']);
-        
+
         // Assume that incident appeals with a response are closed.
         $closed = !empty($response);
-        
+
         if (!empty($message)) {
             $message = $db->sanitize($message);
             $values .= " ('{$appeal['user_id']}', '{$appeal['user_id']}', $closed, '{$appeal['appeal_date']}', '{$message}'),";
@@ -176,16 +179,16 @@ SQL;
             $values .= " ('{$appeal['user_id']}', '{$appeal['moderator_id']}', $closed, '{$appeal['appeal_date']}', '{$response}'),";
         }
     }
-    
+
     if (!empty($values)) {
         // Remove the trailing ','
         $values = substr($values, 0, -1);
-    
+
         $sql = "INSERT INTO `appeal` (`user_id`, `author_id`, `closed`, `date`, `message`) VALUES $values";
-         
+
         $db->query($sql);
     }
-    
+
     // Remove the appeal columns
     $sql = <<<SQL
 ALTER TABLE `incident`
@@ -211,7 +214,7 @@ SQL;
 
     // Add the ranks to the Database
     $values = '';
-    
+
     foreach($ranks as $rank) {
         if (!empty($values)) {
             $values .= ",\n";
@@ -222,10 +225,10 @@ SQL;
 
     if (!empty($values)) {
         $sql = "INSERT INTO `rank` (`name`) VALUES $values";
-        
+
         $db->query($sql);
     }
-    
+
     // Switch over the ranks
     $sql = <<<SQL
 UPDATE `users` AS u, `rank` AS r
@@ -233,7 +236,7 @@ SET u.`rank` = r.`rank_id`
 WHERE u.`rank` = r.`name`;
 SQL;
     $db->query($sql);
-    
+
     // Change the rank column in the users table to an INT
     $sql = <<<SQL
 ALTER TABLE `users`
@@ -243,3 +246,5 @@ SQL;
     $db->query($sql);
 }
 // End ranks table
+
+$db->close();
