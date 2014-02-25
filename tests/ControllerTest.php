@@ -75,8 +75,6 @@ class ControllerTest extends PHPUnit_Framework_TestCase
             'notes'         => "Don't worry, just have some cheese.",
             'id'            => '28',
         );
-
-        $_COOKIE = array('wordpress_logged_in_28'=> self::USERNAME . '|1393260248|7fe9e5132050a0ef139492791867b659');
     }
 
     protected function tearDown()

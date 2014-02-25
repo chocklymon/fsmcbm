@@ -42,50 +42,61 @@ class Authentication
         $this->settings = $settings;
     }
 
-    public function authenticate(Database $db, Output $output)
+    /**
+     * Authenticates the user.
+     * @param Database $db
+     * @param Output $output
+     * @return bool <tt>true</tt> if the user was authenticated.
+     */
+    public function authenticate(Database $db)
     {
-        $user_id = false;
+        $authenticated = false;
 
         if ($this->settings->debugMode()) {
             // Debugging mode on, auto login as the first user
-            $user_id = 1;
+            $this->user_id = 1;
+            $authenticated = true;
         } else {
+            // Attempt to authenticate the user
             $username = $this->getLoggedInName();
 
-            if ($username  === FALSE ) {
-                // User is not logged in, set the ban manager cookie as expired.
+            if ($username === false) {
+                // User is not logged into wordpress
+                // Expire the cookie
                 setcookie($this->settings->getCookieName(), "", time() - 3600);
 
-            } else if (isset($_COOKIE[$this->settings->getCookieName()])) {
+            } else {
+                // User is logged into wordpress
+                if (isset($_COOKIE[$this->settings->getCookieName()])) {
+                    // Get the user information from the ban manager cookie
+                    $user_info = explode("|", $_COOKIE[$this->settings->getCookieName()]);
 
-                $user_info = explode("|", $_COOKIE[$this->settings->getCookieName()]);
-
-                // Check if the user has changed
-                if ($user_info[2] == $username) {
-                    // User is the same, store their ID
-                    $user_id = $user_info[0];
-                }
-            }
-
-            if ($user_id === false) {
-                $user_info = $this->getModeratorInfo($db, $username);
-
-                if($user_info === FALSE) {
-                    // Not a moderator
-                    $output->error("Not logged in.");
-                    if ($db->isConnected()) {
-                        $db->close();
+                    // Make sure the user hasn't changed
+                    if ($user_info[2] == $username) {
+                        $this->user_id = $user_info[0];
+                        $authenticated = true;
                     }
-                    exit();
                 } else {
-                    // Mark the user as logged into the ban manager
-                    setcookie(BM_COOKIE, implode("|", $user_info), 0, "/", "finalscoremc.com");
+                    // Get the user information from the database
+                    $user_info = $this->getModeratorInfo($db, $username);
 
-                    $this->user_id = $user_info[0];
+                    // User is a moderator+
+                    if($user_info !== false) {
+                        // Store the user information
+                        setcookie(BM_COOKIE, implode("|", $user_info), 0, "/");
+
+                        $this->user_id = $user_info[0];
+                        $authenticated = true;
+                    }
                 }
             }
         }
 
+        return $authenticated;
+    }
+
+    public function getUserId()
+    {
         return $this->user_id;
     }
 

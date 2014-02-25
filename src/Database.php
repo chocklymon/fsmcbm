@@ -119,7 +119,7 @@ class Database
     }
 
     /**
-     * Get if the datbase is currently connected.
+     * Get if the database is currently connected.
      * @return boolean <tt>true</tt> if the database is connected.
      */
     public function isConnected()

@@ -35,34 +35,36 @@ require_once('Controller.php');
 
 
 /* =============================
- *        VERIFY USER
+ *        SETUP
  * =============================
  */
 
-// Build the settings and ouptut handler
+// Get an instance of the various needed classes
 $settings = new Settings();
 $output = new Output($settings);
-
-// Get the connection to the database
 $db = new Database($settings);
-
 $auth = new Authentication($settings);
-$user_id = $auth->authenticate($db, $output);
 
-if ($user_id === false) {
-    $output->error("Not logged in.");
-    exit();
-}
+try {
+    // Authenticate the user
+    if ($auth->authenticate($db) === false) {
+        $output->error("Not logged in.");
+        exit();
+    }
+
+
 
 /* =============================
  *      PERFORM ACTIONS
  * =============================
  */
 
-try {
+    // Make sure the database is connected
     if (!$db->isConnected()) {
         $db->connect($settings);
     }
+
+    // Get an instance of the controller
     $actions = new Controller($db, $output);
 
     if (isset($_GET['term'])) {
@@ -79,7 +81,7 @@ try {
 
     } else if (isset($_GET['add_incident'])) {
 
-        $actions->addIncident($user_id);
+        $actions->addIncident($auth->getUserId());
 
     } else if (isset($_GET['get'])) {
         // Tab contents requested
@@ -119,6 +121,7 @@ try {
     $output->exception($ex);
 }
 
+// Close the database connection
 if ($db->isConnected()) {
     $db->close();
 }

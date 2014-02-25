@@ -40,9 +40,9 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
     private static $settings;
 
     /**
-     * @var Output
+     * @var MockDatabase
      */
-    private static $output;
+    private static $empty_db;
 
     /**
      * @var Authentication
@@ -52,57 +52,89 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
     public static function setUpBeforeClass()
     {
         self::$settings = new MockSettings();
-        self::$output = new Output(self::$settings);
+        self::$empty_db = new MockDatabase();
     }
 
     protected function setUp()
     {
+        $_COOKIE = array();
+        self::$settings->setDebugMode(false);
         $this->auth = new Authentication(self::$settings);
+    }
+
+    public function testAuthenticate_noCookie()
+    {
+        $this->assertFalse(
+            $this->auth->authenticate(self::$empty_db)
+        );
+    }
+
+    public function testAuthenticate_debugMode()
+    {
+        self::$settings->setDebugMode(true);
+        $this->assertTrue(
+            $this->auth->authenticate(self::$empty_db)
+        );
+    }
+
+    public function testAuthenticate_alreadyLoggedIn()
+    {
+        $this->setLoggedInCookie();
+        $_COOKIE[self::$settings->getCookieName()] = '28|Admin|' . self::USERNAME;
+        $this->assertTrue(
+            $this->auth->authenticate(self::$empty_db)
+        );
+        $this->assertEquals(28, $this->auth->getUserId());
+    }
+
+    public function testAuthenticate_loggedIn()
+    {
+        $this->setLoggedInCookie();
+        $db = $this->getModeratorMockDB();
+        $this->assertTrue(
+            $this->auth->authenticate($db)
+        );
     }
 
     public function testGetLoggedInName()
     {
-        $_COOKIE = array('wordpress_logged_in_28'=> self::USERNAME . '|1393260248|7fe9e5132050a0ef139492791867b659');
-
+        $this->setLoggedInCookie();
         $name = $this->auth->getLoggedInName();
-
         $this->assertEquals(self::USERNAME, $name);
     }
 
     public function testGetLoggedInName_false()
     {
         // Empty the cookie so the name returns false
-        $_COOKIE = array();
-
         $name = $this->auth->getLoggedInName();
-
         $this->assertFalse($name);
     }
 
     public function testGetModeratorInfo()
     {
-        $db = new MockDatabase(array(array('id'=>28, 'rank'=>'Admin')));
-
+        $db = $this->getModeratorMockDB();
         $info = $this->auth->getModeratorInfo($db, self::USERNAME);
-
         $this->assertEquals(array(28, 'Admin', self::USERNAME), $info);
     }
 
     public function testGetModeratorInfo_false()
     {
-        $db = new MockDatabase();
-
-        $info = $this->auth->getModeratorInfo($db, "");
-
+        $info = $this->auth->getModeratorInfo(self::$empty_db, "");
         $this->assertFalse($info);
     }
 
     public function testGetModeratorInfo_nonAdmin()
     {
         $db = new MockDatabase(array(array('id'=>28, 'rank'=>'Regular')));
-
         $info = $this->auth->getModeratorInfo($db, self::USERNAME);
-
         $this->assertFalse($info);
+    }
+
+    private function setLoggedInCookie() {
+        $_COOKIE = array('wordpress_logged_in_28'=> self::USERNAME . '|1393260248|7fe9e5132050a0ef139492791867b659');
+    }
+
+    private function getModeratorMockDB() {
+        return new MockDatabase(array(array('id'=>28, 'rank'=>'Admin')));
     }
 }

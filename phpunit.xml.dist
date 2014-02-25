@@ -10,6 +10,7 @@
     </filter>
     <testsuites>
         <testsuite name="all-tests">
+            <file>tests/AuthenticationTest.php</file>
             <file>tests/ControllerTest.php</file>
             <file>tests/OutputTest.php</file>
             <file>tests/SettingsTest.php</file>
