@@ -1,17 +1,17 @@
 <?php
 /* Copyright (c) 2014 Curtis Oakley
  * http://chockly.org/
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -31,26 +31,26 @@ class Output
      * @var array
      */
     private $js_response = array();
-    
+
     /**
      * Holds the HTML to be returned.
      * @var string
      */
     private $html_response = '';
-    
+
     /**
      * Indicates if this should output as HTML or JSON.
      * When true, ouputs as HTML.
      * @var boolean
      */
     private $output_as_html = false;
-    
+
     /**
      * Holds the configuration settings.
      * @var Settings
      */
     private $settings;
-    
+
     /**
      * Construct a new output handler.
      * @param Settings $settings The settings to use when outputing.
@@ -59,10 +59,12 @@ class Output
      */
     public function __construct(Settings $settings, $output_as_html = false)
     {
+        mb_internal_encoding("UTF-8");
+        
         $this->settings = $settings;
         $this->output_as_html = $output_as_html;
     }
-    
+
     /**
      * Clears any output currently stored.
      */
@@ -71,7 +73,7 @@ class Output
         $this->html_response = '';
         $this->js_response = array();
     }
-    
+
     /**
      * Send the output message to the browser.
      */
@@ -81,14 +83,14 @@ class Output
             // Set the correct content-type header now
             header('Content-Type:' . ($this->output_as_html ? 'text/html' : 'application/json'));
         }
-        
+
         if ($this->output_as_html) {
             echo $this->html_response;
         } else {
             echo json_encode($this->js_response);
         }
     }
-    
+
     /**
      * Sends the success message.
      */
@@ -101,14 +103,14 @@ class Output
         }
         $this->reply();
     }
-    
+
     /**
      * Append a message to the output.
      * @param mixed $message The message to output.
      * @param string $key Only used when in JSON output mode. The array key to
      * use for storing the message. If not specified the message is pushed onto
      * the end of the reply.
-     * @param boolean $subarray Only used when in JSON output mode. When true 
+     * @param boolean $subarray Only used when in JSON output mode. When true
      * and the key is set, the value of key is treated as an array and the
      * $message is pushed onto the end of it. Defaults to false.
      */
@@ -126,7 +128,7 @@ class Output
             }
         }
     }
-    
+
     /**
      * Sets the output mode. When true, the the content will be output
      * as HTML, when false the content will be JSON encoded. Default mode
@@ -138,27 +140,47 @@ class Output
     {
         $this->output_as_html = (boolean) $output_as_html;
     }
-    
+
     /**
-     * Takes a string and truncates it and runs it through HTML special chars.
-     * If the string is over 120 characters long and $truncate is set to true,
-     * it will remove the truncate the string to and append an ellipsis.
-     * @param string $string The string to truncate.
+     * Takes a string and runs HTML special chars on it.
+     *
+     * When truncate is set to <tt>true</tt> and the string is longer than the
+     * max length (typically 120 characters), the string wil be truncated
+     * to the nearest word that brings it under the length and an ellipsis will
+     * be added to the end.
+     *
+     * @param string $message The string to truncate.
      * @param boolean $truncate Whether or not the string should be truncated.
-     * Defaults to false.
-     * @return string The truncated string.
+     * Defaults to <tt>false</tt>.
+     * @param int $max_length The longest the returned string can be. Only used
+     * when $truncate is <tt>true</tt>. Defaults to 120. If the max length is
+     * less than three, it will be set to the three.
+     * @return string The HTML prepared string.
      */
-    public function prepareHTML($message, $truncate = false)
+    public function prepareHTML($message, $truncate = false, $max_length = 120)
     {
-        $string = htmlspecialchars($message);
-        
-        if ($truncate && strlen($string) > 120){
-            $string = substr($string, 0, 120) . " ...";
+        $prepared = htmlspecialchars($message);
+
+        if ($truncate) {
+            // Make sure the max length is valid
+            if ($max_length < 3) {
+                $max_length = 3;
+            }
+
+            $msg_len = mb_strlen($prepared);
+            if ($msg_len > $max_length) {
+                $word_break = mb_strrpos($prepared, ' ', -($msg_len - $max_length));
+                if ($word_break < $max_length/2) {
+                    // If the word break is far into the string, just truncate it
+                    $word_break = $max_length;
+                }
+                $prepared = mb_substr($prepared, 0, $word_break) . '&hellip;';
+            }
         }
-        
-        return $string;
+
+        return $prepared;
     }
-    
+
     /**
      * Outputs an error message as a JSON object, and then optionally exits the
      * script.

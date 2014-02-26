@@ -48,6 +48,7 @@ class Database
      */
     public function __construct()
     {
+        mb_internal_encoding("UTF-8");
     }
 
     public function __destruct()

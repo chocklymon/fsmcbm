@@ -41,6 +41,7 @@ class MockDatabase extends Database
      */
     public function __construct($responses = array())
     {
+        parent::__construct();
         $this->queries = array();
         $this->responses = $responses;
     }

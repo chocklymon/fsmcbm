@@ -182,7 +182,7 @@ SQL;
 
     if (!empty($values)) {
         // Remove the trailing ','
-        $values = substr($values, 0, -1);
+        $values = mb_substr($values, 0, -1);
 
         $sql = "INSERT INTO `appeal` (`user_id`, `author_id`, `closed`, `date`, `message`) VALUES $values";
 

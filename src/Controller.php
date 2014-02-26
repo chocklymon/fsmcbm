@@ -75,8 +75,8 @@ class Controller
         }
 
         // Check if we have an incident date.
-        if($incident_date === null || strlen($incident_date) < 6) {
-            $incident_date = substr($today, 0, 10);
+        if($incident_date === null || mb_strlen($incident_date) < 6) {
+            $incident_date = mb_substr($today, 0, 10);
         }
 
         $query = "INSERT INTO `incident` (`user_id`, `moderator_id`, `created_date`, `modified_date`, `incident_date`, `incident_type`, `notes`, `action_taken`, `world`, `coord_x`, `coord_y`, `coord_z`)
@@ -142,7 +142,7 @@ class Controller
     public function autoComplete()
     {
         // Make sure that the term is at least two characters long
-        if(strlen($_GET['term']) < 2) {
+        if(mb_strlen($_GET['term']) < 2) {
             throw new InvalidArgumentException("AutoComplete term must be longer than one.");
         }
 
@@ -326,7 +326,7 @@ SQL;
     public function search()
     {
         $this->output->setHTMLMode(true);
-        if( strlen($_GET['search']) < 2) {
+        if (mb_strlen($_GET['search']) < 2) {
             // Searches must contain at least two characters
             throw new InvalidArgumentException("Search string must be longer than one.");
         }
@@ -426,8 +426,9 @@ SQL;
         // Perform the udpate
         $query = "UPDATE  `users` SET ";
 
-        if ($username != null && strlen($username) > 0)
+        if ($username != null && mb_strlen($username) > 0) {
             $query .= "`username` = '$username', ";
+        }
 
         $query .=   "`modified_date` = '$today',
                     `rank` =  '$rank',

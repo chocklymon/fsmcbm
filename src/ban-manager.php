@@ -39,6 +39,9 @@ require_once('Controller.php');
  * =============================
  */
 
+// Make sure we are using UTF-8
+mb_internal_encoding("UTF-8");
+
 // Get an instance of the various needed classes
 $settings = new Settings();
 $output = new Output($settings);

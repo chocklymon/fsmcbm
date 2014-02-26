@@ -232,9 +232,19 @@ class OutputTest extends PHPUnit_Framework_TestCase
     public function testPrepareHTML_truncate()
     {
         $string   = 'I <i>like</i> cheese & pickles. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis in nisl sem. Donec quis imperdiet nibh.';
-        $expected = 'I &lt;i&gt;like&lt;/i&gt; cheese &amp; pickles. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis in nisl se ...';
+        $expected = 'I &lt;i&gt;like&lt;/i&gt; cheese &amp; pickles. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis in nisl&hellip;';
 
         $actual = $this->output->prepareHTML($string, true);
+
+        $this->assertEquals($expected, $actual);
+    }
+
+    public function testPrepareHTML_invalidMax()
+    {
+        $string   = 'Micheal is Green';
+        $expected = 'Mic&hellip;';
+
+        $actual = $this->output->prepareHTML($string, true, 0);
 
         $this->assertEquals($expected, $actual);
     }
