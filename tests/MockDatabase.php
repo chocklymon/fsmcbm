@@ -157,11 +157,12 @@ class MockDatabase extends Database
      * into the output as a subarray of the provided key.
      * Only use this when JSON output mode is on.
      * @param string $sql The query string.
+     * @param Output $output The Output object to place the rows into.
      * @param string $key The array key to use for storing the results.
      * @param string $error_message An optional error message to output if
      * the query fails.
      */
-    public function queryRowsIntoOutput($sql, $key, $error_message = 'Nothing found.')
+    public function queryRowsIntoOutput($sql, Output $output, $key, $error_message = 'Nothing found.')
     {
         return $this->query($sql);
     }

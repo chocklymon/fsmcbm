@@ -116,7 +116,7 @@ SQL;
 $sql = "SELECT CHARACTER_MAXIMUM_LENGTH
 FROM INFORMATION_SCHEMA.COLUMNS
 WHERE table_name = 'incident'
-AND table_schema = '" . DB_DATABASE . "'
+AND table_schema = '" . $settings->getDatabaseName() . "'
 AND column_name = 'incident_type'
 LIMIT 0 , 1";
 $result = $db->querySingleRow($sql);

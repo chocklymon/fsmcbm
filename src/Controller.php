@@ -302,7 +302,7 @@ WHERE i.user_id = '$lookup'
 ORDER BY i.incident_date
 SQL;
 
-        $this->db->queryRowsIntoOutput($sql, 'incident');
+        $this->db->queryRowsIntoOutput($sql, $this->output, 'incident');
 
 
         // Get the ban history
@@ -314,7 +314,7 @@ WHERE bh.`user_id` = '$lookup'
 ORDER BY bh.`date`
 SQL;
 
-        $this->db->queryRowsIntoOutput($sql, 'history');
+        $this->db->queryRowsIntoOutput($sql, $this->output, 'history');
 
         $this->output->reply();
     }
