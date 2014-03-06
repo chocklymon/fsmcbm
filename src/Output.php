@@ -60,7 +60,7 @@ class Output
     public function __construct(Settings $settings, $output_as_html = false)
     {
         mb_internal_encoding("UTF-8");
-        
+
         $this->settings = $settings;
         $this->output_as_html = $output_as_html;
     }
@@ -81,7 +81,7 @@ class Output
     {
         if (!headers_sent()) {
             // Set the correct content-type header now
-            header('Content-Type:' . ($this->output_as_html ? 'text/html' : 'application/json'));
+            header('Content-Type: ' . ($this->output_as_html ? 'text/html' : 'application/json'));
         }
 
         if ($this->output_as_html) {

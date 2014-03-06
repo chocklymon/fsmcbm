@@ -27,12 +27,6 @@ require_once('src/Output.php');
 /**
  * Test the Output class.
  *
- * Testing that the headers are set will not work unless phpunit
- * is run with the --stderr, since doing otherwise causes the headers
- * to already be sent. This test could also be run with {AT}runInSeparateProcess
- * to be able to test this.
- * See: http://stackoverflow.com/questions/9745080/test-php-headers-with-phpunit
- *
  * @author Curtis Oakley
  */
 class OutputTest extends PHPUnit_Framework_TestCase
@@ -61,6 +55,25 @@ class OutputTest extends PHPUnit_Framework_TestCase
     {
         // Reset the debug mode to off
         self::$settings->setDebugMode(false);
+    }
+
+    /**
+     * Run is separate proccess since PHP Unit may have already set the headers.
+     * See: http://stackoverflow.com/questions/9745080/test-php-headers-with-phpunit
+     * @runInSeparateProcess
+     */
+    public function testReply_headers()
+    {
+        ob_start();
+        $this->output->reply();
+
+        // Check the headers
+        /* Commented out, because when running the the command line PHP doesn't actually set headers.
+        $headers_list = headers_list();
+        $this->assertNotEmpty($headers_list);
+        $this->assertContains('Content-Type: text/html');
+        // */
+        header_remove();
     }
 
     public function testAppend_html()

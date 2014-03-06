@@ -62,6 +62,11 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
         $this->auth = new Authentication(self::$settings);
     }
 
+    /**
+     * Run is separate proccess since authenticate will attempt to set a cookie,
+     * and PHP Unit can sometimes already have set the headers.
+     * @runInSeparateProcess
+     */
     public function testAuthenticate_noCookie()
     {
         $this->assertFalse(
@@ -87,6 +92,11 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
         $this->assertEquals(28, $this->auth->getUserId());
     }
 
+    /**
+     * Run is separate proccess since authenticate will attempt to set a cookie,
+     * and PHP Unit can sometimes already have set the headers.
+     * @runInSeparateProcess
+     */
     public function testAuthenticate_loggedIn()
     {
         $this->setLoggedInCookie();
