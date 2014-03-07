@@ -12,7 +12,7 @@ header('Content-Type: text/javascript');
 header('Cache-Control: public, max-age=172800');
 flush();
 ?>
-(function() {
+(function($) {
     /* ----------------------------- *
      *   Data Structure Variables    *
      * ----------------------------- */
@@ -366,6 +366,10 @@ $output->reply();
                         label:"Gamma"
                     },
                     {
+                        value:"omega",
+                        label:"Omega"
+                    },
+                    {
                         value:"world_nether",
                         label:"Alpha Nether"
                     },
@@ -376,6 +380,10 @@ $output->reply();
                     {
                         value:"world4_nether",
                         label:"Gamma Nether"
+                    },
+                    {
+                        value:"omega_nether",
+                        label:"Omega Nether"
                     },
                     {
                         value:"world_the_end",
@@ -436,4 +444,4 @@ $output->reply();
     bm.user = user;
     bm.incident = incident;
     bm.appeal = appeal;
-})();
+})(jQuery);

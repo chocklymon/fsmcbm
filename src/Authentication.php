@@ -137,12 +137,12 @@ class Authentication
 
         $info = false;
 
-        $moderator_name = $db->sanitize($moderator_name);
-
         // Request the user id from the database
         if (!$db->isConnected()) {
             $db->connect($this->settings);
         }
+
+        $moderator_name = $db->sanitize($moderator_name);
 
         $row = $db->querySingleRow(
             "SELECT `users`.`user_id`, `rank`.`name` AS rank
