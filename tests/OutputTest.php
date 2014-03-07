@@ -46,7 +46,7 @@ class OutputTest extends PHPUnit_Framework_TestCase
         self::$settings = new MockSettings();
     }
 
-    public function setUP()
+    public function setUp()
     {
         $this->output = new Output(self::$settings);
     }

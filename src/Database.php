@@ -248,7 +248,7 @@ class Database
      */
     public function sanitize($input, $integer = false)
     {
-       if (isset($input) && $input !== null) {
+       if (!empty($input)) {
            if ($integer) {
                // Sanitize as a number
                $num = preg_replace('/[^0-9\-]/', '', $input);
@@ -280,7 +280,7 @@ class Database
      * @return boolean True if the table is in the database.
      * @throws DatabaseException If the query fails.
      */
-    public function tableExits($table)
+    public function tableExists($table)
     {
         $table = $this->sanitize($table);
         $result = $this->query("SHOW TABLES LIKE '$table'");

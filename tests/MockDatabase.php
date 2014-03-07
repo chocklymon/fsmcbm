@@ -241,7 +241,7 @@ class MockDatabase extends Database
      * @param string $table The name of the table.
      * @return boolean True if the table is in the database.
      */
-    public function tableExits($table)
+    public function tableExists($table)
     {
         return $this->query($table);
     }

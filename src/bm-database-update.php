@@ -132,7 +132,7 @@ SQL;
 
 
 // Move the appeals into a seperate appeal table
-if (!$db->tableExits('appeal')) {
+if (!$db->tableExists('appeal')) {
     // Create the appeal table
     $sql = <<<SQL
 CREATE TABLE IF NOT EXISTS `appeal` (
@@ -202,7 +202,7 @@ SQL;
 
 
 // Create the ranks table
-if (!$db->tableExits('rank')) {
+if (!$db->tableExists('rank')) {
     $sql = <<<SQL
 CREATE TABLE IF NOT EXISTS `rank` (
   `rank_id` int(10) unsigned NOT NULL AUTO_INCREMENT,

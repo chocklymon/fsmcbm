@@ -1,17 +1,17 @@
 <?php
 /* Copyright (c) 2014 Curtis Oakley
  * http://chockly.org/
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -41,21 +41,21 @@ class MockSettings extends Settings
             'db_username' => 'travis',
             'db_password' => '',
             'db_database' => 'myapp_test',
-            
+
             'cookie_name' => 'bm',
             'debug' => false,
         );
-        
+
         // Allow the settings to be overriden by a test.ini file
         if (is_readable('test.ini')) {
             $settings = parse_ini_file('test.ini');
         } else {
             $settings = array();
         }
-        
+
         $this->settings = array_merge($defaults, $settings);
     }
-    
+
     /**
      * Set the debug mode flag.
      * @param boolean $debug_mode The debug mode flag
@@ -64,7 +64,7 @@ class MockSettings extends Settings
     {
         $this->settings['debug'] = $debug_mode;
     }
-    
+
     /**
      * Set a specific setting by name.
      * @param string $setting_name The name of the setting.
@@ -74,5 +74,5 @@ class MockSettings extends Settings
     {
         $this->settings[$setting_name] = $value;
     }
-    
+
 }
