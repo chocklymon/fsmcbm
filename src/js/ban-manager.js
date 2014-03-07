@@ -1,3 +1,7 @@
+/* Copyright 2014 Curtis Oakley Licensed MIT
+ * http://chockly.org/
+ */
+
 /* Ban Manager
  * Main JavaScript file.
  */
@@ -285,7 +289,8 @@ if (!window.console || !window.console.log) {
             dataType = 'json';
         }
         $.ajax({
-            url      : "ban-manager.php" + urlExtra,
+            // TODO handle URL differences
+            url      : "/fsmcbm/ban-manager.php" + urlExtra,
             data     : payload,
             dataType : dataType,
             type     : method,
