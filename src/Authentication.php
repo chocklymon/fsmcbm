@@ -75,7 +75,7 @@ class Authentication
                 // User is logged into wordpress
                 if (isset($_COOKIE[$this->settings->getCookieName()])) {
                     // Get the user information from the ban manager cookie
-                    $user_info = json_decode($_COOKIE[$this->settings->getCookieName()]);
+                    $user_info = json_decode($_COOKIE[$this->settings->getCookieName()], true);
 
                     // Make sure the user hasn't changed
                     if ($user_info['username'] == $username) {

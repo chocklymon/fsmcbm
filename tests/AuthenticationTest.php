@@ -85,7 +85,8 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
     public function testAuthenticate_alreadyLoggedIn()
     {
         $this->setLoggedInCookie();
-        $_COOKIE[self::$settings->getCookieName()] = '28|Admin|' . self::USERNAME;
+        $bm_cookie = json_encode(array('id'=>28, 'rank'=>'Admin', 'username'=>self::USERNAME));
+        $_COOKIE[self::$settings->getCookieName()] = $bm_cookie;
         $this->assertTrue(
             $this->auth->authenticate(self::$empty_db)
         );
@@ -124,7 +125,9 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
     {
         $db = $this->getModeratorMockDB();
         $info = $this->auth->getModeratorInfo($db, self::USERNAME);
-        $this->assertEquals(array(28, 'Admin', self::USERNAME), $info);
+
+        $expected = array('id'=>28, 'rank'=>'Admin', 'username'=>self::USERNAME);
+        $this->assertEquals($expected, $info);
     }
 
     public function testGetModeratorInfo_false()
