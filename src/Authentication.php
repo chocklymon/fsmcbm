@@ -37,6 +37,10 @@ class Authentication
      */
     private $user_id;
 
+    /**
+     * Create a new authenticator class.
+     * @param Settings $settings The settings to use.
+     */
     public function __construct(Settings $settings)
     {
         $this->settings = $settings;
@@ -53,11 +57,13 @@ class Authentication
         $authenticated = false;
 
         if ($this->settings->debugMode()) {
+            // TODO need a separate setting for this.
             // Debugging mode on, auto login as the first user
             $this->user_id = 1;
             $authenticated = true;
         } else {
-            // Attempt to authenticate the user
+            // TODO this is extremly insecure, need to find a better way.
+            // Attempt to authenticate the user via Wordpress
             $username = $this->getLoggedInName();
 
             if ($username === false) {
@@ -69,11 +75,11 @@ class Authentication
                 // User is logged into wordpress
                 if (isset($_COOKIE[$this->settings->getCookieName()])) {
                     // Get the user information from the ban manager cookie
-                    $user_info = explode("|", $_COOKIE[$this->settings->getCookieName()]);
+                    $user_info = json_decode($_COOKIE[$this->settings->getCookieName()]);
 
                     // Make sure the user hasn't changed
-                    if ($user_info[2] == $username) {
-                        $this->user_id = $user_info[0];
+                    if ($user_info['username'] == $username) {
+                        $this->user_id = $user_info['id'];
                         $authenticated = true;
                     }
                 } else {
@@ -83,9 +89,9 @@ class Authentication
                     // User is a moderator+
                     if($user_info !== false) {
                         // Store the user information
-                        setcookie(BM_COOKIE, implode("|", $user_info), 0, "/");
+                        setcookie(BM_COOKIE, json_encode($user_info), 0, "/");
 
-                        $this->user_id = $user_info[0];
+                        $this->user_id = $user_info['id'];
                         $authenticated = true;
                     }
                 }
@@ -95,6 +101,10 @@ class Authentication
         return $authenticated;
     }
 
+    /**
+     * Get the user ID of the authenticated user.
+     * @return int
+     */
     public function getUserId()
     {
         return $this->user_id;
@@ -120,14 +130,10 @@ class Authentication
         return false;
     }
 
-
-
-
     /**
      * Gets the information for the moderator using the ban manager.
-     * @return mixed FALSE if the user is not a moderator/admin or is not logged into
-     * wordpress, otherwise it return an array where index zero is the user id,
-     * index one is the user's rank, and index two is the user's name.
+     * @return mixed boolean <tt>false</tt> if the user is not a moderator/admin,
+     * otherwise it returns and array with the user's information.
      */
     public function getModeratorInfo(Database $db, $moderator_name)
     {
@@ -137,13 +143,13 @@ class Authentication
 
         $info = false;
 
-        // Request the user id from the database
+        // Sanitize the provided user name
         if (!$db->isConnected()) {
             $db->connect($this->settings);
         }
-
         $moderator_name = $db->sanitize($moderator_name);
 
+        // Request the user id from the database
         $row = $db->querySingleRow(
             "SELECT `users`.`user_id`, `rank`.`name` AS rank
              FROM `users`
@@ -154,7 +160,11 @@ class Authentication
 
         // Only store the information of admins/moderators
         if ($row['rank'] == 'Admin' || $row['rank'] == 'Moderator') {
-            $info = array($row['id'], $row['rank'], $moderator_name);
+            $info = array(
+                'id'=>$row['id'],
+                'rank'=>$row['rank'],
+                'username'=>$moderator_name,
+            );
         }
 
         return $info;
