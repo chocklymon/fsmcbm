@@ -100,22 +100,6 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
      * and PHP Unit has already set the headers.
      * @runInSeparateProcess
      */
-    public function testAuthenticate_changedUser()
-    {
-        $this->setLoggedInCookie();
-        $bm_cookie = json_encode(array('id'=>self::USER_ID, 'rank'=>'Admin', 'username'=>'Different_UserName'));
-        $_COOKIE[self::$settings->getCookieName()] = $bm_cookie;
-        $this->assertFalse(
-            $this->auth->authenticate(self::$empty_db)
-        );
-        $this->assertNull($this->auth->getUserId());
-    }
-
-    /**
-     * Run is separate proccess since authenticate will attempt to set a cookie,
-     * and PHP Unit has already set the headers.
-     * @runInSeparateProcess
-     */
     public function testAuthenticate_logIn()
     {
         $this->setLoggedInCookie();

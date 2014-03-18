@@ -69,7 +69,7 @@ class Authentication
             if ($username === false) {
                 // User is not logged into wordpress
                 // Expire the cookie
-                $this->expireCookie();
+                setcookie($this->settings->getCookieName(), "", time() - 3600);
 
             } else {
                 // User is logged into wordpress
@@ -81,11 +81,9 @@ class Authentication
                     if ($user_info['username'] == $username && $user_info['id']) {
                         $this->user_id = $user_info['id'];
                         $authenticated = true;
-                    } else {
-                        // Expire the cookie
-                        $this->expireCookie();
                     }
-                } else {
+                }
+                if (!$authenticated) {
                     // Get the user information from the database
                     $user_info = $this->getModeratorInfo($db, $username);
 
@@ -171,10 +169,6 @@ class Authentication
         }
 
         return $info;
-    }
-
-    private function expireCookie() {
-        setcookie($this->settings->getCookieName(), "", time() - 3600);
     }
 
 }
