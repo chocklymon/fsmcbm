@@ -33,6 +33,7 @@ require_once('src/Authentication.php');
 class AuthenticationTest extends PHPUnit_Framework_TestCase
 {
     const USERNAME = 'JaneDoe';
+    const USER_ID = 28;
 
     /**
      * @var MockSettings
@@ -80,31 +81,49 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
         $this->assertTrue(
             $this->auth->authenticate(self::$empty_db)
         );
+        $this->assertEquals(1, $this->auth->getUserId());
     }
 
     public function testAuthenticate_alreadyLoggedIn()
     {
         $this->setLoggedInCookie();
-        $bm_cookie = json_encode(array('id'=>28, 'rank'=>'Admin', 'username'=>self::USERNAME));
+        $bm_cookie = json_encode(array('id'=>self::USER_ID, 'rank'=>'Admin', 'username'=>self::USERNAME));
         $_COOKIE[self::$settings->getCookieName()] = $bm_cookie;
         $this->assertTrue(
             $this->auth->authenticate(self::$empty_db)
         );
-        $this->assertEquals(28, $this->auth->getUserId());
+        $this->assertEquals(self::USER_ID, $this->auth->getUserId());
     }
 
     /**
      * Run is separate proccess since authenticate will attempt to set a cookie,
-     * and PHP Unit can sometimes already have set the headers.
+     * and PHP Unit has already set the headers.
      * @runInSeparateProcess
      */
-    public function testAuthenticate_loggedIn()
+    public function testAuthenticate_changedUser()
+    {
+        $this->setLoggedInCookie();
+        $bm_cookie = json_encode(array('id'=>self::USER_ID, 'rank'=>'Admin', 'username'=>'Different_UserName'));
+        $_COOKIE[self::$settings->getCookieName()] = $bm_cookie;
+        $this->assertFalse(
+            $this->auth->authenticate(self::$empty_db)
+        );
+        $this->assertNull($this->auth->getUserId());
+    }
+
+    /**
+     * Run is separate proccess since authenticate will attempt to set a cookie,
+     * and PHP Unit has already set the headers.
+     * @runInSeparateProcess
+     */
+    public function testAuthenticate_logIn()
     {
         $this->setLoggedInCookie();
         $db = $this->getModeratorMockDB();
         $this->assertTrue(
             $this->auth->authenticate($db)
         );
+        $this->assertEquals(self::USER_ID, $this->auth->getUserId());
     }
 
     public function testGetLoggedInName()
@@ -138,7 +157,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
 
     public function testGetModeratorInfo_nonAdmin()
     {
-        $db = new MockDatabase(array(array('id'=>28, 'rank'=>'Regular')));
+        $db = new MockDatabase(array(array('user_id'=>self::USER_ID, 'rank'=>'Regular')));
         $info = $this->auth->getModeratorInfo($db, self::USERNAME);
         $this->assertFalse($info);
     }
@@ -148,6 +167,6 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
     }
 
     private function getModeratorMockDB() {
-        return new MockDatabase(array(array('id'=>28, 'rank'=>'Admin')));
+        return new MockDatabase(array(array('user_id'=>self::USER_ID, 'rank'=>'Admin')));
     }
 }

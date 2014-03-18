@@ -69,7 +69,7 @@ class Authentication
             if ($username === false) {
                 // User is not logged into wordpress
                 // Expire the cookie
-                setcookie($this->settings->getCookieName(), "", time() - 3600);
+                $this->expireCookie();
 
             } else {
                 // User is logged into wordpress
@@ -78,18 +78,21 @@ class Authentication
                     $user_info = json_decode($_COOKIE[$this->settings->getCookieName()], true);
 
                     // Make sure the user hasn't changed
-                    if ($user_info['username'] == $username) {
+                    if ($user_info['username'] == $username && $user_info['id']) {
                         $this->user_id = $user_info['id'];
                         $authenticated = true;
+                    } else {
+                        // Expire the cookie
+                        $this->expireCookie();
                     }
                 } else {
                     // Get the user information from the database
                     $user_info = $this->getModeratorInfo($db, $username);
 
                     // User is a moderator+
-                    if($user_info !== false) {
+                    if ($user_info !== false) {
                         // Store the user information
-                        setcookie(BM_COOKIE, json_encode($user_info), 0, "/");
+                        setcookie($this->settings->getCookieName(), json_encode($user_info), 0, "/");
 
                         $this->user_id = $user_info['id'];
                         $authenticated = true;
@@ -161,13 +164,17 @@ class Authentication
         // Only store the information of admins/moderators
         if ($row['rank'] == 'Admin' || $row['rank'] == 'Moderator') {
             $info = array(
-                'id'=>$row['id'],
+                'id'=>$row['user_id'],
                 'rank'=>$row['rank'],
                 'username'=>$moderator_name,
             );
         }
 
         return $info;
+    }
+
+    private function expireCookie() {
+        setcookie($this->settings->getCookieName(), "", time() - 3600);
     }
 
 }

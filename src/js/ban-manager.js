@@ -290,7 +290,7 @@ if (!window.console || !window.console.log) {
         }
         $.ajax({
             // TODO handle URL differences
-            url      : "/fsmcbm/ban-manager.php" + urlExtra,
+            url      : "ban-manager.php" + urlExtra,
             data     : payload,
             dataType : dataType,
             type     : method,
