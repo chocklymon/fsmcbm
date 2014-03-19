@@ -207,7 +207,7 @@ flush();
             } else if(this.type == "date") {
                 field.datepicker({
                    showOn: "both",
-                   buttonImage: bm.url + "calendar-month.png",// TODO get the button image to actually work
+                   buttonImage: "calendar-month.png",// TODO get the button image to actually work
                    buttonImageOnly : true,
                    dateFormat : "yy-mm-dd",
                    maxDate : 0
