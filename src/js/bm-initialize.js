@@ -27,7 +27,7 @@
         ],
 
         // The URL to the folder where the ban manager files are.
-        url = '';
+        url = '';// TODO
 
     // Attach the CSS
     for(var i=0; i<css.length; i++) {

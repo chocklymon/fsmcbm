@@ -125,6 +125,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
     public function testAddUser()
     {
         // Set Up //
+        $moderator_id = 4;
         $expectedOutput = '{"user_id":29}';
         $this->expectOutputString($expectedOutput);
 
@@ -138,14 +139,14 @@ class ControllerTest extends PHPUnit_Framework_TestCase
 
 
         // Run the test //
-        $controller->addUser();
+        $controller->addUser($moderator_id);
 
 
         // Test that the query was constructed correctly //
         $expected_user = "INSERT INTO `users` (`username`, `modified_date`, `rank`, `relations`, `notes`, `banned`, `permanent`)
             VALUES ('" . self::USERNAME . "', '{$now}', '2', 'Friends with Jane12', 'Don\\'t worry, just have some cheese.', 1, 0)";
         $expected_ban_history = "INSERT INTO `ban_history` (`user_id`, `moderator_id`, `date`, `banned`, `permanent`)
-                VALUES ('{$new_user_id}', '', '{$now}', '1', '')";
+                VALUES ('{$new_user_id}', '{$moderator_id}', '{$now}', '1', '')";
 
         $queries = $db->getQueries();
         $this->assertEquals($expected_user, $queries[1]);
@@ -163,7 +164,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
         $controller = new Controller(new MockDatabase(), self::$output);
 
         // Run the test //
-        $controller->addUser();
+        $controller->addUser(1);
     }
 
     /**
@@ -176,7 +177,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
         $controller = new Controller($db, self::$output);
 
         // Run the test //
-        $controller->addUser();
+        $controller->addUser(1);
     }
 
     public function testAutoComplete()
@@ -379,7 +380,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
         $now = date('Y-m-d H:i:s');
 
         // Run the test //
-        $controller->updateUser();
+        $controller->updateUser(1);
 
         $expected_select = "SELECT * FROM `users` WHERE `users`.`user_id` = 28";
         $expected_update = "UPDATE  `users` SET `username` = '" . self::USERNAME . "', `modified_date` = '$now',
@@ -407,7 +408,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
         $controller = new Controller($db, self::$output);
 
         // Run the test //
-        $controller->updateUser();
+        $controller->updateUser(1);
     }
 
     public function testUpdateIncident()

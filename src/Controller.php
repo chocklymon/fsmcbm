@@ -94,7 +94,7 @@ class Controller
      * Adds a new user to the database.
      * User information is gathered from the data posted into this page.
      */
-    public function addUser()
+    public function addUser($user_id)
     {
         // Make sure that the user name isn't empty
         if (empty($_POST['username'])) {
@@ -120,18 +120,18 @@ class Controller
         $today     = $this->getNow();
 
         // Insert the user
-        $user_id = $this->db->insert(
+        $player_id = $this->db->insert(
             "INSERT INTO `users` (`username`, `modified_date`, `rank`, `relations`, `notes`, `banned`, `permanent`)
             VALUES ('$username', '$today', '$rank', '$relations', '$notes', $banned, $permanent)"
         );
 
         // See if we need to add to the ban history
         if ($banned) {
-            $this->updateBanHistory($user_id, $banned, $permanent);
+            $this->updateBanHistory($player_id, $user_id, $banned, $permanent);
         }
 
         // Return the new users ID
-        $this->output->append($user_id, 'user_id');
+        $this->output->append($player_id, 'user_id');
         $this->output->reply();
     }
 
@@ -389,13 +389,13 @@ SQL;
      * Updates an exisiting user with new data.
      * The data is retrieved from the data posted into this page.
      */
-    public function updateUser()
+    public function updateUser($user_id)
     {
         // Sanitize the inputs
-        $id = $this->db->sanitize($_POST['id'], true);
+        $player_id = $this->db->sanitize($_POST['id'], true);
 
         // Verify that we have a valid user id
-        if($id <= 0) {
+        if($player_id <= 0) {
             throw new InvalidArgumentException("Invalid user ID.");
         }
 
@@ -416,11 +416,11 @@ SQL;
         }
 
         // See if we need to update the ban history
-        $query = "SELECT * FROM `users` WHERE `users`.`user_id` = $id";
+        $query = "SELECT * FROM `users` WHERE `users`.`user_id` = $player_id";
         $row = $this->db->querySingleRow($query, "Failed to retrieve incident.");
 
         if($row['banned'] != $banned || $row['permanent'] != $permanent) {
-            $this->updateBanHistory($id, $banned, $permanent);
+            $this->updateBanHistory($player_id, $user_id, $banned, $permanent);
         }
 
         // Perform the udpate
@@ -436,7 +436,7 @@ SQL;
                     `notes` =  '$notes',
                     `banned` =  '$banned',
                     `permanent` =  '$permanent'
-                    WHERE  `users`.`user_id` = $id";
+                    WHERE  `users`.`user_id` = $player_id";
 
         $this->db->query($query);
 
@@ -446,16 +446,15 @@ SQL;
 
     /**
      * Updates the ban history
-     * @global int $moderator The ID of the moderator/admin that is logged in.
-     * @param int $user_id The ID of the user who's ban history is being updated.
+     * @param int $player_id The ID of the user who's ban history is being updated.
+     * @param int $user_id The ID of the logged in user.
      * @param boolean $banned Whether or not the user is banned.
      * @param boolean $permanent Wether or not the user is banned permanently.
      */
-    public function updateBanHistory($user_id, $banned, $permanent)
+    public function updateBanHistory($player_id, $user_id, $banned, $permanent)
     {
-        global $moderator;
-
         // Be sure the inputs are what the are supposed to be.
+        $player_id = (int) $player_id;
         $user_id = (int) $user_id;
         $banned = (boolean) $banned;
         $permanent = (boolean) $permanent;
@@ -463,7 +462,7 @@ SQL;
         $today = $this->getNow();
 
         $this->db->query("INSERT INTO `ban_history` (`user_id`, `moderator_id`, `date`, `banned`, `permanent`)
-                VALUES ('$user_id', '$moderator', '$today', '$banned', '$permanent')");
+                VALUES ('$player_id', '$user_id', '$today', '$banned', '$permanent')");
     }
 
 

@@ -54,6 +54,7 @@ try {
         $output->error("Not logged in.");
         exit();
     }
+    $user_id = $auth->getUserId();
 
 
 
@@ -80,11 +81,11 @@ try {
 
     } else if (isset($_GET['add_user'])) {
 
-        $actions->addUser();
+        $actions->addUser($user_id);
 
     } else if (isset($_GET['add_incident'])) {
 
-        $actions->addIncident($auth->getUserId());
+        $actions->addIncident($user_id);
 
     } else if (isset($_GET['get'])) {
         // Tab contents requested
@@ -104,7 +105,7 @@ try {
 
     } else if (isset($_GET['update_user'])) {
 
-        $actions->updateUser();
+        $actions->updateUser($user_id);
 
     } else if (isset($_GET['update_incident'])) {
 
