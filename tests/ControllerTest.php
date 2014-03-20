@@ -126,11 +126,11 @@ class ControllerTest extends PHPUnit_Framework_TestCase
     {
         // Set Up //
         $moderator_id = 4;
-        $expectedOutput = '{"user_id":29}';
+        $new_user_id = 29;
+        $expectedOutput = "{\"user_id\":{$new_user_id}}";
         $this->expectOutputString($expectedOutput);
 
         // Construct the database
-        $new_user_id = 29;
         $db = new MockDatabase(array(new FakeQueryResult(), $new_user_id));
 
         // Create the controller
@@ -357,6 +357,24 @@ class ControllerTest extends PHPUnit_Framework_TestCase
 
         // Run the test //
         $controller->search();
+    }
+
+    public function testUpdateBanHistory()
+    {
+        $player_id = 28;
+        $moderator_id = 2;
+        $banned = true;
+
+        $db = new MockDatabase();
+        $controller = new Controller($db, self::$output);
+        $now = date('Y-m-d H:i:s');
+
+        $controller->updateBanHistory($player_id, $moderator_id, $banned, $banned);
+
+        $lastQuery = $db->getLastQuery();
+        $expectedQuery = "INSERT INTO `ban_history` (`user_id`, `moderator_id`, `date`, `banned`, `permanent`)
+                VALUES ('{$player_id}', '{$moderator_id}', '{$now}', '{$banned}', '{$banned}')";
+        $this->assertEquals($expectedQuery, $lastQuery);
     }
 
     public function testUpdateUser()
