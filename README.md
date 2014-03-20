@@ -19,3 +19,6 @@ Setup
 
 You should be able to start using the ban manager at this point.
 
+#### License ####
+Copyright (c) 2014 Curtis Oakley
+Licensed under the MIT license. See LICENSE.txt
