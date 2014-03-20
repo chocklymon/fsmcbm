@@ -5,6 +5,7 @@ This is the ban manager used by FinalScoreMC.
 With a few modifications it could be used as a ban manager for other
 minecraft servers.
 
+[![Build Status](http://img.shields.io/travis/chocklymon/fsmcbm.svg)](https://travis-ci.org/chocklymon/fsmcbm)
 
 Setup
 --------------------------------
