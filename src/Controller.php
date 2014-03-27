@@ -217,6 +217,22 @@ class Controller
         $this->output->reply();
     }
 
+    public function deleteIncident()
+    {
+        $incident_id = 0;
+        if (isset($_POST['incident_id'])) {
+            $incident_id = $this->db->sanitize($_POST['incident_id'], true);
+        }
+
+        if ($incident_id == 0) {
+            $this->output->error("Invalid Incident ID");
+        } else {
+            $sql = "DELETE FROM `incident` WHERE `incident_id` = $incident_id";// TODO have a deleted flag?
+            $this->db->query($sql);
+            $this->output->success();
+        }
+    }
+
 
     /**
      * Retrieves a list of all banned users.

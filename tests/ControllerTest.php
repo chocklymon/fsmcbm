@@ -250,6 +250,34 @@ class ControllerTest extends PHPUnit_Framework_TestCase
         $controller->buildTable("FAKE QUERY");
     }
 
+    public function testDeleteIncident()
+    {
+        $this->expectOutputString('<div class="success">Success!</div>');
+
+        $incident_id = 2;
+        $_POST['incident_id'] = $incident_id;
+        $db = new MockDatabase();
+        $controller = new Controller($db, self::$output);
+
+        $controller->deleteIncident();
+
+        $this->assertEquals("DELETE FROM `incident` WHERE `incident_id` = $incident_id", $db->getLastQuery());
+    }
+
+    public function testDeleteIncident_invalidId()
+    {
+        $this->expectOutputString('<div class="error">Invalid Incident ID</div>');
+
+        $incident_id = 'hippo';
+        $_POST['incident_id'] = $incident_id;
+        $db = new MockDatabase();
+        $controller = new Controller($db, self::$output);
+
+        $controller->deleteIncident();
+
+        $this->assertEmpty($db->getLastQuery());
+    }
+
     public function testGetBans()
     {
         // Set Up //

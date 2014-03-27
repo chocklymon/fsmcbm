@@ -87,6 +87,10 @@ try {
 
         $actions->addIncident($user_id);
 
+    } else if (isset($_GET['delete_incident'])) {
+
+        $actions->deleteIncident();
+
     } else if (isset($_GET['get'])) {
         // Tab contents requested
 
