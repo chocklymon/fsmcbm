@@ -56,50 +56,73 @@ class Authentication
     {
         $authenticated = false;
 
-        if ($this->settings->debugMode()) {
-            // TODO need a separate setting for this.
-            // Debugging mode on, auto login as the first user
-            $this->user_id = 1;
-            $authenticated = true;
-        } else {
-            // TODO this is extremly insecure, need to find a better way.
-            // Attempt to authenticate the user via Wordpress
-            $username = $this->getLoggedInName();
+        // Validate the payload
 
-            if ($username === false) {
-                // User is not logged into wordpress
-                // Expire the cookie
-                setcookie($this->settings->getCookieName(), "", time() - 3600);
 
-            } else {
-                // User is logged into wordpress
-                if (isset($_COOKIE[$this->settings->getCookieName()])) {
-                    // Get the user information from the ban manager cookie
-                    $user_info = json_decode($_COOKIE[$this->settings->getCookieName()], true);
+        if (isset($_POST['accessor']) && isset($_POST['nonce']) && isset($_POST['timestamp']) && isset($_POST['hmac'])) {
+            // API call
+            // Validate the message
+            $timestamp = strtotime($_POST['timestamp']);
+            $current_time = time();
 
-                    // Make sure the user hasn't changed
-                    if ($user_info['username'] == $username && $user_info['id']) {
-                        $this->user_id = $user_info['id'];
-                        $authenticated = true;
+            // Give the time a ten minute range from the curren time to be valid
+            if ($timestamp > ($current_time - 600) && $timestamp < ($current_time + 600)) {
+
+                $msg = '';
+                $hmac = '';
+                foreach ($_POST as $key => $value) {
+                    if ($key == 'hmac') {
+                        $hmac = $value;
+                    } else {
+                        $msg .= $key . $value;
                     }
                 }
-                if (!$authenticated) {
-                    // Get the user information from the database
-                    $user_info = $this->getModeratorInfo($db, $username);
-
-                    // User is a moderator+
-                    if ($user_info !== false) {
-                        // Store the user information
-                        setcookie($this->settings->getCookieName(), json_encode($user_info), 0, "/");
-
-                        $this->user_id = $user_info['id'];
-                        $authenticated = true;
-                    }
+                $key = $this->settings->getAccessorKey($_POST['accessor']);
+                if ($key !== false && hash_hmac('sha1', $msg, $key) == $hmac) {
+                    // HMAC valid, check the nonce
+                    
                 }
             }
+
+        } else if ($this->settings->useWPLogin()) {
+            $authenticated = $this->authenticateUsingWP($db);
+        } else {
+            // TODO use our authentication system
+
         }
 
         return $authenticated;
+    }
+
+    /**
+     * Attempts to authenticate the user by checking if they are logged into
+     * wordpress.
+     * @param Database $db The database instance to use.
+     * @return boolean <tt>true</tt> if the user is logged into wordpress and
+     * is a moderator.
+     * @throws AuthenticationException If there is a problem loading wordpress.
+     */
+    private function authenticateUsingWP(Database $db)
+    {
+        // Load the needed wordpress functions
+        $wp_load = $this->settings->getWordpressLoadFile();
+        if (empty($wp_load) || !file_exists($wp_load)) {
+            throw new AuthenticationException("Configuration error. Unable to authenticate through wordpress!");
+        }
+        require_once($wp_load);
+
+        if (is_user_logged_in()) {
+            $wp_current_user = wp_get_current_user();
+            $moderator_name = $wp_current_user->user_login;
+
+            $moderator_info = $this->getModeratorInfo($db, $moderator_name);
+            if ($moderator_info !== false) {
+                // User is logged into wordpress, and is a moderator
+                $this->user_id = $moderator_info['id'];
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -109,26 +132,6 @@ class Authentication
     public function getUserId()
     {
         return $this->user_id;
-    }
-
-    /**
-     * Gets name of the user logged into wordpress.
-     * @return mixed FALSE if the user is not not logged into wordpress, otherwise
-     * it return an unsanitized string contain the logged in user's name.
-     */
-    public function getLoggedInName()
-    {
-        // Search the wordpress cookies for the logged in user name
-        $keys = array_keys($_COOKIE);
-        foreach($keys as &$key) {
-            if (strncmp("wordpress_logged_in_", $key, 20) === 0) {
-                // Extract user name from the cookie
-                $value = $_COOKIE[$key];
-                return substr($value, 0, strpos($value, "|"));
-            }
-        }
-
-        return false;
     }
 
     /**

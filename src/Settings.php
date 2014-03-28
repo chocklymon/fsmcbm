@@ -50,6 +50,7 @@ class Settings
         $defaults = array(
             'cookie_name' => 'bm',
             'debug' => false,
+            'use_wp_login' => false,
         );
         $this->settings = array_merge($defaults, $settings);
     }
@@ -99,6 +100,11 @@ class Settings
         return $this->settings['db_username'];
     }
 
+    public function getWordpressLoadFile()
+    {
+        return $this->settings['wp_load_file'];
+    }
+
     /**
      * Indicates if the ban manager is being run in debugging mode.
      * @return boolean <tt>true</tt> when debug mode is on.
@@ -106,6 +112,29 @@ class Settings
     public function debugMode()
     {
         return $this->settings['debug'];
+    }
+
+    public function useWPLogin()
+    {
+        return $this->settings['use_wp_login'];
+    }
+
+    public function getCookieKey()
+    {
+        return $this->settings['cookie_secret'];
+    }
+
+    public function getAccessorKey($accessor_name)
+    {
+        if (isset($this->settings['auth_secret_keys'])) {
+            $keys = $this->settings['auth_secret_keys'];
+            if (is_array($keys) && isset($keys[$accessor_name])) {
+                return $keys[$accessor_name];
+            } else {
+                return $keys;
+            }
+        }
+        return false;
     }
 
 }

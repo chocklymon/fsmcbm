@@ -116,6 +116,8 @@ try {
         $actions->updateIncident();
 
     }
+} catch (AuthenticationException $ex) {
+    $output->exception($ex);
 } catch (DatabaseException $ex) {
     $output->exception(
         $ex,

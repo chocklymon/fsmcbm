@@ -110,20 +110,6 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
         $this->assertEquals(self::USER_ID, $this->auth->getUserId());
     }
 
-    public function testGetLoggedInName()
-    {
-        $this->setLoggedInCookie();
-        $name = $this->auth->getLoggedInName();
-        $this->assertEquals(self::USERNAME, $name);
-    }
-
-    public function testGetLoggedInName_false()
-    {
-        // Empty the cookie so the name returns false
-        $name = $this->auth->getLoggedInName();
-        $this->assertFalse($name);
-    }
-
     public function testGetModeratorInfo()
     {
         $db = $this->getModeratorMockDB();
