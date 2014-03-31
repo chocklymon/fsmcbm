@@ -105,7 +105,7 @@ class Authentication
                     $row = $db->querySingleRow($sql);
                     if ($row[0] == 0) {
                         // Nonce hasn't been used, save it and return true
-                        $date_time = date('Y-m-d H:i:s', $current_time);// TODO this should be part of the database class, so that the date time format is not hardcoded everywhere
+                        $date_time = $db->getDate($current_time);
                         $sql = "INSERT INTO `auth_nonce` (`nonce`, `timestamp`) VALUES ('{$nonce}', '{$date_time}')";
                         $db->query($sql);
 
@@ -208,7 +208,7 @@ class Authentication
      */
     public function cleanUpNonce(Database $db)
     {
-        $date_time = date('Y-m-d H:i:s', time() - 86400);// One day
+        $date_time = $db->getDate(time() - 86400);// One day
         $sql = "DELETE FROM `auth_nonce` WHERE `timestamp` < '{$date_time}'";
         $db->query($sql);
     }
