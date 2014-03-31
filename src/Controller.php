@@ -260,7 +260,7 @@ class Controller
      */
     public function getNow()
     {
-        return date('Y-m-d H:i:s');
+        return $this->db->getDate();
     }
 
     /**
