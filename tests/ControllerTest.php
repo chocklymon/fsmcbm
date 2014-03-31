@@ -94,7 +94,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
 
         // Create the controller
         $controller = new Controller($db, self::$output);
-        $now = date('Y-m-d H:i:s');
+        $now = $db->getDate();
 
 
         // Run the test //
@@ -135,7 +135,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
 
         // Create the controller
         $controller = new Controller($db, self::$output);
-        $now = date('Y-m-d H:i:s');
+        $now = $db->getDate();
 
 
         // Run the test //
@@ -395,7 +395,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
 
         $db = new MockDatabase();
         $controller = new Controller($db, self::$output);
-        $now = date('Y-m-d H:i:s');
+        $now = $db->getDate();
 
         $controller->updateBanHistory($player_id, $moderator_id, $banned, $banned);
 
@@ -423,7 +423,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
 
         // Create the controller
         $controller = new Controller($db, self::$output);
-        $now = date('Y-m-d H:i:s');
+        $now = $db->getDate();
 
         // Run the test //
         $controller->updateUser(1);

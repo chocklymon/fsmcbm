@@ -129,6 +129,20 @@ class Database
     }
 
     /**
+     * Gets the date and time as a string ready to be inserted into the database.
+     * @param int $timestamp The UNIX timestamp, defaults to the current time if
+     * not specified.
+     * @return string The date and time.
+     */
+    public static function getDate($timestamp = null)
+    {
+        if (empty($timestamp)) {
+            $timestamp = time();
+        }
+        return date('Y-m-d H:i:s', $timestamp);
+    }
+
+    /**
      * Performs a query against the database.
      * @param string $sql The query string.
      * @param string $error_message An optional error message to output if

@@ -129,6 +129,19 @@ EOF;
         $this->assertEquals($value, $row[self::MSG_COLUMN_NAME]);
     }
 
+    public function testGetDate()
+    {
+        $date = '2010-10-10 10:10:10';
+        $timestamp = strtotime($date);
+        $this->assertEquals($date, $this->db->getDate($timestamp));
+    }
+
+    public function testGetDate_currentTime()
+    {
+        $date = date('Y-m-d H:i:s');
+        $this->assertEquals($date, $this->db->getDate());
+    }
+
     public function testQueryRows()
     {
         $row = $this->db->queryRows("SELECT * FROM `" . self::TABLE_NAME . "` WHERE id=" . self::$default_row['id']);
