@@ -20,12 +20,14 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
 /**
- * Description of AuthenticationException
+ * Authentication Exception. Used to indicate that an error occured while
+ * attempting to authenticate a user.
  *
- * @author coakley
+ * @author Curtis Oakley
  */
 class AuthenticationException extends RuntimeException
 {
-    
+
 }

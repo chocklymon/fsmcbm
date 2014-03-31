@@ -94,3 +94,15 @@ CREATE TABLE IF NOT EXISTS `users` (
   KEY `banned` (`banned`),
   KEY `rank` (`rank`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci ;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `auth_nonce`
+--
+
+CREATE TABLE `auth_nonce` (
+	`nonce` INT(10) NOT NULL,
+	`timestamp` DATETIME NOT NULL,
+    PRIMARY KEY (`nonce`)
+) COMMENT='Store the nonce\'s' COLLATE='utf8_unicode_ci' ENGINE=MyISAM;

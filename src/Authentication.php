@@ -56,42 +56,70 @@ class Authentication
     {
         $authenticated = false;
 
-        // Validate the payload
-
-
         if (isset($_POST['accessor']) && isset($_POST['nonce']) && isset($_POST['timestamp']) && isset($_POST['hmac'])) {
             // API call
-            // Validate the message
-            $timestamp = strtotime($_POST['timestamp']);
-            $current_time = time();
-
-            // Give the time a ten minute range from the curren time to be valid
-            if ($timestamp > ($current_time - 600) && $timestamp < ($current_time + 600)) {
-
-                $msg = '';
-                $hmac = '';
-                foreach ($_POST as $key => $value) {
-                    if ($key == 'hmac') {
-                        $hmac = $value;
-                    } else {
-                        $msg .= $key . $value;
-                    }
-                }
-                $key = $this->settings->getAccessorKey($_POST['accessor']);
-                if ($key !== false && hash_hmac('sha1', $msg, $key) == $hmac) {
-                    // HMAC valid, check the nonce
-                    
-                }
-            }
-
+            $authenticated = $this->authenticateAPIRequest($db);
         } else if ($this->settings->useWPLogin()) {
+            // Authenticate using WordPress
             $authenticated = $this->authenticateUsingWP($db);
         } else {
-            // TODO use our authentication system
-
+            // Authenticate using our authentication
+            // TODO
         }
 
         return $authenticated;
+    }
+
+    /**
+     * Authenticates that an API request is valid.
+     * @param Database $db The database instance to use.
+     * @return boolean <tt>true</tt> if the post's hmac, nonce, and timestamp
+     * are valid for the accessor.
+     * @throws AuthenticationException If a database exception occurs.
+     */
+    public function authenticateAPIRequest(Database $db)
+    {
+        // Validate the payload
+        $timestamp = strtotime($_POST['timestamp']);
+        $current_time = time();
+
+        // Give the time a ten minute range from the curren time to be valid
+        if ($timestamp > ($current_time - 600) && $timestamp < ($current_time + 600)) {
+
+            $msg = '';
+            $hmac = '';
+            foreach ($_POST as $key => $value) {
+                if ($key == 'hmac') {
+                    $hmac = $value;
+                } else {
+                    $msg .= $key . $value;
+                }
+            }
+            $key = $this->settings->getAccessorKey($_POST['accessor']);
+            if ($key !== false && hash_hmac('sha1', $msg, $key) == $hmac) {
+                // HMAC valid
+                try {
+                    // Check the nonce
+                    $nonce = $db->sanitize($_POST['nonce'], true);
+                    $sql = "SELECT COUNT(*) FROM `auth_nonce` WHERE `nonce` = '{$nonce}'";
+                    $row = $db->querySingleRow($sql);
+                    if ($row[0] == 0) {
+                        // Nonce hasn't been used, save it and return true
+                        $date_time = date('Y-m-d H:i:s', $current_time);// TODO this should be part of the database class, so that the date time format is not hardcoded everywhere
+                        $sql = "INSERT INTO `auth_nonce` (`nonce`, `timestamp`) VALUES ('{$nonce}', '{$date_time}')";
+                        $db->query($sql);
+
+                        $this->cleanUpNonce($db);
+
+                        return true;
+                    }
+                } catch (DatabaseException $ex) {
+                    throw new AuthenticationException("Authentication failed due to database issue.", $ex->getCode(), $ex);
+                }
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -172,6 +200,17 @@ class Authentication
         }
 
         return $info;
+    }
+
+    /**
+     * Deletes old records from the nonce table.
+     * @param Database $db The database instance
+     */
+    public function cleanUpNonce(Database $db)
+    {
+        $date_time = date('Y-m-d H:i:s', time() - 86400);// One day
+        $sql = "DELETE FROM `auth_nonce` WHERE `timestamp` < '{$date_time}'";
+        $db->query($sql);
     }
 
 }
