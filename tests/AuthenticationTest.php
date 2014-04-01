@@ -60,7 +60,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
     {
         $_COOKIE = array();
         self::$settings->setDebugMode(false);
-        $this->auth = new Authentication(self::$settings);
+        $this->auth = new Authentication(self::$empty_db, self::$settings);
     }
 
     /**
@@ -71,7 +71,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
     public function testAuthenticate_noCookie()
     {
         $this->assertFalse(
-            $this->auth->authenticate(self::$empty_db)
+            $this->auth->authenticate()
         );
     }
 
@@ -79,7 +79,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
     {
         self::$settings->setDebugMode(true);
         $this->assertTrue(
-            $this->auth->authenticate(self::$empty_db)
+            $this->auth->authenticate()
         );
         $this->assertEquals(1, $this->auth->getUserId());
     }
@@ -90,7 +90,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
         $bm_cookie = json_encode(array('id'=>self::USER_ID, 'rank'=>'Admin', 'username'=>self::USERNAME));
         $_COOKIE[self::$settings->getCookieName()] = $bm_cookie;
         $this->assertTrue(
-            $this->auth->authenticate(self::$empty_db)
+            $this->auth->authenticate()
         );
         $this->assertEquals(self::USER_ID, $this->auth->getUserId());
     }
@@ -104,16 +104,18 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
     {
         $this->setLoggedInCookie();
         $db = $this->getModeratorMockDB();
+        $auth = new Authentication($db, self::$settings);
         $this->assertTrue(
-            $this->auth->authenticate($db)
+            $auth->authenticate($db)
         );
-        $this->assertEquals(self::USER_ID, $this->auth->getUserId());
+        $this->assertEquals(self::USER_ID, $auth->getUserId());
     }
 
     public function testGetModeratorInfo()
     {
         $db = $this->getModeratorMockDB();
-        $info = $this->auth->getModeratorInfo($db, self::USERNAME);
+        $auth = new Authentication($db, self::$settings);
+        $info = $auth->getModeratorInfo(self::USERNAME);
 
         $expected = array('id'=>28, 'rank'=>'Admin', 'username'=>self::USERNAME);
         $this->assertEquals($expected, $info);
@@ -121,14 +123,15 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
 
     public function testGetModeratorInfo_false()
     {
-        $info = $this->auth->getModeratorInfo(self::$empty_db, "");
+        $info = $this->auth->getModeratorInfo("");
         $this->assertFalse($info);
     }
 
     public function testGetModeratorInfo_nonAdmin()
     {
         $db = new MockDatabase(array(array('user_id'=>self::USER_ID, 'rank'=>'Regular')));
-        $info = $this->auth->getModeratorInfo($db, self::USERNAME);
+        $auth = new Authentication($db, self::$settings);
+        $info = $auth->getModeratorInfo(self::USERNAME);
         $this->assertFalse($info);
     }
 

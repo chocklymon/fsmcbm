@@ -46,11 +46,11 @@ mb_internal_encoding("UTF-8");
 $settings = new Settings();
 $output = new Output($settings);
 $db = new Database($settings);
-$auth = new Authentication($settings);
+$auth = new Authentication($db, $settings);
 
 try {
     // Authenticate the user
-    if ($auth->authenticate($db) === false) {
+    if ($auth->authenticate() === false) {
         $output->error("Not logged in.");
         exit();
     }
@@ -62,11 +62,6 @@ try {
  *      PERFORM ACTIONS
  * =============================
  */
-
-    // Make sure the database is connected
-    if (!$db->isConnected()) {
-        $db->connect($settings);
-    }
 
     // Get an instance of the controller
     $actions = new Controller($db, $output);
@@ -132,6 +127,4 @@ try {
 }
 
 // Close the database connection
-if ($db->isConnected()) {
-    $db->close();
-}
+$db->close();

@@ -29,7 +29,6 @@ require_once 'src/Database.php';
  */
 class MockDatabase extends Database
 {
-    private $mock_connected = false;
     private $queries;
     private $responses;
     private $query_count = 0;
@@ -41,39 +40,8 @@ class MockDatabase extends Database
      */
     public function __construct($responses = array())
     {
-        parent::__construct();
         $this->queries = array();
         $this->responses = $responses;
-    }
-
-    /**
-     * Connects to the mock database.
-     * Simply sets the connected flag to true.
-     * @param Settings $settings The settings. Used to get the data needed to
-     * connect with the database.
-     */
-    public function connect(Settings $settings)
-    {
-        $this->mock_connected = true;
-    }
-
-    /**
-     * Get if the database is currently connected.
-     * Since this is a mock database, this is simply a flag.
-     * @return boolean <tt>true</tt> if the database is connected.
-     */
-    public function isConnected()
-    {
-        return $this->mock_connected;
-    }
-
-    /**
-     * Set if the mock database is connected.
-     * @param boolean $connected
-     */
-    public function setConnected($connected)
-    {
-        $this->mock_connected = $connected;
     }
 
     /**

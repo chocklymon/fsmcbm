@@ -29,11 +29,6 @@ require_once('DatabaseException.php');
  */
 class Database
 {
-    /**
-     * Indicated if the database connection is active.
-     * @var boolean
-     */
-    private $connected = false;
 
     /**
      * The MySQL database connection.
@@ -45,32 +40,16 @@ class Database
      * Construct a Database connection handler.
      *
      * Handles communication with the database.
+     *
+     * @param Settings $settings The settings.
+     * @throws DatabaseException If there was an issue with connection
+     * to the database.
      */
-    public function __construct()
+    public function __construct(Settings $settings)
     {
         mb_internal_encoding("UTF-8");
-    }
 
-    public function __destruct()
-    {
-        // Assures that the database connection is closed
-        if ($this->connected) {
-            @$this->close();
-        }
-    }
-
-    /**
-     * Connects to the database.
-     *
-     * This must be called before attempting any queries.
-     *
-     * @param Settings $settings The settings. Used to get the data needed to
-     * connect with the database.
-     * @throws DatabaseException If there was a error setting up
-     * a connection to the database.
-     */
-    public function connect(Settings $settings)
-    {
+        // Connect to the database
         $this->conn = new mysqli(
             $settings->getDatabaseHost(),
             $settings->getDatabaseUsername(),
@@ -88,8 +67,12 @@ class Database
         if (!$this->conn->set_charset("utf8")) {
             throw new DatabaseException("Unable to set utf8 character set.");
         }
+    }
 
-        $this->connected = true;
+    public function __destruct()
+    {
+        // Assures that the database connection is closed
+        @$this->close();
     }
 
     /**
@@ -97,7 +80,7 @@ class Database
      */
     public function close()
     {
-        $this->connected = !$this->conn->close();
+        $this->conn->close();
     }
 
     /**
@@ -117,15 +100,6 @@ class Database
         $result->free();
 
         return $exists;
-    }
-
-    /**
-     * Get if the database is currently connected.
-     * @return boolean <tt>true</tt> if the database is connected.
-     */
-    public function isConnected()
-    {
-        return $this->connected;
     }
 
     /**

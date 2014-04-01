@@ -56,8 +56,7 @@ class DatabaseTest extends PHPUnit_Framework_TestCase
         self::$settings = new MockSettings;
 
         // Set up the test table
-        $db = new Database();
-        $db->connect(self::$settings);
+        $db = new Database(self::$settings);
         $table = self::TABLE_NAME;
         $msg_name = self::MSG_COLUMN_NAME;
         $sql = <<<EOF
@@ -82,8 +81,7 @@ EOF;
     public static function tearDownAfterClass()
     {
         // Remove the table
-        $db = new Database();
-        $db->connect(self::$settings);
+        $db = new Database(self::$settings);
         $sql = 'DROP TABLE IF EXISTS `' . self::TABLE_NAME . '`';
         $db->query($sql);
         $db->close();
@@ -91,8 +89,7 @@ EOF;
 
     public function setUp()
     {
-        $this->db =  new Database();
-        $this->db->connect(self::$settings);
+        $this->db = new Database(self::$settings);
     }
 
     public function tearDown()
@@ -221,10 +218,5 @@ EOF;
     {
         $table_exists = $this->db->tableExists(self::TABLE_NAME);
         $this->assertTrue($table_exists);
-    }
-
-    public function testIsConnected()
-    {
-        $this->assertTrue($this->db->isConnected());
     }
 }

@@ -28,6 +28,11 @@
 class Authentication
 {
     /**
+     * @var Database
+     */
+    private $db;
+
+    /**
      * @var Settings
      */
     private $settings;
@@ -39,32 +44,32 @@ class Authentication
 
     /**
      * Create a new authenticator class.
+     * @param Database $db The database instance.
      * @param Settings $settings The settings to use.
      */
-    public function __construct(Settings $settings)
+    public function __construct(Database $db, Settings $settings)
     {
+        $this->db = $db;
         $this->settings = $settings;
     }
 
     /**
      * Authenticates the user.
-     * @param Database $db
-     * @param Output $output
      * @return bool <tt>true</tt> if the user was authenticated.
      */
-    public function authenticate(Database $db)
+    public function authenticate()
     {
         $authenticated = false;
 
         if (isset($_POST['accessor']) && isset($_POST['nonce']) && isset($_POST['timestamp']) && isset($_POST['hmac'])) {
             // API call
-            $authenticated = $this->authenticateAPIRequest($db);
+            $authenticated = $this->authenticateAPIRequest();
         } else if ($this->settings->useWPLogin()) {
             // Authenticate using WordPress
-            $authenticated = $this->authenticateUsingWP($db);
+            $authenticated = $this->authenticateUsingWP();
         } else {
             // Authenticate using our authentication
-            // TODO
+            $authenticated = $this->authenticateUser();
         }
 
         return $authenticated;
@@ -72,12 +77,11 @@ class Authentication
 
     /**
      * Authenticates that an API request is valid.
-     * @param Database $db The database instance to use.
      * @return boolean <tt>true</tt> if the post's hmac, nonce, and timestamp
      * are valid for the accessor.
      * @throws AuthenticationException If a database exception occurs.
      */
-    public function authenticateAPIRequest(Database $db)
+    private function authenticateAPIRequest()
     {
         // Validate the payload
         $timestamp = strtotime($_POST['timestamp']);
@@ -100,16 +104,16 @@ class Authentication
                 // HMAC valid
                 try {
                     // Check the nonce
-                    $nonce = $db->sanitize($_POST['nonce'], true);
+                    $nonce = $this->db->sanitize($_POST['nonce'], true);
                     $sql = "SELECT COUNT(*) FROM `auth_nonce` WHERE `nonce` = '{$nonce}'";
-                    $row = $db->querySingleRow($sql);
+                    $row = $this->db->querySingleRow($sql);
                     if ($row[0] == 0) {
                         // Nonce hasn't been used, save it and return true
-                        $date_time = $db->getDate($current_time);
+                        $date_time = $this->db->getDate($current_time);
                         $sql = "INSERT INTO `auth_nonce` (`nonce`, `timestamp`) VALUES ('{$nonce}', '{$date_time}')";
-                        $db->query($sql);
+                        $this->db->query($sql);
 
-                        $this->cleanUpNonce($db);
+                        $this->cleanUpNonce();
 
                         return true;
                     }
@@ -122,15 +126,19 @@ class Authentication
         return false;
     }
 
+    private function authenticateUser()
+    {
+        // TODO
+    }
+
     /**
      * Attempts to authenticate the user by checking if they are logged into
      * wordpress.
-     * @param Database $db The database instance to use.
      * @return boolean <tt>true</tt> if the user is logged into wordpress and
      * is a moderator.
      * @throws AuthenticationException If there is a problem loading wordpress.
      */
-    private function authenticateUsingWP(Database $db)
+    private function authenticateUsingWP()
     {
         // Load the needed wordpress functions
         $wp_load = $this->settings->getWordpressLoadFile();
@@ -143,7 +151,7 @@ class Authentication
             $wp_current_user = wp_get_current_user();
             $moderator_name = $wp_current_user->user_login;
 
-            $moderator_info = $this->getModeratorInfo($db, $moderator_name);
+            $moderator_info = $this->getModeratorInfo($moderator_name);
             if ($moderator_info !== false) {
                 // User is logged into wordpress, and is a moderator
                 $this->user_id = $moderator_info['id'];
@@ -164,10 +172,11 @@ class Authentication
 
     /**
      * Gets the information for the moderator using the ban manager.
+     * @param string $moderator_name The name of the moderator to get the information of.
      * @return mixed boolean <tt>false</tt> if the user is not a moderator/admin,
      * otherwise it returns and array with the user's information.
      */
-    public function getModeratorInfo(Database $db, $moderator_name)
+    public function getModeratorInfo($moderator_name)
     {
         if (empty($moderator_name)) {
             return false;
@@ -176,13 +185,10 @@ class Authentication
         $info = false;
 
         // Sanitize the provided user name
-        if (!$db->isConnected()) {
-            $db->connect($this->settings);
-        }
-        $moderator_name = $db->sanitize($moderator_name);
+        $moderator_name = $this->db->sanitize($moderator_name);
 
         // Request the user id from the database
-        $row = $db->querySingleRow(
+        $row = $this->db->querySingleRow(
             "SELECT `users`.`user_id`, `rank`.`name` AS rank
              FROM `users`
              LEFT JOIN `rank` ON (`users`.`rank` = `rank`.`rank_id`)
@@ -204,13 +210,11 @@ class Authentication
 
     /**
      * Deletes old records from the nonce table.
-     * @param Database $db The database instance
      */
-    public function cleanUpNonce(Database $db)
+    public function cleanUpNonce()
     {
-        $date_time = $db->getDate(time() - 86400);// One day
+        $date_time = $this->db->getDate(time() - 86400);// One day
         $sql = "DELETE FROM `auth_nonce` WHERE `timestamp` < '{$date_time}'";
-        $db->query($sql);
+        $this->db->query($sql);
     }
-
 }
