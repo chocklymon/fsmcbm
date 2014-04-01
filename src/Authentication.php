@@ -21,6 +21,8 @@
  * THE SOFTWARE.
  */
 
+require_once('AuthenticationException.php');
+
 /**
  * Handles authenticating and permissioning the logged in users.
  * @author Curtis Oakley
@@ -115,6 +117,7 @@ class Authentication
 
                         $this->cleanUpNonce();
 
+                        // TODO user ID
                         return true;
                     }
                 } catch (DatabaseException $ex) {

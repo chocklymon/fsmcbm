@@ -63,52 +63,112 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
         $this->auth = new Authentication(self::$empty_db, self::$settings);
     }
 
+    protected function tearDown()
+    {
+        $_POST = array();
+    }
+
+    public function testAuthenticateAPIRequest()
+    {
+        $this->setUpAPIRequest();
+        $db = new MockDatabase(array(array(0)));
+        $auth = new Authentication($db, self::$settings);
+
+        $authenticated = $auth->authenticate();
+        $this->assertTrue($authenticated);
+    }
+
+    public function testAuthenticateAPIRequest_badHMAC()
+    {
+        $this->setUpAPIRequest();
+        $_POST['hmac'] = 'invalid';
+
+        $authenticated = $this->auth->authenticate();
+        $this->assertFalse($authenticated);
+    }
+
+    public function testAuthenticateAPIRequest_badTimestamp()
+    {
+        $this->setUpAPIRequest();
+        $_POST['timestamp'] = time() - 8000;
+
+        $authenticated = $this->auth->authenticate();
+        $this->assertFalse($authenticated);
+    }
+
+    public function testAuthenticateAPIRequest_nonceUsed()
+    {
+        $this->setUpAPIRequest();
+        $db = new MockDatabase(array(array(1)));
+        $auth = new Authentication($db, self::$settings);
+
+        $authenticated = $auth->authenticate();
+        $this->assertFalse($authenticated);
+    }
+
     /**
-     * Run is separate proccess since authenticate will attempt to set a cookie,
-     * and PHP Unit can sometimes already have set the headers.
-     * @runInSeparateProcess
+     * @expectedException AuthenticationException
      */
-    public function testAuthenticate_noCookie()
+    public function testAuthenticateAPIRequest_databaseError()
     {
-        $this->assertFalse(
-            $this->auth->authenticate()
-        );
+        $this->setUpAPIRequest();
+        $db = new MockDatabase(array(), true);
+        $auth = new Authentication($db, self::$settings);
+
+        $auth->authenticate();
     }
 
-    public function testAuthenticate_debugMode()
+    public function testAuthenticateUsingWP()
     {
-        self::$settings->setDebugMode(true);
-        $this->assertTrue(
-            $this->auth->authenticate()
-        );
-        $this->assertEquals(1, $this->auth->getUserId());
-    }
-
-    public function testAuthenticate_alreadyLoggedIn()
-    {
-        $this->setLoggedInCookie();
-        $bm_cookie = json_encode(array('id'=>self::USER_ID, 'rank'=>'Admin', 'username'=>self::USERNAME));
-        $_COOKIE[self::$settings->getCookieName()] = $bm_cookie;
-        $this->assertTrue(
-            $this->auth->authenticate()
-        );
-        $this->assertEquals(self::USER_ID, $this->auth->getUserId());
-    }
-
-    /**
-     * Run is separate proccess since authenticate will attempt to set a cookie,
-     * and PHP Unit has already set the headers.
-     * @runInSeparateProcess
-     */
-    public function testAuthenticate_logIn()
-    {
-        $this->setLoggedInCookie();
+        // Set up so the user will be logged in correctly
+        global $wp_user_logged_in, $wp_current_user;
+        $wp_user_logged_in = true;
+        $wp_current_user = (object) array('user_login'=>self::USERNAME);
+        self::$settings->setSetting('use_wp_login', true);
         $db = $this->getModeratorMockDB();
         $auth = new Authentication($db, self::$settings);
-        $this->assertTrue(
-            $auth->authenticate($db)
-        );
+
+        // Run the test
+        $authenticated = $auth->authenticate();
+        $this->assertTrue($authenticated);
         $this->assertEquals(self::USER_ID, $auth->getUserId());
+    }
+
+    public function testAuthenticateUsingWP_notLoggedIn()
+    {
+        // Set up so the user will not be logged in
+        global $wp_user_logged_in;
+        $wp_user_logged_in = false;
+        self::$settings->setSetting('use_wp_login', true);
+
+        // Run the test
+        $authenticated = $this->auth->authenticate();
+        $this->assertFalse($authenticated);
+    }
+
+    public function testAuthenticateUsingWP_nonModerator()
+    {
+        // Set up so the user will be logged in correctly
+        global $wp_user_logged_in, $wp_current_user;
+        $wp_user_logged_in = true;
+        $wp_current_user = (object) array('user_login'=>self::USERNAME);
+        self::$settings->setSetting('use_wp_login', true);
+        $db = new MockDatabase(array(array('user_id'=>self::USER_ID, 'rank'=>'Regular')));
+        $auth = new Authentication($db, self::$settings);
+
+        // Run the test
+        $authenticated = $auth->authenticate();
+        $this->assertFalse($authenticated);
+    }
+
+    /**
+     * @expectedException AuthenticationException
+     */
+    public function testAuthenticateUsingWP_badConfiguration()
+    {
+        // Set up  so there will be an authentication exception
+        self::$settings->setSetting('wp_load_file', null);
+        $this->auth->authenticate();
     }
 
     public function testGetModeratorInfo()
@@ -141,5 +201,29 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
 
     private function getModeratorMockDB() {
         return new MockDatabase(array(array('user_id'=>self::USER_ID, 'rank'=>'Admin')));
+    }
+
+    public function setUpAPIRequest()
+    {
+        $accessor = 'test';
+        $secret_key = 'secret';
+        self::$settings->setSetting('auth_secret_keys', array($accessor => $secret_key));
+        $nonce = mt_rand(0, 400000);
+        $timestamp = MockDatabase::getDate();
+
+        $_POST = array(
+            'accessor' => $accessor,
+            'nonce' => $nonce,
+            'timestamp' => $timestamp,
+        );
+
+        $payload = '';
+        foreach ($_POST as $key => $value) {
+            $payload .= $key . $value;
+        }
+
+        $hmac = hash_hmac('sha1', $payload, $secret_key);
+
+        $_POST['hmac'] = $hmac;
     }
 }

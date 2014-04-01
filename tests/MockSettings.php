@@ -44,6 +44,7 @@ class MockSettings extends Settings
 
             'cookie_name' => 'bm',
             'debug' => false,
+            'wp_load_file' => 'tests/wp-load.php'
         );
 
         // Allow the settings to be overriden by a test.ini file
