@@ -46,6 +46,11 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
     private static $empty_db;
 
     /**
+     * @var string
+     */
+    private static $wp_load_file;
+
+    /**
      * @var Authentication
      */
     private $auth;
@@ -54,18 +59,22 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
     {
         self::$settings = new MockSettings();
         self::$empty_db = new MockDatabase();
+
+        // Store the true wp_load_file
+        self::$wp_load_file = self::$settings->getWordpressLoadFile();
+
     }
 
     protected function setUp()
     {
-        $_COOKIE = array();
-        self::$settings->setDebugMode(false);
         $this->auth = new Authentication(self::$empty_db, self::$settings);
     }
 
     protected function tearDown()
     {
+        // Reset anything that may have been changed
         $_POST = array();
+        self::$settings->setSetting('wp_load_file', self::$wp_load_file);
     }
 
     public function testAuthenticateAPIRequest()
@@ -153,7 +162,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
         $wp_user_logged_in = true;
         $wp_current_user = (object) array('user_login'=>self::USERNAME);
         self::$settings->setSetting('use_wp_login', true);
-        $db = new MockDatabase(array(array('user_id'=>self::USER_ID, 'rank'=>'Regular')));
+        $db = $this->getNonModeratorMockDB();
         $auth = new Authentication($db, self::$settings);
 
         // Run the test
@@ -189,27 +198,46 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
 
     public function testGetModeratorInfo_nonAdmin()
     {
-        $db = new MockDatabase(array(array('user_id'=>self::USER_ID, 'rank'=>'Regular')));
+        $db = $this->getNonModeratorMockDB();
         $auth = new Authentication($db, self::$settings);
         $info = $auth->getModeratorInfo(self::USERNAME);
         $this->assertFalse($info);
     }
 
-    private function setLoggedInCookie() {
-        $_COOKIE = array('wordpress_logged_in_28'=> self::USERNAME . '|1393260248|7fe9e5132050a0ef139492791867b659');
+
+    //
+    // Test Helper Functions
+    //
+
+    /**
+     * Gets a MockDatabase instance that will return a user that is not a
+     * moderator.
+     * @return \MockDatabase
+     */
+    private function getNonModeratorMockDB()
+    {
+        return new MockDatabase(array(array('user_id'=>self::USER_ID, 'rank'=>'Regular')));
     }
 
-    private function getModeratorMockDB() {
+    /**
+     * Gets a MockDatabase instance that will return a user that is a moderator.
+     * @return \MockDatabase
+     */
+    private function getModeratorMockDB()
+    {
         return new MockDatabase(array(array('user_id'=>self::USER_ID, 'rank'=>'Admin')));
     }
 
-    public function setUpAPIRequest()
+    /**
+     * Set up a valid API request, this modifies the global $_POST.
+     */
+    private function setUpAPIRequest()
     {
+        $nonce = mt_rand(0, 400000);
+        $timestamp = MockDatabase::getDate();
         $accessor = 'test';
         $secret_key = 'secret';
         self::$settings->setSetting('auth_secret_keys', array($accessor => $secret_key));
-        $nonce = mt_rand(0, 400000);
-        $timestamp = MockDatabase::getDate();
 
         $_POST = array(
             'accessor' => $accessor,
