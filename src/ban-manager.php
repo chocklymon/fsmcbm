@@ -50,6 +50,7 @@ $auth = new Authentication($db, $settings);
 
 try {
     // Authenticate the user
+    // TODO login
     if ($auth->authenticate() === false) {
         $output->error("Not logged in.");
         exit();

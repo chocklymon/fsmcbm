@@ -29,6 +29,8 @@ require_once('AuthenticationException.php');
  */
 class Authentication
 {
+    const HASH_ALGO = "sha1";
+
     /**
      * @var Database
      */
@@ -61,37 +63,39 @@ class Authentication
      */
     public function authenticate()
     {
-        $authenticated = false;
+        // All requests should validate with the timestamp and nonce
+        if ($this->validatePost()) {
+            if (isset($_POST['accessor_token']) && isset($_POST['hmac']) && isset($_POST['UUID'])) {
+                // API call
+                $user_id = $this->authenticateAPIRequest();
+            } else if ($this->settings->useWPLogin()) {
+                // Authenticate using WordPress
+                $user_id = $this->authenticateUsingWP();
+            } else {
+                // Authenticate using our authentication
+                $user_id = $this->authenticateUser();
+            }
 
-        if (isset($_POST['accessor']) && isset($_POST['nonce']) && isset($_POST['timestamp']) && isset($_POST['hmac'])) {
-            // API call
-            $authenticated = $this->authenticateAPIRequest();
-        } else if ($this->settings->useWPLogin()) {
-            // Authenticate using WordPress
-            $authenticated = $this->authenticateUsingWP();
-        } else {
-            // Authenticate using our authentication
-            $authenticated = $this->authenticateUser();
+            if ($user_id != null) {
+                // User validated
+                $this->user_id = $user_id;
+                $this->cleanUpNonce();
+                return true;
+            }
         }
 
-        return $authenticated;
+        return false;
     }
 
     /**
      * Authenticates that an API request is valid.
-     * @return boolean <tt>true</tt> if the post's hmac, nonce, and timestamp
-     * are valid for the accessor.
+     * @return int The user ID or <tt>null</tt> if the user doesn't validate.
      * @throws AuthenticationException If a database exception occurs.
      */
     private function authenticateAPIRequest()
     {
-        // Validate the payload
-        $timestamp = strtotime($_POST['timestamp']);
-        $current_time = time();
-
-        // Give the time a ten minute range from the curren time to be valid
-        if ($timestamp > ($current_time - 600) && $timestamp < ($current_time + 600)) {
-
+        $key = $this->settings->getAccessorKey($_POST['accessor_token']);
+        if ($key !== false ) {
             $msg = '';
             $hmac = '';
             foreach ($_POST as $key => $value) {
@@ -101,44 +105,70 @@ class Authentication
                     $msg .= $key . $value;
                 }
             }
-            $key = $this->settings->getAccessorKey($_POST['accessor']);
-            if ($key !== false && hash_hmac('sha1', $msg, $key) == $hmac) {
+
+            if (hash_hmac(self::HASH_ALGO, $msg, $key) == $hmac) {
                 // HMAC valid
                 try {
-                    // Check the nonce
-                    $nonce = $this->db->sanitize($_POST['nonce'], true);
-                    $sql = "SELECT COUNT(*) FROM `auth_nonce` WHERE `nonce` = '{$nonce}'";
-                    $row = $this->db->querySingleRow($sql);
-                    if ($row[0] == 0) {
-                        // Nonce hasn't been used, save it and return true
-                        $date_time = $this->db->getDate($current_time);
-                        $sql = "INSERT INTO `auth_nonce` (`nonce`, `timestamp`) VALUES ('{$nonce}', '{$date_time}')";
-                        $this->db->query($sql);
-
-                        $this->cleanUpNonce();
-
-                        // TODO user ID
-                        return true;
+                    // Use the universally unique identifier to get the user info
+                    $uuid = $this->db->sanitize($_POST['UUID']);
+                    $row = $this->db->querySingleRow(
+                        "SELECT `users`.`user_id`, `rank`.`name` AS rank
+                         FROM `users`
+                         LEFT JOIN `rank` ON (`users`.`rank` = `rank`.`rank_id`)
+                         WHERE `uuid` = '$uuid'",
+                        'Moderator not found.'
+                    );
+                    if ($row['rank'] == 'Admin' || $row['rank'] == 'Moderator') {
+                        return $row['user_id'];
                     }
                 } catch (DatabaseException $ex) {
-                    throw new AuthenticationException("Authentication failed due to database issue.", $ex->getCode(), $ex);
+                    throw new AuthenticationException('Authentication failed due to database issue.', $ex->getCode(), $ex);
                 }
             }
         }
-
-        return false;
+        return null;
     }
 
+    /**
+     * Authenticate a user using the ban manager cookie.
+     * @return int The user ID or <tt>null</tt> if the user doesn't validate.
+     */
     private function authenticateUser()
     {
-        // TODO
+        $cookie_name = $this->settings->getCookieName();
+        if (isset($_COOKIE[$cookie_name])) {
+            $cookie = split("|", $_COOKIE[$cookie_name]);
+            if (count($cookie) == 4) {
+
+                // Check if the logout time has been reached
+                if ($this->settings->getLogoutTime() > 0
+                    && strtotime($cookie[2]) + $this->settings->getLogoutTime() >= time()
+                ) {
+                    // Max login time has been reached.
+                    $this->expireCookie();
+                    return null;
+                }
+
+                // Check the cookies HMAC
+                $value = $cookie[0] . $cookie[1] . $cookie[2];
+                $key = $this->settings->getCookieKey();
+                if (empty($key)) {
+                    throw new AuthenticationException('Configuration error.');
+                }
+
+                if (hash_hmac(self::HASH_ALGO, $value, $key) == $cookie[3]) {
+                    // Cookie hasn't been modified
+                    return (int) $cookie[0];
+                }
+            }
+        }
+        return null;
     }
 
     /**
      * Attempts to authenticate the user by checking if they are logged into
      * wordpress.
-     * @return boolean <tt>true</tt> if the user is logged into wordpress and
-     * is a moderator.
+     * @return int The user ID or <tt>null</tt> if the user doesn't validate.
      * @throws AuthenticationException If there is a problem loading wordpress.
      */
     private function authenticateUsingWP()
@@ -146,7 +176,7 @@ class Authentication
         // Load the needed wordpress functions
         $wp_load = $this->settings->getWordpressLoadFile();
         if (empty($wp_load) || !file_exists($wp_load)) {
-            throw new AuthenticationException("Configuration error. Unable to authenticate through wordpress!");
+            throw new AuthenticationException('Configuration error. Unable to authenticate through wordpress!');
         }
         require_once($wp_load);
 
@@ -157,11 +187,33 @@ class Authentication
             $moderator_info = $this->getModeratorInfo($moderator_name);
             if ($moderator_info !== false) {
                 // User is logged into wordpress, and is a moderator
-                $this->user_id = $moderator_info['id'];
-                return true;
+                return $moderator_info['id'];
             }
         }
-        return false;
+        return null;
+    }
+
+    /**
+     * Deletes old records from the nonce table.
+     * @param int $chance The chance that a cleanup will actually occur. This
+     * specifies the ration (<tt>1/$chance</tt) of times that a cleanup will occur.
+     * One means always clean up. Defaults to four (25% chance of cleanup).
+     */
+    public function cleanUpNonce($chance = 4)
+    {
+        if (mt_rand(1, $chance) == 1) {
+            $date_time = $this->db->getDate(time() - 86400);// One day
+            $sql = "DELETE FROM `auth_nonce` WHERE `timestamp` < '{$date_time}'";
+            $this->db->query($sql);
+        }
+    }
+
+    /**
+     * Sets the cookie as expired.
+     */
+    private function expireCookie()
+    {
+        setcookie($this->settings->getCookieName(), "", time() - 3600);
     }
 
     /**
@@ -211,13 +263,46 @@ class Authentication
         return $info;
     }
 
-    /**
-     * Deletes old records from the nonce table.
-     */
-    public function cleanUpNonce()
+    public function loginUser()
     {
-        $date_time = $this->db->getDate(time() - 86400);// One day
-        $sql = "DELETE FROM `auth_nonce` WHERE `timestamp` < '{$date_time}'";
-        $this->db->query($sql);
+        // TODO
+    }
+
+    /**
+     * Validates that the post's nonce hasn't been used and that the timestamp
+     * is in range.
+     * @return boolean <tt>true</tt> if the post passes validation.
+     * @throws AuthenticationException If there is a problem with the database
+     * connection.
+     */
+    private function validatePost()
+    {
+        if (isset($_POST['nonce']) && isset($_POST['timestamp'])) {
+            // Validate the payload
+            $timestamp = strtotime($_POST['timestamp']);
+            $current_time = time();
+
+            // Give the time a ten minute range from the curren time to be valid
+            if ($timestamp > ($current_time - 600) && $timestamp < ($current_time + 600)) {
+                try {
+                    // Check the nonce
+                    $nonce = $this->db->sanitize($_POST['nonce'], true);
+                    $sql = "SELECT COUNT(*) FROM `auth_nonce` WHERE `nonce` = '{$nonce}'";
+                    $row = $this->db->querySingleRow($sql);
+                    if ($row[0] == 0) {
+                        // Nonce hasn't been used, save it and return true
+                        $date_time = $this->db->getDate($current_time);
+                        $sql = "INSERT INTO `auth_nonce` (`nonce`, `timestamp`) VALUES ('{$nonce}', '{$date_time}')";
+                        $this->db->query($sql);
+
+                        return true;
+                    }
+                } catch (DatabaseException $ex) {
+                    throw new AuthenticationException('Authentication failed due to database issue.', $ex->getCode(), $ex);
+                }
+            }
+        }
+
+        return false;
     }
 }

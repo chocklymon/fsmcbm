@@ -51,6 +51,7 @@ class Settings
             'cookie_name' => 'bm',
             'debug' => false,
             'use_wp_login' => false,
+            'session_duration' => 43200,// 12 hours
         );
         $this->settings = array_merge($defaults, $settings);
     }
@@ -135,6 +136,11 @@ class Settings
             }
         }
         return false;
+    }
+
+    public function getLogoutTime()
+    {
+        return $this->settings['session_duration'];
     }
 
 }

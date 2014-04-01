@@ -22,6 +22,12 @@ $settings = array(
     'cookie_secret' => 'secret',
 
     /**
+     * The maximum time in seconds that is a user is allowed to be logged in
+     * before they have to log in again. Zero means no timeout.
+     */
+    'session_duration' => 43200,
+
+    /**
      * When true, the ban manager will be in debug mode and automatically log the
      * user in as an admin, as well as output additional debugging information.
      */
