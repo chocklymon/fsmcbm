@@ -290,7 +290,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
 
     public function testGetModeratorInfo_nonAdmin()
     {
-        $db = $this->getNonModeratorMockDB();
+        $db = new MockDatabase(array(array('user_id'=>self::USER_ID, 'rank'=>'Regular')));;
         $auth = new Authentication($db, self::$settings);
         $info = $auth->getModeratorInfo(self::USERNAME);
         $this->assertFalse($info);

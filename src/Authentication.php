@@ -137,7 +137,7 @@ class Authentication
     {
         $cookie_name = $this->settings->getCookieName();
         if (isset($_COOKIE[$cookie_name])) {
-            $cookie = split('\|', $_COOKIE[$cookie_name]);
+            $cookie = explode('|', $_COOKIE[$cookie_name]);
             if (count($cookie) == 4) {
 
                 // Check if the logout time has been reached
@@ -270,7 +270,7 @@ class Authentication
             $password = hash(self::HASH_ALGO, $_POST['password']);
 
             $sql = <<<EOF
-SELECT `users`.`user_id` AS id, `rank`.`name` AS rank
+SELECT `users`.`user_id`, `rank`.`name` AS rank
 FROM
 `users`
 LEFT JOIN `passwords` ON (`users`.`user_id` = `passwords`.`user_id`)
