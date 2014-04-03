@@ -129,10 +129,10 @@ class Settings
     {
         if (isset($this->settings['auth_secret_keys'])) {
             $keys = $this->settings['auth_secret_keys'];
-            if (is_array($keys) && isset($keys[$accessor_name])) {
-                return $keys[$accessor_name];
-            } else {
+            if (!is_array($keys)) {
                 return $keys;
+            } else if (isset($keys[$accessor_name])) {
+                return $keys[$accessor_name];
             }
         }
         return false;

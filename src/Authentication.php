@@ -94,8 +94,8 @@ class Authentication
      */
     private function authenticateAPIRequest()
     {
-        $key = $this->settings->getAccessorKey($_POST['accessor_token']);
-        if ($key !== false ) {
+        $accessor_key = $this->settings->getAccessorKey($_POST['accessor_token']);
+        if ($accessor_key !== false ) {
             $msg = '';
             $hmac = '';
             foreach ($_POST as $key => $value) {
@@ -106,7 +106,7 @@ class Authentication
                 }
             }
 
-            if (hash_hmac(self::HASH_ALGO, $msg, $key) == $hmac) {
+            if (hash_hmac(self::HASH_ALGO, $msg, $accessor_key) == $hmac) {
                 // HMAC valid
                 try {
                     // Use the universally unique identifier to get the user info
@@ -137,12 +137,12 @@ class Authentication
     {
         $cookie_name = $this->settings->getCookieName();
         if (isset($_COOKIE[$cookie_name])) {
-            $cookie = split("|", $_COOKIE[$cookie_name]);
+            $cookie = split('\|', $_COOKIE[$cookie_name]);
             if (count($cookie) == 4) {
 
                 // Check if the logout time has been reached
                 if ($this->settings->getLogoutTime() > 0
-                    && strtotime($cookie[2]) + $this->settings->getLogoutTime() >= time()
+                    && $cookie[2] + $this->settings->getLogoutTime() >= time()
                 ) {
                     // Max login time has been reached.
                     $this->expireCookie();
@@ -265,7 +265,7 @@ class Authentication
 
     public function loginUser()
     {
-        if (isset($_POST['username']) && isset($_POST['password']) && validatePost()) {
+        if (isset($_POST['username']) && isset($_POST['password']) && $this->validatePost()) {
             $username = $this->db->sanitize($_POST['username']);
             $password = hash(self::HASH_ALGO, $_POST['password']);
 
@@ -280,12 +280,11 @@ WHERE
 AND  `passwords`.`password_hash` = '{$password}'
 EOF;
             try {
-                $result = $this->db->queryRows($sql);
-                if (count($result) == 1) {
-                    // User found and password matches, set the login cookie and return true
-                    $this->setCookie($result['id'], $username);
-                    return true;
-                }
+                $result = $this->db->querySingleRow($sql);
+
+                // User found and password matches, set the login cookie and return true
+                $this->setCookie($result['id'], $username);
+                return true;
             } catch (\DatabaseException $ex) {
                 throw new \AuthenticationException('Authentication failed due to database issue.', $ex->getCode(), $ex);
             }

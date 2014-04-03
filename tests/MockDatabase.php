@@ -32,20 +32,17 @@ class MockDatabase extends Database
     private $queries;
     private $responses;
     private $query_count = 0;
-    private $throw_exceptions;
 
     /**
      * Constructs a new database mock.
      * @param array $responses An array of responses that should be returned
-     * for the requests.
-     * @param bool $throw_exceptions When set to true will always through database
-     * exceptions when a query is performed.
+     * for the requests. If a response is false, then a database exception will
+     * be throw instead.
      */
-    public function __construct($responses = array(), $throw_exceptions = false)
+    public function __construct($responses = array())
     {
         $this->queries = array();
         $this->responses = $responses;
-        $this->throw_exceptions = $throw_exceptions;
     }
 
     /**
@@ -60,6 +57,15 @@ class MockDatabase extends Database
         } else {
             return $this->queries[$this->query_count - 1];
         }
+    }
+
+    /**
+     * Gets the number of queries that where run against this mock database.
+     * @return int The number of queries.
+     */
+    public function getQueryCount()
+    {
+        return $this->query_count;
     }
 
     /**
@@ -101,18 +107,22 @@ class MockDatabase extends Database
      */
     public function &query($sql, $error_message = 'Nothing found.')
     {
-        $this->queries[] = $sql;
-        if ($this->throw_exceptions) {
-            throw new DatabaseException();
-        }
-
+        // Get the response
         if ($this->query_count >= count($this->responses)) {
             // Reached the end of the array, just return an empty result
             $response = new FakeQueryResult();
         } else {
             $response = $this->responses[$this->query_count];
         }
+
+        // Store the sql query
+        $this->queries[] = $sql;
         $this->query_count++;
+
+        // Return the response
+        if ($response === false) {
+            throw new DatabaseException();
+        }
         return $response;
     }
 

@@ -43,6 +43,7 @@ class MockSettings extends Settings
             'db_database' => 'myapp_test',
 
             'cookie_name' => 'bm',
+            'cookie_secret' => 'secret_key',
             'debug' => false,
             'wp_load_file' => 'tests/wp-load.php'
         );

@@ -41,11 +41,6 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
     private static $settings;
 
     /**
-     * @var MockDatabase
-     */
-    private static $empty_db;
-
-    /**
      * @var string
      */
     private static $wp_load_file;
@@ -58,7 +53,6 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
     public static function setUpBeforeClass()
     {
         self::$settings = new MockSettings();
-        self::$empty_db = new MockDatabase();
 
         // Store the true wp_load_file
         self::$wp_load_file = self::$settings->getWordpressLoadFile();
@@ -67,7 +61,16 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
 
     protected function setUp()
     {
-        $this->auth = new Authentication(self::$empty_db, self::$settings);
+        // Set up a fake post
+        $nonce = mt_rand(0, 400000);
+        $timestamp = MockDatabase::getDate();
+
+        $_POST = array(
+            'nonce' => $nonce,
+            'timestamp' => $timestamp,
+        );
+
+        $this->auth = new Authentication($this->getNonceFreeMockDB(), self::$settings);
     }
 
     protected function tearDown()
@@ -77,14 +80,53 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
         self::$settings->setSetting('wp_load_file', self::$wp_load_file);
     }
 
-    public function testAuthenticateAPIRequest()
+    public function testAuthenticate_badTimestamp()
     {
         $this->setUpAPIRequest();
-        $db = new MockDatabase(array(array(0)));
+        $_POST['timestamp'] = time() - 8000;
+
+        $authenticated = $this->auth->authenticate();
+        $this->assertFalse($authenticated);
+    }
+
+    /**
+     * @expectedException AuthenticationException
+     */
+    public function testAuthenticate_databaseError()
+    {
+        $this->setUpAPIRequest();
+        $db = new MockDatabase(array(false));
+        $auth = new Authentication($db, self::$settings);
+
+        $auth->authenticate();
+    }
+
+    public function testAuthenticate_nonceUsed()
+    {
+        $this->setUpAPIRequest();
+        $db = new MockDatabase(array(array(1)));
         $auth = new Authentication($db, self::$settings);
 
         $authenticated = $auth->authenticate();
+        $this->assertFalse($authenticated);
+    }
+
+    public function testAuthenticateAPIRequest()
+    {
+        $this->setUpAPIRequest();
+        $auth = new Authentication($this->getModeratorMockDB(), self::$settings);
+
+        $authenticated = $auth->authenticate();
         $this->assertTrue($authenticated);
+    }
+
+    public function testAuthenticateAPIRequest_nonModerator()
+    {
+        $this->setUpAPIRequest();
+        $auth = new Authentication($this->getNonModeratorMockDB(), self::$settings);
+
+        $authenticated = $auth->authenticate();
+        $this->assertFalse($authenticated);
     }
 
     public function testAuthenticateAPIRequest_badHMAC()
@@ -96,35 +138,75 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
         $this->assertFalse($authenticated);
     }
 
-    public function testAuthenticateAPIRequest_badTimestamp()
-    {
-        $this->setUpAPIRequest();
-        $_POST['timestamp'] = time() - 8000;
-
-        $authenticated = $this->auth->authenticate();
-        $this->assertFalse($authenticated);
-    }
-
-    public function testAuthenticateAPIRequest_nonceUsed()
-    {
-        $this->setUpAPIRequest();
-        $db = new MockDatabase(array(array(1)));
-        $auth = new Authentication($db, self::$settings);
-
-        $authenticated = $auth->authenticate();
-        $this->assertFalse($authenticated);
-    }
-
     /**
      * @expectedException AuthenticationException
      */
     public function testAuthenticateAPIRequest_databaseError()
     {
         $this->setUpAPIRequest();
-        $db = new MockDatabase(array(), true);
+        $db = new MockDatabase(array(array(0), array(), false));
         $auth = new Authentication($db, self::$settings);
 
         $auth->authenticate();
+    }
+
+    public function testAuthenticateAPIRequest_noAccessor()
+    {
+        $this->setUpAPIRequest();
+        $_POST['accessor_token'] = 'invalid';
+
+        $authenticated = $this->auth->authenticate();
+        $this->assertFalse($authenticated);
+    }
+
+    public function testAuthenticateUsingCookie()
+    {
+        $_COOKIE[self::$settings->getCookieName()] = '1|notch|139656221|8c6e7d97248140d2155f36094d955a8f53339a89';
+        self::$settings->setSetting('cookie_secret', 'secret_key');
+        self::$settings->setSetting('session_duration', 0);
+        $this->assertTrue($this->auth->authenticate(), "Cookie user should have been authenticated correctly.");
+    }
+
+    /**
+     * Run in a separate process since this method sets cookies, and the
+     * headers have already been set by PHPUnit.
+     * @runInSeparateProcess
+     */
+    public function testAuthenticateUsingCookie_badTimeStamp()
+    {
+        $_COOKIE[self::$settings->getCookieName()] = '1|notch|1986447600|8c6e7d97248140d2155f36094d955a8f53339a89';// timestamp = 2032-12-12
+        self::$settings->setSetting('cookie_secret', 'secret_key');
+        self::$settings->setSetting('session_duration', 1);
+        $this->assertFalse($this->auth->authenticate(), "Cookie user should NOT have been authenticated.");
+    }
+
+    /**
+     * @expectedException AuthenticationException
+     */
+    public function testAuthenticateUsingCookie_badConfiguration()
+    {
+        $_COOKIE[self::$settings->getCookieName()] = '1|notch|139656221|8c6e7d97248140d2155f36094d955a8f53339a89';
+        self::$settings->setSetting('cookie_secret', '');
+        $this->assertFalse($this->auth->authenticate(), "Cookie user should NOT have been authenticated.");
+    }
+
+    public function testAuthenticateUsingCookie_noCookie()
+    {
+        $_COOKIE = array();
+        $this->assertFalse($this->auth->authenticate(), "Cookie user should NOT have been authenticated.");
+    }
+
+    public function testAuthenticateUsingCookie_badCookie()
+    {
+        $_COOKIE[self::$settings->getCookieName()] = '1|notch';
+        $this->assertFalse($this->auth->authenticate(), "Cookie user should NOT have been authenticated.");
+    }
+
+    public function testAuthenticateUsingCookie_badHMAC()
+    {
+        $_COOKIE[self::$settings->getCookieName()] = '1|notch|139656221|invalid';
+        self::$settings->setSetting('cookie_secret', 'secret_key');
+        $this->assertFalse($this->auth->authenticate(), "Cookie user should NOT have been authenticated.");
     }
 
     public function testAuthenticateUsingWP()
@@ -180,9 +262,19 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
         $this->auth->authenticate();
     }
 
+    public function testCleanUpNonce()
+    {
+        $db = new MockDatabase();
+        $auth = new Authentication($db, self::$settings);
+        $auth->cleanUpNonce(1);
+        // TODO assert
+        $this->assertEquals(1, $db->getQueryCount());
+        $this->assertEquals(0, strpos($db->getLastQuery(), 'DELETE FROM `auth_nonce'));
+    }
+
     public function testGetModeratorInfo()
     {
-        $db = $this->getModeratorMockDB();
+        $db = new MockDatabase(array(array('user_id'=>self::USER_ID, 'rank'=>'Admin')));;
         $auth = new Authentication($db, self::$settings);
         $info = $auth->getModeratorInfo(self::USERNAME);
 
@@ -204,10 +296,71 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
         $this->assertFalse($info);
     }
 
+    /**
+     * Run in a separate process since this method sets cookies, and the
+     * headers have already been set by PHPUnit.
+     * @runInSeparateProcess
+     */
+    public function testLoginUser()
+    {
+        $_POST['username'] = self::USERNAME;
+        $_POST['password'] = 'password1';
+
+        $db = $this->getModeratorMockDB();
+        $auth = new Authentication($db, self::$settings);
+
+        $this->assertTrue($auth->loginUser());
+    }
+
+    /**
+     * @expectedException AuthenticationException
+     */
+    public function testLoginUser_databaseError()
+    {
+        $_POST['username'] = self::USERNAME;
+        $_POST['password'] = 'password1';
+
+        $db = new MockDatabase(array(array(0), array(), false));
+        $auth = new Authentication($db, self::$settings);
+
+        $auth->loginUser();
+    }
+
+    /**
+     * @expectedException AuthenticationException
+     */
+    public function testLoginUser_configurationError()
+    {
+        self::$settings->setSetting('cookie_secret', '');
+
+        $_POST['username'] = self::USERNAME;
+        $_POST['password'] = 'password1';
+
+        $db = $this->getModeratorMockDB();
+        $auth = new Authentication($db, self::$settings);
+
+        $auth->loginUser();
+    }
+
+    public function testLoginUser_noUsername()
+    {
+        $_POST['password'] = 'password1';
+        $this->assertFalse($this->auth->loginUser());
+    }
+
 
     //
     // Test Helper Functions
     //
+
+    /**
+     * Get a mock database that will return that the nonce hasn't been used yet.
+     * @return \MockDatabase
+     */
+    private function getNonceFreeMockDB()
+    {
+        return new MockDatabase(array(array(0), array()));
+    }
 
     /**
      * Gets a MockDatabase instance that will return a user that is not a
@@ -216,7 +369,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
      */
     private function getNonModeratorMockDB()
     {
-        return new MockDatabase(array(array('user_id'=>self::USER_ID, 'rank'=>'Regular')));
+        return new MockDatabase(array(array(0), array(), array('user_id'=>self::USER_ID, 'rank'=>'Regular')));
     }
 
     /**
@@ -225,7 +378,8 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
      */
     private function getModeratorMockDB()
     {
-        return new MockDatabase(array(array('user_id'=>self::USER_ID, 'rank'=>'Admin')));
+                                   // check nonce, insert nonce, get user info
+        return new MockDatabase(array(array(0), array(), array('user_id'=>self::USER_ID, 'rank'=>'Admin')));
     }
 
     /**
@@ -233,25 +387,21 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
      */
     private function setUpAPIRequest()
     {
-        $nonce = mt_rand(0, 400000);
-        $timestamp = MockDatabase::getDate();
         $accessor = 'test';
         $secret_key = 'secret';
         self::$settings->setSetting('auth_secret_keys', array($accessor => $secret_key));
 
-        $_POST = array(
-            'accessor' => $accessor,
-            'nonce' => $nonce,
-            'timestamp' => $timestamp,
-        );
+        $_POST['accessor_token'] = $accessor;
+        $_POST['UUID'] = 'd9';
 
         $payload = '';
         foreach ($_POST as $key => $value) {
             $payload .= $key . $value;
         }
 
-        $hmac = hash_hmac('sha1', $payload, $secret_key);
+        $hmac = hash_hmac(Authentication::HASH_ALGO, $payload, $secret_key);
 
         $_POST['hmac'] = $hmac;
     }
+
 }
