@@ -49,68 +49,77 @@ $db = new Database($settings);
 $auth = new Authentication($db, $settings);
 
 try {
-    // Authenticate the user
-    // TODO login
-    if ($auth->authenticate() === false) {
-        $output->error("Not logged in.");
-        exit();
-    }
-    $user_id = $auth->getUserId();
-
-
-
-/* =============================
- *      PERFORM ACTIONS
- * =============================
- */
-
-    // Get an instance of the controller
-    $actions = new Controller($db, $output);
-
-    if (isset($_GET['term'])) {
-
-        $actions->autoComplete();
-
-    } else if (isset($_GET['lookup'])) {
-
-        $actions->retrieveUserData();
-
-    } else if (isset($_GET['add_user'])) {
-
-        $actions->addUser($user_id);
-
-    } else if (isset($_GET['add_incident'])) {
-
-        $actions->addIncident($user_id);
-
-    } else if (isset($_GET['delete_incident'])) {
-
-        $actions->deleteIncident();
-
-    } else if (isset($_GET['get'])) {
-        // Tab contents requested
-
-        if ($_GET['get'] == 'bans') {
-
-            $actions->getBans();
-
-        } else if ($_GET['get'] == 'watchlist') {
-
-            $actions->getWatchlist();
-
+    if (isset($_GET['login'])) {
+        // Try to login the user
+        if ($auth->loginUser()) {
+            $output->success();
+        } else {
+            $output->error('Login Failed');
         }
-    } else if (isset($_GET['search'])) {
+    } else {
+        // Authenticate the request
+        if ($auth->authenticate() === false) {
+            // Authentication failed
+            $output->error("Not logged in.");
+        } else {
+            // Authentication successful, continue with the request
+            $user_id = $auth->getUserId();
 
-        $actions->search();
 
-    } else if (isset($_GET['update_user'])) {
+            /* =============================
+             *      PERFORM ACTIONS
+             * =============================
+             */
 
-        $actions->updateUser($user_id);
+            // Get an instance of the controller
+            $actions = new Controller($db, $output);
 
-    } else if (isset($_GET['update_incident'])) {
+            if (isset($_GET['term'])) {
 
-        $actions->updateIncident();
+               $actions->autoComplete();
 
+            } else if (isset($_GET['lookup'])) {
+
+               $actions->retrieveUserData();
+
+            } else if (isset($_GET['add_user'])) {
+
+               $actions->addUser($user_id);
+
+            } else if (isset($_GET['add_incident'])) {
+
+               $actions->addIncident($user_id);
+
+            } else if (isset($_GET['delete_incident'])) {
+
+               $actions->deleteIncident();
+
+            } else if (isset($_GET['get'])) {
+               // Tab contents requested
+
+               if ($_GET['get'] == 'bans') {
+
+                   $actions->getBans();
+
+               } else if ($_GET['get'] == 'watchlist') {
+
+                   $actions->getWatchlist();
+
+               }
+            } else if (isset($_GET['search'])) {
+
+               $actions->search();
+
+            } else if (isset($_GET['update_user'])) {
+
+               $actions->updateUser($user_id);
+
+            } else if (isset($_GET['update_incident'])) {
+
+               $actions->updateIncident();
+
+            }
+        }
     }
 } catch (AuthenticationException $ex) {
     $output->exception($ex);

@@ -98,11 +98,22 @@ CREATE TABLE IF NOT EXISTS `users` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `passwords`
+--
+
+CREATE TABLE `passwords` (
+	`user_id` INT(10) unsigned NOT NULL,
+	`password_hash` VARCHAR(64) NOT NULL COLLATE 'utf8_unicode_ci'
+) COMMENT='Store user passwords for the built in authentication' COLLATE='utf8_unicode_ci' ENGINE=MyISAM ;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `auth_nonce`
 --
 
 CREATE TABLE `auth_nonce` (
-	`nonce` INT(10) NOT NULL,
+	`nonce` CHAR(32) NOT NULL,
 	`timestamp` DATETIME NOT NULL,
     PRIMARY KEY (`nonce`)
-) COMMENT='Store the nonce\'s' COLLATE='utf8_unicode_ci' ENGINE=MyISAM;
+) COMMENT='Stores used nonce\'s' COLLATE='utf8_unicode_ci' ENGINE=MyISAM ;

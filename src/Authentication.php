@@ -265,12 +265,37 @@ class Authentication
 
     public function loginUser()
     {
-        // TODO
+        if (isset($_POST['username']) && isset($_POST['password']) && validatePost()) {
+            $username = $this->db->sanitize($_POST['username']);
+            $password = hash(self::HASH_ALGO, $_POST['password']);
+
+            $sql = <<<EOF
+SELECT `users`.`user_id` AS id, `rank`.`name` AS rank
+FROM
+`users`
+LEFT JOIN `passwords` ON (`users`.`user_id` = `passwords`.`user_id`)
+LEFT JOIN `rank` ON (`users`.`rank` = `rank`.`rank_id`)
+WHERE
+     `users`.`username` = '{$username}'
+AND  `passwords`.`password_hash` = '{$password}'
+EOF;
+            try {
+                $result = $this->db->queryRows($sql);
+                if (count($result) == 1) {
+                    // User found and password matches, set the login cookie and return true
+                    $this->setCookie($result['id'], $username);
+                    return true;
+                }
+            } catch (\DatabaseException $ex) {
+                throw new \AuthenticationException('Authentication failed due to database issue.', $ex->getCode(), $ex);
+            }
+        }
+        return false;
     }
 
     /**
      * Validates that the post's nonce hasn't been used and that the timestamp
-     * is in range.
+     * is in range. This will only prevent the most basic of replay attacks.
      * @return boolean <tt>true</tt> if the post passes validation.
      * @throws AuthenticationException If there is a problem with the database
      * connection.
@@ -304,5 +329,27 @@ class Authentication
         }
 
         return false;
+    }
+
+    /**
+     * Sets the authentication cookie.
+     * @param int $user_id The ID of the user.
+     * @param string $username The user's name.
+     * @throws AuthenticationException If the cookie key is not set in the
+     * configuration.
+     */
+    private function setCookie($user_id, $username)
+    {
+        // Cookie: id|username|timestamp|hmac
+        $key = $this->settings->getCookieKey();
+        if (empty($key)) {
+            throw new AuthenticationException('Configuration error.');
+        }
+
+        $cookie = array($user_id, $username, time());
+        $cookie[] = hash_hmac(self::HASH_ALGO, implode("", $cookie), $key);
+        $cookie_value = implode("|", $cookie);
+
+        setcookie($this->settings->getCookieName(), $cookie_value, 0, '/', null, false, true);
     }
 }
