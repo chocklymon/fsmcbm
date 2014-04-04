@@ -283,7 +283,7 @@ EOF;
                 $result = $this->db->querySingleRow($sql);
 
                 // User found and password matches, set the login cookie and return true
-                $this->setCookie($result['id'], $username);
+                $this->setCookie($result['user_id'], $username);
                 return true;
             } catch (\DatabaseException $ex) {
                 throw new \AuthenticationException('Authentication failed due to database issue.', $ex->getCode(), $ex);
