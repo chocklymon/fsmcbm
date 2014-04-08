@@ -29,6 +29,11 @@ require_once('AuthenticationException.php');
  */
 class Authentication
 {
+    /**
+     * The name of the hash algorithm to use when hashing passwords and checking
+     * HMAC's. The database can hold up to 64 bytes for the password hash, so
+     * this algorithm should not produce a hash longer than this.
+     */
     const HASH_ALGO = "sha1";
 
     /**
@@ -110,7 +115,7 @@ class Authentication
                 // HMAC valid
                 try {
                     // Use the universally unique identifier to get the user info
-                    $uuid = $this->db->sanitize($_POST['UUID']);
+                    $uuid = $this->db->sanitize(pack('H*', $_POST['UUID']));
                     $row = $this->db->querySingleRow(
                         "SELECT `users`.`user_id`, `rank`.`name` AS rank
                          FROM `users`
@@ -267,7 +272,7 @@ class Authentication
     {
         if (isset($_POST['username']) && isset($_POST['password']) && $this->validatePost()) {
             $username = $this->db->sanitize($_POST['username']);
-            $password = hash(self::HASH_ALGO, $_POST['password']);
+            $password = $this->db->sanitize(hash(self::HASH_ALGO, $_POST['password'], true));
 
             $sql = <<<EOF
 SELECT `users`.`user_id`, `rank`.`name` AS rank
@@ -306,11 +311,13 @@ EOF;
             $timestamp = strtotime($_POST['timestamp']);
             $current_time = time();
 
-            // Give the time a ten minute range from the curren time to be valid
-            if ($timestamp > ($current_time - 600) && $timestamp < ($current_time + 600)) {
+            // The timestamp can be valid for ten seconds in the past and two minutes into the future.
+            // This gives a buffer to compensate for time differences and network latency.
+            if ($timestamp > ($current_time - 10) && $timestamp < ($current_time + 120)) {
                 try {
                     // Check the nonce
-                    $nonce = $this->db->sanitize($_POST['nonce'], true);
+                    // Get the md5 hash of the nonce (using md5 hash so the nonce will always be 16 bytes long).
+                    $nonce = $this->db->sanitize(hash('md5', $_POST['nonce'], true));
                     $sql = "SELECT COUNT(*) FROM `auth_nonce` WHERE `nonce` = '{$nonce}'";
                     $row = $this->db->querySingleRow($sql);
                     if ($row[0] == 0) {

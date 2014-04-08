@@ -46,9 +46,11 @@ $db->connect($settings);
 
 // Begin database update code
 
-/* *****
+/* ************************************************
+ *
  * v1 -> v2 updates
- * *****
+ *
+ * ************************************************
  */
 
 /* ************
@@ -246,5 +248,61 @@ SQL;
     $db->query($sql);
 }
 // End ranks table
+
+
+/* ************************************************
+ *
+ * v2 -> v3 updates
+ *
+ * ************************************************
+ */
+
+// Create the passwords table
+if (!$db->tableExists('passwords')) {
+    $sql = <<<SQL
+CREATE TABLE `passwords` (
+	`user_id` INT(10) unsigned NOT NULL,
+	`password_hash` BINARY(64) NOT NULL COLLATE 'utf8_unicode_ci'
+) COMMENT='Store user passwords for the built in authentication' COLLATE='utf8_unicode_ci' ENGINE=MyISAM ;
+SQL;
+    $db->query($sql);
+}
+// END passwords table
+
+// Create the nonce table
+if (!$db->tableExists('auth_nonce')) {
+    $sql = <<<SQL
+CREATE TABLE `auth_nonce` (
+	`nonce` BINARY(16) NOT NULL,
+	`timestamp` DATETIME NOT NULL,
+    PRIMARY KEY (`nonce`)
+) COMMENT='Stores used nonce\'s' COLLATE='utf8_unicode_ci' ENGINE=MyISAM ;
+SQL;
+    $db->query($sql);
+}
+// END nonce table
+
+// Update the users table
+if (!$db->columnExists('users', 'uuid')) {
+    // Add the UID column
+    $sql = <<<SQL
+ALTER TABLE `users`
+	ADD COLUMN `uuid` BINARY(16) NULL COMMENT 'Store the users universally unique identifier' AFTER `user_id`;
+SQL;
+    $db->query($sql);
+
+    // Change the username index from unique to just indexed
+    $sql = "ALTER TABLE `users` DROP INDEX `username`";
+    $db->query($sql);
+
+    $sql = "ALTER TABLE `users` ADD INDEX `username` (`username`)";
+    $db->query($sql);
+
+    // Add a unique index to the UUID
+    $sql = "ALTER TABLE `users` ADD UNIQUE INDEX `uuid` (`uuid`)";
+    $db->query($sql);
+}
+// END users table
+
 
 $db->close();
