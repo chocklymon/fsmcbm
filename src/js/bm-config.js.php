@@ -27,7 +27,7 @@ require_once '../Database.php';
 
 $settings = new Settings();
 $output = new Output($settings);
-$db = new Database();
+$db = new Database($settings);
 
 header('Content-Type: text/javascript');
 // Since this won't change very often, set the cache to store this for two days
@@ -309,7 +309,6 @@ SELECT *
 FROM `rank`
 SQL;
 
-$db->connect($settings);
 $rows = $db->queryRows($sql);
 
 foreach($rows as $rank) {

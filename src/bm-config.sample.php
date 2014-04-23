@@ -6,7 +6,7 @@
  */
 
 $settings = array(
-    // DATABSE CONNECTION
+    // DATABASE CONNECTION
     'db_host'     => 'localhost',
     'db_username' => 'root',
     'db_password' => '',

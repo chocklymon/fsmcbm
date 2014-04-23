@@ -306,3 +306,5 @@ SQL;
 
 
 $db->close();
+
+echo "Database Updated";
