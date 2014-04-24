@@ -40,9 +40,7 @@ require_once 'Database.php';
 require_once 'Output.php';
 
 $settings = new Settings();
-$db = new Database();
-
-$db->connect($settings);
+$db = new Database($settings);
 
 // Begin database update code
 
@@ -262,7 +260,7 @@ if (!$db->tableExists('passwords')) {
     $sql = <<<SQL
 CREATE TABLE `passwords` (
 	`user_id` INT(10) unsigned NOT NULL,
-	`password_hash` BINARY(64) NOT NULL COLLATE 'utf8_unicode_ci'
+	`password_hash` BINARY(64) NOT NULL
 ) COMMENT='Store user passwords for the built in authentication' COLLATE='utf8_unicode_ci' ENGINE=MyISAM ;
 SQL;
     $db->query($sql);
