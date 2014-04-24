@@ -103,6 +103,7 @@ class Authentication
         if ($accessor_key !== false ) {
             $msg = '';
             $hmac = '';
+            ksort($_POST);
             foreach ($_POST as $key => $value) {
                 if ($key == 'hmac') {
                     $hmac = $value;
@@ -318,9 +319,9 @@ EOF;
                     // Check the nonce
                     // Get the md5 hash of the nonce (using md5 hash so the nonce will always be 16 bytes long).
                     $nonce = $this->db->sanitize(hash('md5', $_POST['nonce'], true));
-                    $sql = "SELECT COUNT(*) FROM `auth_nonce` WHERE `nonce` = '{$nonce}'";
+                    $sql = "SELECT COUNT(*) AS count FROM `auth_nonce` WHERE `nonce` = '{$nonce}'";
                     $row = $this->db->querySingleRow($sql);
-                    if ($row[0] == 0) {
+                    if ($row['count'] == 0) {
                         // Nonce hasn't been used, save it and return true
                         $date_time = $this->db->getDate($current_time);
                         $sql = "INSERT INTO `auth_nonce` (`nonce`, `timestamp`) VALUES ('{$nonce}', '{$date_time}')";

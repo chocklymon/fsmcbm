@@ -104,7 +104,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
     public function testAuthenticate_nonceUsed()
     {
         $this->setUpAPIRequest();
-        $db = new MockDatabase(array(array(1)));
+        $db = new MockDatabase(array(array('count'=>1)));
         $auth = new Authentication($db, self::$settings);
 
         $authenticated = $auth->authenticate();
@@ -144,7 +144,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
     public function testAuthenticateAPIRequest_databaseError()
     {
         $this->setUpAPIRequest();
-        $db = new MockDatabase(array(array(0), array(), false));
+        $db = new MockDatabase(array(array('count'=>0), array(), false));
         $auth = new Authentication($db, self::$settings);
 
         $auth->authenticate();
@@ -320,7 +320,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
         $_POST['username'] = self::USERNAME;
         $_POST['password'] = 'password1';
 
-        $db = new MockDatabase(array(array(0), array(), false));
+        $db = new MockDatabase(array(array('count'=>0), array(), false));
         $auth = new Authentication($db, self::$settings);
 
         $auth->loginUser();
@@ -359,7 +359,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
      */
     private function getNonceFreeMockDB()
     {
-        return new MockDatabase(array(array(0), array()));
+        return new MockDatabase(array(array('count'=>0), array()));
     }
 
     /**
@@ -369,7 +369,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
      */
     private function getNonModeratorMockDB()
     {
-        return new MockDatabase(array(array(0), array(), array('user_id'=>self::USER_ID, 'rank'=>'Regular')));
+        return new MockDatabase(array(array('count'=>0), array(), array('user_id'=>self::USER_ID, 'rank'=>'Regular')));
     }
 
     /**
@@ -379,7 +379,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
     private function getModeratorMockDB()
     {
                                    // check nonce, insert nonce, get user info
-        return new MockDatabase(array(array(0), array(), array('user_id'=>self::USER_ID, 'rank'=>'Admin')));
+        return new MockDatabase(array(array('count'=>0), array(), array('user_id'=>self::USER_ID, 'rank'=>'Admin')));
     }
 
     /**
@@ -395,6 +395,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
         $_POST['UUID'] = 'd9';
 
         $payload = '';
+        ksort($_POST);
         foreach ($_POST as $key => $value) {
             $payload .= $key . $value;
         }
