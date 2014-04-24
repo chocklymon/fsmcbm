@@ -21,6 +21,13 @@
  * THE SOFTWARE.
  */
 
+function my_log($msg) {
+    file_put_contents('/var/www/ban-manager/src/temp.txt', $msg, FILE_APPEND);
+}
+$file_contents = "----------------\n" . date('Y-m-d H:m:s') . "\nPOST: ";
+$file_contents .= print_r($_POST, true) . "\nGET: " . print_r($_GET, true);
+my_log($file_contents);
+
 /* =============================
  *           IMPORTS
  * =============================
@@ -73,8 +80,12 @@ try {
 
             // Get an instance of the controller
             $actions = new Controller($db, $output);
+            
+            if (isset($_GET['set_user_uuid'])) {
 
-            if (isset($_GET['term'])) {
+                $actions->updateUserUUID();
+                
+            } else if (isset($_GET['term'])) {
 
                $actions->autoComplete();
 
@@ -122,6 +133,13 @@ try {
         }
     }
 } catch (AuthenticationException $ex) {
+    my_log($ex->getTraceAsString());
+    $prev = $ex->getPrevious();
+    if (!empty($prev)) {
+        my_log("Error #: {$prev->getCode()}\n");
+        my_log("DB Error: {$prev->getErrorMessage()}\n");
+        my_log("Query: {$prev->getQuery()}\n");
+    }
     $output->exception($ex);
 } catch (DatabaseException $ex) {
     $output->exception(

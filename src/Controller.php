@@ -522,4 +522,32 @@ SQL;
         $this->output->success();
     }
 
+    public function updateUserUUID()
+    {
+        // Get the user ID
+        $username = $this->db->sanitize($_POST['username']);
+        $result = $this->db->query("SELECT user_id FROM `users` WHERE `users`.`username` = '{$username}'");
+        
+        if ($result->num_rows == 0) {
+            // Insert a new user
+            $this->addUser(1);
+        } else {
+            $uuid = pack("H*", mb_ereg_replace('-', '', $_POST['uuid']));
+            if (strlen($uuid) != 16) {
+                throw new InvalidArgumentException("Invalid UUID");
+            }
+            
+            $row = $result->fetch_assoc();
+            $result->free();
+
+            // Perform the udpate
+            $query = "UPDATE `users` SET uuid = '{$uuid}' 
+                       WHERE  `users`.`user_id` = {$row['user_id']}";
+
+            $this->db->query($query);
+
+            $this->output->success();
+        }
+    }
+
 }
