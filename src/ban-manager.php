@@ -52,11 +52,19 @@ mb_internal_encoding("UTF-8");
 // Get an instance of the various needed classes
 $settings = new Settings();
 $output = new Output($settings);
-$db = new Database($settings);
-$auth = new Authentication($db, $settings);
 
 try {
-    if (isset($_GET['login'])) {
+    // Make sure that we have an action before continuing
+    $endpoint = filter_input(INPUT_GET, 'action');
+    if (is_null($endpoint)) {
+        $output->error('No endpoint provided');
+        exit();
+    }
+    
+    $db = new Database($settings);
+    $auth = new Authentication($db, $settings);
+    
+    if ($endpoint === 'login') {
         // Try to login the user
         if ($auth->loginUser()) {
             $output->success();
@@ -81,65 +89,44 @@ try {
             // Get an instance of the controller
             $actions = new Controller($db, $output);
             
-            if (isset($_GET['set_user_uuid'])) {
-
-                $actions->updateUserUUID();
-                
-            } else if (isset($_GET['term'])) {
-
-               $actions->autoComplete();
-
-            } else if (isset($_GET['lookup'])) {
-
-               $actions->retrieveUserData();
-
-            } else if (isset($_GET['add_user'])) {
-
-               $actions->addUser($user_id);
-
-            } else if (isset($_GET['add_incident'])) {
-
-               $actions->addIncident($user_id);
-
-            } else if (isset($_GET['delete_incident'])) {
-
-               $actions->deleteIncident();
-
-            } else if (isset($_GET['get'])) {
-               // Tab contents requested
-
-               if ($_GET['get'] == 'bans') {
-
-                   $actions->getBans();
-
-               } else if ($_GET['get'] == 'watchlist') {
-
-                   $actions->getWatchlist();
-
-               }
-            } else if (isset($_GET['search'])) {
-
-               $actions->search();
-
-            } else if (isset($_GET['update_user'])) {
-
-               $actions->updateUser($user_id);
-
-            } else if (isset($_GET['update_incident'])) {
-
-               $actions->updateIncident();
-
+            switch ($endpoint) {
+                case 'auto_complete':
+                    $actions->autoComplete();
+                    break;
+                case 'lookup':
+                    $actions->retrieveUserData();
+                    break;
+                case 'add_user':
+                    $actions->addUser($user_id);
+                    break;
+                case 'add_incident':
+                    $actions->addIncident($user_id);
+                    break;
+                case 'delete_incident':
+                    $actions->deleteIncident();
+                    break;
+                case 'get_bans':
+                    $actions->getBans();
+                    break;
+                case 'get_watchlist':
+                    $actions->getWatchlist();
+                    break;
+                case 'search':
+                    $actions->search();
+                    break;
+                case 'set_user_uuid':
+                    $actions->updateUserUUID();
+                    break;
+                case 'update_user':
+                    $actions->updateUser($user_id);
+                    break;
+                case 'update_incident':
+                    $actions->updateIncident();
+                    break;
             }
         }
     }
 } catch (AuthenticationException $ex) {
-    my_log($ex->getTraceAsString());
-    $prev = $ex->getPrevious();
-    if (!empty($prev)) {
-        my_log("Error #: {$prev->getCode()}\n");
-        my_log("DB Error: {$prev->getErrorMessage()}\n");
-        my_log("Query: {$prev->getQuery()}\n");
-    }
     $output->exception($ex);
 } catch (DatabaseException $ex) {
     $output->exception(
@@ -155,4 +142,6 @@ try {
 }
 
 // Close the database connection
-$db->close();
+if (isset($db)) {
+    $db->close();
+}
