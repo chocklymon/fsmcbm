@@ -70,7 +70,7 @@ class Authentication
     {
         // All requests should validate with the timestamp and nonce
         if ($this->validatePost()) {
-            if (isset($_POST['accessor_token']) && isset($_POST['hmac']) && isset($_POST['UUID'])) {
+            if (isset($_POST['accessor_token']) && isset($_POST['hmac']) && isset($_POST['uuid'])) {
                 // API call
                 $user_id = $this->authenticateAPIRequest();
             } else if ($this->settings->useWPLogin()) {
@@ -116,7 +116,7 @@ class Authentication
                 // HMAC valid
                 try {
                     // Use the universally unique identifier to get the user info
-                    $uuid = $this->db->sanitize(pack('H*', $_POST['UUID']));
+                    $uuid = $this->db->sanitize(pack('H*', $_POST['uuid']));
                     $row = $this->db->querySingleRow(
                         "SELECT `users`.`user_id`, `rank`.`name` AS rank
                          FROM `users`
