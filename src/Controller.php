@@ -531,8 +531,8 @@ SQL;
         if ($result->num_rows == 0) {
             // Insert a new user
             $this->addUser(1);
-        } else {
-            $uuid = pack("H*", mb_ereg_replace('-', '', $_POST['uuid']));
+        } else if (!empty($_POST['user_uuid'])) {
+            $uuid = pack("H*", mb_ereg_replace('-', '', $_POST['user_uuid']));
             if (strlen($uuid) != 16) {
                 throw new InvalidArgumentException("Invalid UUID");
             }
@@ -541,12 +541,15 @@ SQL;
             $result->free();
 
             // Perform the udpate
+            $uuid = $this->db->sanitize($uuid);
             $query = "UPDATE `users` SET uuid = '{$uuid}' 
                        WHERE  `users`.`user_id` = {$row['user_id']}";
 
             $this->db->query($query);
 
             $this->output->success();
+        } else {
+            $this->output->error('No UUID provided');
         }
     }
 
