@@ -46,6 +46,18 @@ mb_internal_encoding("UTF-8");
 $settings = new Settings();
 $output = new Output($settings);
 
+// If we are using wordpress load it now
+// Some plugins (bbPress2 shortcode whitelist and possibly others) cause a fatal
+// error when this is included inside of authentication.
+if ($settings->useWPLogin()) {
+    $wp_load_file = $settings->getWordpressLoadFile();
+    if (empty($wp_load_file) || !file_exists($wp_load_file)) {
+        $output->error('Configuration error. Unable to authenticate through wordpress!');
+        exit();
+    }
+    require_once($wp_load_file);
+}
+
 try {
     // Make sure that we have an action before continuing
     $endpoint = filter_input(INPUT_GET, 'action');

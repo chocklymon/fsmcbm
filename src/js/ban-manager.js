@@ -394,7 +394,7 @@ if (!window.console || !window.console.log) {
     // Set up a prefilter to change all AJAX requests to posts and add the auth parameters
     $.ajaxPrefilter(function( options, originalOptions, jqXHR ) {
         options.type = 'POST';
-        var authParams = $.param({nonce: Math.random(), timestamp: new Date().toLocaleString()});
+        var authParams = $.param({nonce: Math.random(), timestamp: new Date().toUTCString()});
         if (options.data) {
             options.data += '&' + authParams;
         } else {
