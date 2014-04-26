@@ -47,9 +47,11 @@ $settings = new Settings();
 $output = new Output($settings);
 
 // If we are using wordpress load it now
-// Some plugins (bbPress2 shortcode whitelist and possibly others) cause a fatal
+// Some plugins ('bbPress2 shortcode whitelist' and possibly others) cause a fatal
 // error when this is included inside of authentication.
-if ($settings->useWPLogin()) {
+if ($settings->useWPLogin()
+    && !(isset($_POST['accessor_token']) && isset($_POST['hmac']) && isset($_POST['uuid']))
+) {
     $wp_load_file = $settings->getWordpressLoadFile();
     if (empty($wp_load_file) || !file_exists($wp_load_file)) {
         $output->error('Configuration error. Unable to authenticate through wordpress!');
