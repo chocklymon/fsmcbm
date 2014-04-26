@@ -105,7 +105,7 @@ CREATE TABLE IF NOT EXISTS `users` (
 
 CREATE TABLE `passwords` (
 	`user_id` INT(10) unsigned NOT NULL,
-	`password_hash` BINARY(64) NOT NULL
+	`password_hash` VARBINARY(64) NOT NULL
 ) COMMENT='Store user passwords for the built in authentication' COLLATE='utf8_unicode_ci' ENGINE=MyISAM ;
 
 -- --------------------------------------------------------
