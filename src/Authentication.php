@@ -148,7 +148,7 @@ class Authentication
 
                 // Check if the logout time has been reached
                 if ($this->settings->getLogoutTime() > 0
-                    && $cookie[2] + $this->settings->getLogoutTime() >= time()
+                    && time() - $cookie[2] > $this->settings->getLogoutTime()
                 ) {
                     // Max login time has been reached.
                     $this->expireCookie();
