@@ -112,18 +112,50 @@ class Controller
         $res->free();
 
         // Get the user's data from the post
-        $rank      = $this->db->sanitize($_POST['rank'], true);
-        $relations = $this->db->sanitize($_POST['relations']);
-        $notes     = $this->db->sanitize($_POST['notes']);
-        $banned    = (isset($_POST['banned']) && $_POST['banned'] == 'on') ? '1' : '0';
-        $permanent = (isset($_POST['permanent']) && $_POST['permanent'] == 'on') ? '1' : '0';
-        $today     = $this->getNow();
+        $insert = "INSERT INTO `users` (username,modified_date,";
+        $values = "VALUES ('{$username}','{$this->getNow()}',";
+        
+        if (isset($_POST['user_uuid'])) {
+            $insert .= 'uuid,';
+            $uuid = pack("H*", mb_ereg_replace('-', '', $_POST['user_uuid']));
+            if (strlen($uuid) != 16) {
+                throw new InvalidArgumentException("Invalid UUID");
+            }
+            $values .= "'{$this->db->sanitize($uuid)}',";
+        }
+        if (isset($_POST['rank'])) {
+            $insert .= 'rank,';
+            $values .= $this->db->sanitize($_POST['rank'], true) . ',';
+        }// TODO have a way to specify a default rank
+        if (isset($_POST['relations'])) {
+            $insert .= 'relations,';
+            $values .= "'{$this->db->sanitize($_POST['relations'])}',";
+        }
+        if (isset($_POST['notes'])) {
+            $insert .= 'notes,';
+            $values .= "'{$this->db->sanitize($_POST['notes'])}',";
+        }
+        if (isset($_POST['banned'])) {
+            $insert .= 'banned,';
+            $banned = $_POST['banned'] == 'on' ? '1' : '0';
+            $values .= "{$banned},";
+        } else {
+            $banned = false;
+        }
+        if (isset($_POST['permanent'])) {
+            $insert .= 'permanent,';
+            $permanent = $_POST['permanent'] == 'on' ? '1' : '0';
+            $values .= "{$permanent},";
+        } else {
+            $permanent = false;
+        }
+        
+        // Remove the trailing ','
+        $insert = substr($insert, 0, -1);
+        $values = substr($values, 0, -1);
 
         // Insert the user
-        $player_id = $this->db->insert(
-            "INSERT INTO `users` (`username`, `modified_date`, `rank`, `relations`, `notes`, `banned`, `permanent`)
-            VALUES ('$username', '$today', '$rank', '$relations', '$notes', $banned, $permanent)"
-        );
+        $player_id = $this->db->insert($insert . ') ' . $values . ')');
 
         // See if we need to add to the ban history
         if ($banned) {
