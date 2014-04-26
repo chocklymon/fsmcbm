@@ -31,8 +31,8 @@
                 <div id="tabs" class="main-column" style="overflow:auto"><!-- Overflow auto - fixes tabs height being weird with floats -->
                     <ul>
                         <li><a href="#manage">Manage</a></li>
-                        <li><a href="ban-manager.php?get=bans">Bans</a></li>
-                        <li><a href="ban-manager.php?get=watchlist">Watch-List</a></li>
+                        <li><a href="ban-manager.php?action=get_bans">Bans</a></li>
+                        <li><a href="ban-manager.php?action=get_watchlist">Watch-List</a></li>
                         <li><a href="#search-tab">Search</a></li>
                     </ul>
                     <div id="manage">

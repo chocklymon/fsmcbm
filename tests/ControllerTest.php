@@ -183,7 +183,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
     public function testAutoComplete()
     {
         // Set Up //
-        $_GET = array('term'=>self::USERNAME);
+        $_POST = array('term'=>self::USERNAME);
 
         $expected = '[{"label":"' . self::USERNAME . '","value":5}]';
         $this->expectOutputString($expected);
@@ -207,7 +207,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
     public function testAutoComplete_invalidTerm()
     {
         // Set Up //
-        $_GET = array('term'=>'a');
+        $_POST = array('term'=>'a');
         $controller = new Controller(new MockDatabase(), self::$output);
 
         // Run the test //
@@ -308,7 +308,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
     {
         // Set Up //
         $user_id = 69;
-        $_GET = array('lookup'=>$user_id);
+        $_POST = array('lookup'=>$user_id);
 
         $expectedOutput = self::USERNAME;
         $this->expectOutputString($expectedOutput);
@@ -340,7 +340,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
     public function testRetrieveUserData_invalidId()
     {
         // Set Up //
-        $_GET = array('lookup'=>'INVALID');
+        $_POST = array('lookup'=>'INVALID');
 
         // Construct the database
         $db = new MockDatabase();
@@ -353,7 +353,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
     public function testSearch()
     {
         // Set Up //
-        $_GET = array('search'=>self::USERNAME);
+        $_POST = array('search'=>self::USERNAME);
 
         $expectedOutput = "<h4>Players</h4><div>Nothing Found</div><h4>Incidents</h4><div>Nothing Found</div>";
         $this->expectOutputString($expectedOutput);
@@ -377,7 +377,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
     public function testSearch_invalidSearch()
     {
         // Set Up //
-        $_GET = array('search'=>'b');
+        $_POST = array('search'=>'b');
 
         // Construct the database
         $db = new MockDatabase();

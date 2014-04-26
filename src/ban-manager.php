@@ -21,13 +21,6 @@
  * THE SOFTWARE.
  */
 
-function my_log($msg) {
-    file_put_contents('/var/www/ban-manager/src/temp.txt', $msg, FILE_APPEND);
-}
-$file_contents = "----------------\n" . date('Y-m-d H:m:s') . "\nPOST: ";
-$file_contents .= print_r($_POST, true) . "\nGET: " . print_r($_GET, true);
-my_log($file_contents);
-
 /* =============================
  *           IMPORTS
  * =============================

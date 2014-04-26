@@ -37,7 +37,7 @@ class SettingsTest extends PHPUnit_Framework_TestCase
     
     public static function setUpBeforeClass()
     {
-        self::$settings = new Settings();
+        self::$settings = new Settings();// TODO be able to specify a settings file, this will remove the need for a mock settings
     }
     
     public function testConstructor()
@@ -49,6 +49,12 @@ class SettingsTest extends PHPUnit_Framework_TestCase
     public function testGetCookieName()
     {
         $this->assertEquals('bm', self::$settings->getCookieName());
+    }
+    
+    public function testGetAccessorKey()
+    {
+        $key = self::$settings->getAccessorKey('missing');
+        $this->assertFalse($key);
     }
     
     /**

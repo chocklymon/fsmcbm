@@ -142,11 +142,11 @@ class Controller
     public function autoComplete()
     {
         // Make sure that the term is at least two characters long
-        if(mb_strlen($_GET['term']) < 2) {
+        if(empty($_POST['term']) || mb_strlen($_POST['term']) < 2) {
             throw new InvalidArgumentException("AutoComplete term must be longer than one.");
         }
 
-        $term = $this->db->sanitize( $_GET['term'] );
+        $term = $this->db->sanitize( $_POST['term'] );
 
         $res = $this->db->query(
             "SELECT user_id, username FROM users WHERE username LIKE '$term%'",
@@ -291,7 +291,7 @@ SQL;
      */
     public function retrieveUserData()
     {
-        $lookup = $this->db->sanitize($_GET['lookup'], true);
+        $lookup = $this->db->sanitize($_POST['lookup'], true);
 
         if($lookup <= 0) {
             // Invalid lookup
@@ -341,13 +341,13 @@ SQL;
      */
     public function search()
     {
-        $this->output->setHTMLMode(true);
-        if (mb_strlen($_GET['search']) < 2) {
+        if (empty($_POST['search']) || mb_strlen($_POST['search']) < 2) {
             // Searches must contain at least two characters
             throw new InvalidArgumentException("Search string must be longer than one.");
         }
+        $this->output->setHTMLMode(true);
 
-        $search = $this->db->sanitize($_GET['search']);
+        $search = $this->db->sanitize($_POST['search']);
 
 
         // Get users matching the search

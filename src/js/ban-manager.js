@@ -76,6 +76,7 @@ if (!window.console || !window.console.log) {
      */
     function getInformation() {
         request(
+            'lookup',
             {'lookup' : $("#lookup-user_id").val()},
             function(data) {
                 // Empty out any previous incidents and save the incidents div
@@ -119,9 +120,9 @@ if (!window.console || !window.console.log) {
                     datum.id = user_id;
 
                     // Send in the changes
-                    send(
-                        datum,
+                    request(
                         'update_user',
+                        datum,
                         function(data) {
                             displayMessage("User updated.");
                         }
@@ -154,9 +155,9 @@ if (!window.console || !window.console.log) {
                             datum.id = id;
 
                             // Post in the updated incident
-                            send(
-                                datum,
+                            request(
                                 'update_incident',
+                                datum,
                                 function(data) {
                                     // Success
                                     displayMessage("Incident updated.");
@@ -235,6 +236,7 @@ if (!window.console || !window.console.log) {
             source : function (payload, response) {
                 // Request the autocomplete matching terms
                 request(
+                    'auto_complete',
                     {term: payload.term},
                     function (data) {
                         if (data.length === 0) {
@@ -278,22 +280,15 @@ if (!window.console || !window.console.log) {
     }
 
 
-    function request(payload, callback, completed, urlExtra, method, dataType) {
-        if (method === empty) {
-            method = 'get';
-        }
-        if (urlExtra === empty) {
-            urlExtra = '';
-        }
-        if (dataType === empty) {
+    function request(endpoint, payload, callback, completed, dataType) {
+        if (!dataType) {
             dataType = 'json';
         }
         $.ajax({
             // TODO handle URL differences
-            url      : "ban-manager.php" + urlExtra,
+            url      : "ban-manager.php?action=" + endpoint,
             data     : payload,
             dataType : dataType,
-            type     : method,
             complete : completed,
             error    : function(jqXHR, textStatus, errorThrown) {
                 console.log(jqXHR);
@@ -303,21 +298,17 @@ if (!window.console || !window.console.log) {
                 handleError("Problem with request to server.");
             },
             success  : function(data) {
-                if (dataType == 'json' && data.error !== empty) {
+                if (dataType === 'json' && data.error) {
                     // An error has occured
                     handleError(data.error);
-                } else if (typeof callback == 'function') {
+                } else if (typeof callback === 'function') {
                     // Success, call the calback function
                     callback(data);
                 }
             }
         });
     }
-
-    function send(payload, command, callback, completed) {
-        command = '?' + command + '=true';
-        request(payload, callback, completed, command, 'post');
-    }
+    bm.request = request;
 
     /**
      * Performs a lookup on a user based on which table row was clicked.
@@ -336,6 +327,7 @@ if (!window.console || !window.console.log) {
 
         } else {
             request(
+                'search',
                 {search : $("#search").val()},
                 function(data) {
                     // Set the tab contents
@@ -347,9 +339,7 @@ if (!window.console || !window.console.log) {
                     // Re-enable the search tab, and switch to it.
                     $("#tabs").tabs("enable", 3).tabs("option", "active", 3);
                 },
-                empty,
-                empty,
-                empty,
+                null,
                 'html'
             );
         }
@@ -400,6 +390,17 @@ if (!window.console || !window.console.log) {
     /* ----------------------------- *
      *           INITALIZE           *
      * ----------------------------- */
+    
+    // Set up a prefilter to change all AJAX requests to posts and add the auth parameters
+    $.ajaxPrefilter(function( options, originalOptions, jqXHR ) {
+        options.type = 'POST';
+        var authParams = $.param({nonce: Math.random(), timestamp: new Date().toLocaleString()});
+        if (options.data) {
+            options.data += '&' + authParams;
+        } else {
+            options.data = authParams;
+        }
+    });
 
     // Runs on document ready.
     $( function($) {
@@ -453,9 +454,9 @@ if (!window.console || !window.console.log) {
                     }
 
                     // Save the user
-                    send(
-                        $("#add-user-form").serialize(),
+                    request(
                         'add_user',
+                        $("#add-user-form").serialize(),
                         function(data) {
                             // Success
                             displayMessage("User added succesfully.");
@@ -497,9 +498,9 @@ if (!window.console || !window.console.log) {
                     }
 
                     // Save the incident.
-                    send(
-                        $("#add-incident-form").serialize(),
+                    request(
                         'add_incident',
+                        $("#add-incident-form").serialize(),
                         function(data) {
                             // Success
                             displayMessage("Incident added.");
