@@ -143,8 +143,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
 
 
         // Test that the query was constructed correctly //
-        $expected_user = "INSERT INTO `users` (`username`, `modified_date`, `rank`, `relations`, `notes`, `banned`, `permanent`)
-            VALUES ('" . self::USERNAME . "', '{$now}', '2', 'Friends with Jane12', 'Don\\'t worry, just have some cheese.', 1, 0)";
+        $expected_user = "INSERT INTO `users` (username,modified_date,rank,relations,notes,banned,permanent) VALUES ('" . self::USERNAME . "','{$now}',2,'Friends with Jane12','Don\'t worry, just have some cheese.',1,0)";
         $expected_ban_history = "INSERT INTO `ban_history` (`user_id`, `moderator_id`, `date`, `banned`, `permanent`)
                 VALUES ('{$new_user_id}', '{$moderator_id}', '{$now}', '1', '')";
 
