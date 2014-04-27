@@ -204,44 +204,27 @@ class Controller
      * @param array $headers The table headers and output IDs.
      * @param string $id_key The ID key to use for the table rows.
      */
-    public function buildTable($query, $headers = array(), $id_key = 'user_id')
+    public function buildTable($query, $keys = array(), $id_key = 'user_id')
     {
-        $this->output->setHTMLMode(true);
-
-        if (empty($headers)) {
-            $headers = array(
-                'username' => 'Name',
-                'incident_date' => 'Last Incident Date',
-                'incident_type' => 'Last Incident Type',
-                'action_taken'  => 'Last Action Taken'
+        if (empty($keys)) {
+            $keys = array(
+                'username',
+                'incident_date',
+                'incident_type',
+                'action_taken'
             );
         }
-        $keys   = array_keys($headers);
 
         $res = $this->db->query($query);
 
-        if($res->num_rows == 0){
-            // Nothing found
-            $this->output->append("<div>Nothing Found</div>");
-
-        } else {
-
-            // Place the results into the table
-            $this->output->append('<table class="list"><thead><tr>');
+        while ($row = $res->fetch_assoc()) {
+            $rowData = array();
             foreach ($keys as $key) {
-                $this->output->append('<th>' . $this->output->prepareHTML($headers[$key]) . '</th>');
+                $rowData[$key] = $this->output->prepareHTML($row[$key], true);
             }
-            $this->output->append('</tr></thead><tbody>');
-
-            while($row = $res->fetch_assoc()){
-                $this->output->append("<tr id='id-{$row[$id_key]}'>");
-                foreach ($keys as $key) {
-                    $this->output->append('<td>' . $this->output->prepareHTML($row[$key], true) . '</td>');
-                }
-                $this->output->append('</tr>');
-            }
-
-            $this->output->append("</tbody></table>");
+            $this->output->append(
+                $rowData
+            );
         }
 
         $res->free();

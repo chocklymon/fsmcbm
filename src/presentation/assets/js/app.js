@@ -69,19 +69,9 @@ angular.module('banManager', ['ngRoute']).filter('checkmark', function() {
     }];
 }]).controller('userList', ['$scope', '$location', '$http', function($scope, $location, $http) {
     var endpoint = $location.path() === '/bans' ? 'get_bans' : 'get_watchlist';
-    var parameters = {
-        nonce: Math.random(),
-        timestamp: new Date().toUTCString()
-    };
-    $http.get("ban-manager.php?action=" + endpoint, {params: parameters})
+    $http.get("ban-manager.php?action=" + endpoint)
         .success(function(data) {
-            console.log(data);
-            $scope.users = [{
-                username: 'greg',
-                incidentDate: '2014-04-04',
-                incidentType: 'Theft',
-                actionTaken: 'Banned'
-            }];
+            $scope.users = data;
         });
 }]);
 
