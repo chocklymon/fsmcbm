@@ -33,21 +33,21 @@ angular.module('banManager', ['ngRoute']).filter('checkmark', function() {
             templateUrl: 'presentation/views/user.html'
         })
         .when('/user/:username', {
-                controller:  'user',
-                templateUrl: 'presentation/views/user.html'
-            })
+            controller:  'user',
+            templateUrl: 'presentation/views/user.html'
+        })
         .when('/bans', {
-                controller:  'userList',
-                templateUrl: 'presentation/views/userlist.html'
-            })
+            controller:  'userList',
+            templateUrl: 'presentation/views/userlist.html'
+        })
         .when('/watchlist', {
-                controller:  'userList',
-                templateUrl: 'presentation/views/userlist.html'
-            })
-        .when('/search', {
-                controller:  'search',
-                templateUrl: 'presentation/views/search.html'
-            })
+            controller:  'userList',
+            templateUrl: 'presentation/views/userlist.html'
+        })
+        .when('/search/:term?', {
+            controller:  'search',
+            templateUrl: 'presentation/views/search.html'
+        })
         .otherwise({ redirectTo: '/' });
 }]).controller('user', ['$scope', function($scope) {
     // TODO
@@ -71,7 +71,9 @@ angular.module('banManager', ['ngRoute']).filter('checkmark', function() {
     var endpoint = $location.path() === '/bans' ? 'get_bans' : 'get_watchlist';
     $http.get("ban-manager.php?action=" + endpoint)
         .success(function(data) {
-            $scope.users = data;
+            //$scope.users = data;
+            $scope.users = [];
         });
+}]).controller('search', ['$scope', '$routeParams', '$http', function($scope, $routeParams, $http) {
+    console.log($routeParams);
 }]);
-

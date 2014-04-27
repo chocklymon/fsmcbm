@@ -1,13 +1,16 @@
-<table>
-    <thead>
-        <tr><th>Name</th><th>Last Incident Date</th><th>Last Incident Type</th><th>Last Action Taken</th></tr>
-    </thead>
-    <tbody>
-        <tr ng-repeat="user in users">
-            <td>{{user.username}}</td>
-            <td>{{user.incident_date}}</td>
-            <td>{{user.incident_type}}</td>
-            <td>{{user.action_taken}}</td>
-        </tr>
-    </tbody>
-</table>
+<div ng-switch="users.length">
+    <div ng-switch-when="0">Nothing Found</div>
+    <table ng-switch-default>
+        <thead>
+            <tr><th>Name</th><th>Last Incident Date</th><th>Last Incident Type</th><th>Last Action Taken</th></tr>
+        </thead>
+        <tbody>
+            <tr ng-repeat="user in users">
+                <td>{{user.username}}</td>
+                <td>{{user.incident_date}}</td>
+                <td>{{user.incident_type}}</td>
+                <td>{{user.action_taken}}</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
