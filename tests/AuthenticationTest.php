@@ -114,7 +114,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
     public function testAuthenticateAPIRequest()
     {
         $this->setUpAPIRequest();
-        $auth = new Authentication($this->getModeratorMockDB(), self::$settings);
+        $auth = new Authentication($this->getModeratorMockDB(true), self::$settings);
 
         $authenticated = $auth->authenticate();
         $this->assertTrue($authenticated);
@@ -123,7 +123,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
     public function testAuthenticateAPIRequest_nonModerator()
     {
         $this->setUpAPIRequest();
-        $auth = new Authentication($this->getNonModeratorMockDB(), self::$settings);
+        $auth = new Authentication($this->getNonModeratorMockDB(true), self::$settings);
 
         $authenticated = $auth->authenticate();
         $this->assertFalse($authenticated);
@@ -320,7 +320,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
         $_POST['username'] = self::USERNAME;
         $_POST['password'] = 'password1';
 
-        $db = new MockDatabase(array(array('count'=>0), array(), false));
+        $db = new MockDatabase(array(false));
         $auth = new Authentication($db, self::$settings);
 
         $auth->loginUser();
@@ -352,6 +352,16 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
     //
     // Test Helper Functions
     //
+    
+    /**
+     * Gets an array sutable to be set into a MockDatabase that needs to
+     * return that the nonce hasn't been used.
+     * @return array
+     */
+    private function getNonceFreeArray()
+    {
+        return array(array('count'=>0), array());
+    }
 
     /**
      * Get a mock database that will return that the nonce hasn't been used yet.
@@ -359,27 +369,49 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
      */
     private function getNonceFreeMockDB()
     {
-        return new MockDatabase(array(array('count'=>0), array()));
+        return new MockDatabase($this->getNonceFreeArray());
     }
 
     /**
      * Gets a MockDatabase instance that will return a user that is not a
      * moderator.
+     * @param boolean $include_nonce Whether or not the MockDatase should return
+     * a free nonce result first before the user.
      * @return \MockDatabase
      */
-    private function getNonModeratorMockDB()
+    private function getNonModeratorMockDB($include_nonce = false)
     {
-        return new MockDatabase(array(array('count'=>0), array(), array('user_id'=>self::USER_ID, 'rank'=>'Regular')));
+        return $this->getUserMockDB('Regular', $include_nonce);
     }
 
     /**
      * Gets a MockDatabase instance that will return a user that is a moderator.
+     * @param boolean $include_nonce Whether or not the MockDatase should return
+     * a free nonce result first before the user.
      * @return \MockDatabase
      */
-    private function getModeratorMockDB()
+    private function getModeratorMockDB($include_nonce = false)
     {
-                                   // check nonce, insert nonce, get user info
-        return new MockDatabase(array(array('count'=>0), array(), array('user_id'=>self::USER_ID, 'rank'=>'Admin')));
+        return $this->getUserMockDB('Admin', $include_nonce);
+    }
+    
+    /**
+     * Returns a MockDatabase that will return a user with the provided rank.
+     * @param string $rank The user's rank.
+     * @param boolean $include_nonce Whether or not the MockDatase should return
+     * a free nonce result first before the user.
+     * @return \MockDatabase
+     */
+    private function getUserMockDB($rank, $include_nonce)
+    {
+        $user = array('user_id'=>self::USER_ID, 'rank'=>$rank);
+        if ($include_nonce) {
+            $mock_db_array = $this->getNonceFreeArray();
+            $mock_db_array[] = $user;
+            return new MockDatabase($mock_db_array);
+        } else {
+            return new MockDatabase(array($user));
+        }
     }
 
     /**

@@ -68,25 +68,23 @@ class Authentication
      */
     public function authenticate()
     {
-        // All requests should validate with the timestamp and nonce
-        if ($this->validatePost()) {
-            if (isset($_POST['accessor_token']) && isset($_POST['hmac']) && isset($_POST['uuid'])) {
-                // API call
-                $user_id = $this->authenticateAPIRequest();
-            } else if ($this->settings->useWPLogin()) {
-                // Authenticate using WordPress
-                $user_id = $this->authenticateUsingWP();
-            } else {
-                // Authenticate using our authentication
-                $user_id = $this->authenticateUser();
-            }
+        // Figure out what kind of authentication we will be using
+        if (isset($_POST['accessor_token']) && isset($_POST['hmac']) && isset($_POST['uuid'])) {
+            // API call
+            $user_id = $this->authenticateAPIRequest();
+        } else if ($this->settings->useWPLogin()) {
+            // Authenticate using WordPress
+            $user_id = $this->authenticateUsingWP();
+        } else {
+            // Authenticate using our authentication
+            $user_id = $this->authenticateUser();
+        }
 
-            if ($user_id != null) {
-                // User validated
-                $this->user_id = $user_id;
-                $this->cleanUpNonce();
-                return true;
-            }
+        if ($user_id != null) {
+            // User validated
+            $this->user_id = $user_id;
+            $this->cleanUpNonce();
+            return true;
         }
 
         return false;
@@ -100,36 +98,22 @@ class Authentication
     private function authenticateAPIRequest()
     {
         $accessor_key = $this->settings->getAccessorKey($_POST['accessor_token']);
-        if ($accessor_key !== false ) {
-            $msg = '';
-            $hmac = '';
-            ksort($_POST);
-            foreach ($_POST as $key => $value) {
-                if ($key == 'hmac') {
-                    $hmac = $value;
-                } else {
-                    $msg .= $key . $value;
+        if ($accessor_key !== false && $this->validatePost($accessor_key)) {
+            try {
+                // Use the universally unique identifier to get the user info
+                $uuid = $this->db->sanitize(pack('H*', $_POST['uuid']));
+                $row = $this->db->querySingleRow(
+                    "SELECT `users`.`user_id`, `rank`.`name` AS rank
+                     FROM `users`
+                     LEFT JOIN `rank` ON (`users`.`rank` = `rank`.`rank_id`)
+                     WHERE `uuid` = '$uuid'",
+                    'Moderator not found.'
+                );
+                if ($row['rank'] == 'Admin' || $row['rank'] == 'Moderator') {
+                    return $row['user_id'];
                 }
-            }
-
-            if (hash_hmac(self::HASH_ALGO, $msg, $accessor_key) == $hmac) {
-                // HMAC valid
-                try {
-                    // Use the universally unique identifier to get the user info
-                    $uuid = $this->db->sanitize(pack('H*', $_POST['uuid']));
-                    $row = $this->db->querySingleRow(
-                        "SELECT `users`.`user_id`, `rank`.`name` AS rank
-                         FROM `users`
-                         LEFT JOIN `rank` ON (`users`.`rank` = `rank`.`rank_id`)
-                         WHERE `uuid` = '$uuid'",
-                        'Moderator not found.'
-                    );
-                    if ($row['rank'] == 'Admin' || $row['rank'] == 'Moderator') {
-                        return $row['user_id'];
-                    }
-                } catch (DatabaseException $ex) {
-                    throw new AuthenticationException('Authentication failed due to database issue.', $ex->getCode(), $ex);
-                }
+            } catch (DatabaseException $ex) {
+                throw new AuthenticationException('Authentication failed due to database issue.', $ex->getCode(), $ex);
             }
         }
         return null;
@@ -271,7 +255,7 @@ class Authentication
 
     public function loginUser()
     {
-        if (isset($_POST['username']) && isset($_POST['password']) && $this->validatePost()) {
+        if (isset($_POST['username']) && isset($_POST['password'])) {
             $username = $this->db->sanitize($_POST['username']);
             $password = $this->db->sanitize(hash(self::HASH_ALGO, $_POST['password'], true));
 
@@ -297,45 +281,87 @@ EOF;
         }
         return false;
     }
-
+    
     /**
-     * Validates that the post's nonce hasn't been used and that the timestamp
-     * is in range. This will only prevent the most basic of replay attacks.
-     * @return boolean <tt>true</tt> if the post passes validation.
-     * @throws AuthenticationException If there is a problem with the database
-     * connection.
+     * Validates that all the post data's HMAC generated with the provided
+     * hmac_key matches the HMAC in the post.
+     * @param string $hmac_key
+     * @return boolean TRUE if the HMAC in the post is valid given the provided
+     * $hmac_key.
      */
-    private function validatePost()
+    private function isHMACValid($hmac_key)
     {
-        if (isset($_POST['nonce']) && isset($_POST['timestamp'])) {
-            // Validate the payload
+        $msg = '';
+        $hmac = '';
+        ksort($_POST);
+        foreach ($_POST as $key => $value) {
+            if ($key == 'hmac') {
+                $hmac = $value;
+            } else {
+                $msg .= $key . $value;
+            }
+        }
+
+        if (hash_hmac(self::HASH_ALGO, $msg, $hmac_key) == $hmac) {
+            // HMAC valid
+            return true;
+        } else {
+            return false;
+        }
+    }
+    
+    private function isTimestampValid()
+    {
+        if (isset($_POST['timestamp'])) {
+            // Validate the timestamp
             $timestamp = strtotime($_POST['timestamp']);
             $current_time = time();
 
             // The timestamp can be valid for ten seconds in the past and two minutes into the future.
             // This gives a buffer to compensate for time differences and network latency.
             if ($timestamp > ($current_time - 10) && $timestamp < ($current_time + 120)) {
-                try {
-                    // Check the nonce
-                    // Get the md5 hash of the nonce (using md5 hash so the nonce will always be 16 bytes long).
-                    $nonce = $this->db->sanitize(hash('md5', $_POST['nonce'], true));
-                    $sql = "SELECT COUNT(*) AS count FROM `auth_nonce` WHERE `nonce` = '{$nonce}'";
-                    $row = $this->db->querySingleRow($sql);
-                    if ($row['count'] == 0) {
-                        // Nonce hasn't been used, save it and return true
-                        $date_time = $this->db->getDate($current_time);
-                        $sql = "INSERT INTO `auth_nonce` (`nonce`, `timestamp`) VALUES ('{$nonce}', '{$date_time}')";
-                        $this->db->query($sql);
-
-                        return true;
-                    }
-                } catch (DatabaseException $ex) {
-                    throw new AuthenticationException('Authentication failed due to database issue.', $ex->getCode(), $ex);
-                }
+                return true;
             }
         }
-
         return false;
+    }
+    
+    private function isNonceValid()
+    {
+        if (isset($_POST['nonce'])) {
+            try {
+                // Check the nonce
+                // Get the md5 hash of the nonce (using md5 hash so the nonce will always be 16 bytes long).
+                $nonce = $this->db->sanitize(hash('md5', $_POST['nonce'], true));
+                $sql = "SELECT COUNT(*) AS count FROM `auth_nonce` WHERE `nonce` = '{$nonce}'";
+                $row = $this->db->querySingleRow($sql);
+                if ($row['count'] == 0) {
+                    // Nonce hasn't been used, save it and return true
+                    $date_time = $this->db->getDate();
+                    $sql = "INSERT INTO `auth_nonce` (`nonce`, `timestamp`) VALUES ('{$nonce}', '{$date_time}')";
+                    $this->db->query($sql);
+
+                    return true;
+                }
+            } catch (DatabaseException $ex) {
+                throw new AuthenticationException('Authentication failed due to database issue.', $ex->getCode(), $ex);
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Validates that the post data is valid.
+     * More specifically checks that the post's nonce hasn't been used, that the
+     * timestamp is in range, and that the HMAC is correct for the given key.
+     * @param string $hmac_key
+     * @return boolean <tt>true</tt> if the post passes validation.
+     * @throws AuthenticationException If there is a problem with the database
+     * connection.
+     */
+    private function validatePost($hmac_key)
+    {
+        return $this->isTimestampValid() && $this->isHMACValid($hmac_key) && $this->isNonceValid();
     }
 
     /**
