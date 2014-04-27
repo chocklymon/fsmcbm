@@ -1,0 +1,13 @@
+<table>
+    <thead>
+        <tr><th>Name</th><th>Last Incident Date</th><th>Last Incident Type</th><th>Last Action Taken</th></tr>
+    </thead>
+    <tbody>
+        <tr ng-repeat="user in users">
+            <td>{{user.username}}</td>
+            <td>{{user.incidentDate}}</td>
+            <td>{{user.incidentType}}</td>
+            <td>{{user.actionTaken}}</td>
+        </tr>
+    </tbody>
+</table>
