@@ -216,9 +216,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
     public function testBuildTable()
     {
         // Set Up //
-        $expected = "<table class=\"list\"><thead><tr><th>Name</th><th>Last Incident Date</th><th>Last Incident Type</th><th>Last Action Taken</th></tr></thead><tbody><tr id='id-29'><td>"
-                . self::USERNAME
-                . "</td><td>12/12/2012</td><td>Theft</td><td>Banned</td></tr></tbody></table>";
+        $expected = '[{"username":"'.self::USERNAME.'","incident_date":"12\/12\/2012","incident_type":"Theft","action_taken":"Banned"}]';
         $this->expectOutputString($expected);
 
         $db = new MockDatabase(
@@ -239,7 +237,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
     public function testBuildTable_noResults()
     {
         // Set Up //
-        $expected = "<div>Nothing Found</div>";
+        $expected = "[]";
         $this->expectOutputString($expected);
 
         $db = new MockDatabase(array(new FakeQueryResult()));
@@ -251,7 +249,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
 
     public function testDeleteIncident()
     {
-        $this->expectOutputString('<div class="success">Success!</div>');
+        $this->expectOutputString('{"success":true}');
 
         $incident_id = 2;
         $_POST['incident_id'] = $incident_id;
@@ -265,7 +263,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
 
     public function testDeleteIncident_invalidId()
     {
-        $this->expectOutputString('<div class="error">Invalid Incident ID</div>');
+        $this->expectOutputString('{"error":"Invalid Incident ID"}');
 
         $incident_id = 'hippo';
         $_POST['incident_id'] = $incident_id;
@@ -280,7 +278,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
     public function testGetBans()
     {
         // Set Up //
-        $expected = "<div>Nothing Found</div>";
+        $expected = "[]";
         $this->expectOutputString($expected);
 
         $db = new MockDatabase(array(new FakeQueryResult()));
@@ -293,7 +291,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
     public function testGetWatchlist()
     {
         // Set Up //
-        $expected = "<div>Nothing Found</div>";
+        $expected = "[]";
         $this->expectOutputString($expected);
 
         $db = new MockDatabase(array(new FakeQueryResult()));
@@ -309,7 +307,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
         $user_id = 69;
         $_POST = array('lookup'=>$user_id);
 
-        $expectedOutput = self::USERNAME;
+        $expectedOutput = '{"user":"'.self::USERNAME.'"}';
         $this->expectOutputString($expectedOutput);
 
         // Construct the database
@@ -354,7 +352,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
         // Set Up //
         $_POST = array('search'=>self::USERNAME);
 
-        $expectedOutput = "<h4>Players</h4><div>Nothing Found</div><h4>Incidents</h4><div>Nothing Found</div>";
+        $expectedOutput = "<h4>Players</h4><h4>Incidents</h4>";
         $this->expectOutputString($expectedOutput);
 
         // Construct the database
