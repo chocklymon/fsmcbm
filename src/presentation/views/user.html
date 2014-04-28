@@ -7,20 +7,24 @@
         <input type="text" readonly="readonly" value="{{incident.moderator}}"/>
         <br/>
         <label>Created Date:</label>
-        <input type="text" readonly="readonly" value="{{incident.dateCreated}}"/>
+        <input type="text" readonly="readonly" value="{{incident.created_date}}"/>
         <label>Last Modified:</label>
-        <input type="text" readonly="readonly" value="{{incident.dateModified}}"/>
+        <input type="text" readonly="readonly" value="{{incident.modified_date}}"/>
         <br/>
         <label for="type_{{incident.id}}">Incident type:</label>
-        <input type="text" id="type_{{incident.id}}" value="{{incident.type}}"/>
+        <input type="text" id="type_{{incident.id}}" value="{{incident.incident_type}}"/>
         <label for="date_{{incident.id}}">Incident Date:</label>
-        <input type="text" id="date_{{incident.id}}" value="{{incident.date}}"/>
+        <input type="text" id="date_{{incident.id}}" value="{{incident.incident_date}}"/>
         <br/>
         <label for="notes_{{incident.id}}">Notes:</label>
         <textarea id="notes_{{incident.id}}">{{incident.notes}}</textarea>
         <br/>
-        <label for="action_{{incident.id}}">Notes:</label>
-        <textarea id="action_{{incident.id}}">{{incident.actionTaken}}</textarea>
+        <label for="action_{{incident.id}}">Action Taken:</label>
+        <textarea id="action_{{incident.id}}">{{incident.action_taken}}</textarea>
+        <div>
+            <label for="world_{{incident.id}}">Action Taken:</label>
+            <select id="world_{{incident.id}}" ng-model="worlds" ng-options="c.name for c in world">{{incident.action_taken}}</select>
+        </div>
     </div>
 </div>
 <table>

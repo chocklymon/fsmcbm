@@ -32,6 +32,10 @@ require_once('Database.php');
 require_once('Authentication.php');
 require_once('Controller.php');
 
+function startsWith($haystack, $needle)
+{
+    return $needle === "" || strpos($haystack, $needle) === 0;
+}
 
 
 /* =============================
@@ -101,6 +105,11 @@ try {
                     $actions->autoComplete();
                     break;
                 case 'lookup':
+                    // Modified from http://victorblog.com/2012/12/20/make-angularjs-http-service-behave-like-jquery-ajax/
+                    // TODO make this into a class for filtering inputs
+                    if (isset($_SERVER['CONTENT_TYPE']) && startsWith($_SERVER['CONTENT_TYPE'], 'application/json')) {
+                        $_POST = json_decode(file_get_contents('php://input'), true);
+                    }
                     $actions->retrieveUserData();
                     break;
                 case 'add_user':

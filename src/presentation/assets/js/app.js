@@ -49,7 +49,7 @@ angular.module('banManager', ['ngRoute']).filter('checkmark', function() {
             templateUrl: 'presentation/views/search.html'
         })
         .otherwise({ redirectTo: '/' });
-}]).controller('user', ['$scope', function($scope) {
+}]).controller('user', ['$scope', '$routeParams', '$http', function($scope, $routeParams, $http) {
     // TODO
     $scope.incidents = [{
         id:5,
@@ -61,18 +61,26 @@ angular.module('banManager', ['ngRoute']).filter('checkmark', function() {
         notes:'Something bad happened',
         actionTaken:'Repaired the damage'
     }];
-    $scope.history = [{
-        moderator: 'fredwaffles',
-        date: '2013-06-06 14:23:50',
-        banned: true,
-        permanent: false
-    }];
+    if ($routeParams.username) {
+        $http.post("ban-manager.php?action=lookup", {username: $routeParams.username})
+            .success(function(data) {
+                console.log(data);
+                if (data.incident) {
+                    $scope.incidents = data.incident;
+                }
+                if (data.history) {
+                    $scope.history = data.history;
+                }
+            });
+    }
 }]).controller('userList', ['$scope', '$location', '$http', function($scope, $location, $http) {
     var endpoint = $location.path() === '/bans' ? 'get_bans' : 'get_watchlist';
+    $scope.lookupUser = function(username) {
+        $location.path('/user/'+username);
+    };
     $http.get("ban-manager.php?action=" + endpoint)
         .success(function(data) {
-            //$scope.users = data;
-            $scope.users = [];
+            $scope.users = data;
         });
 }]).controller('search', ['$scope', '$routeParams', '$http', function($scope, $routeParams, $http) {
     console.log($routeParams);

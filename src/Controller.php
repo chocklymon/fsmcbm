@@ -40,6 +40,19 @@ class Controller
      */
     private $output;
 
+    public function getUserIdByUsername($username)
+    {
+        $username = $this->db->sanitize($username);
+        $user_row = $this->db->querySingleRow("SELECT user_id FROM users WHERE username = '{$username}'");
+        return $user_row['user_id'];
+    }
+
+    public function getUserIdByUUID($uuid)
+    {
+        // TODO
+        return 0;
+    }
+
     /**
      * Construct a new controller.
      * @param Database $database The databse instance to use.
@@ -306,9 +319,15 @@ SQL;
      */
     public function retrieveUserData()
     {
-        $lookup = $this->db->sanitize($_POST['lookup'], true);
+        if (isset($_POST['lookup'])) {
+            $user_id = $this->db->sanitize($_POST['lookup'], true);
+        } else if(isset($_POST['username'])) {
+            $user_id = $this->getUserIdByUsername($_POST['username']);
+        } else if(isset($_POST['user_uuid'])) {
+            $user_id = $this->getUserIdByUUID($_POST['user_uuid']);
+        }
 
-        if($lookup <= 0) {
+        if($user_id <= 0) {
             // Invalid lookup
             throw new InvalidArgumentException("Invalid user ID.");
         }
@@ -317,7 +336,7 @@ SQL;
         // Get the user
         $this->output->append(
             $this->db->querySingleRow(
-                "SELECT * FROM users WHERE user_id = '$lookup'",
+                "SELECT * FROM users WHERE user_id = '$user_id'",
                 'User not found.'
             ),
             'user'
@@ -329,7 +348,7 @@ SQL;
 SELECT i.*, u.username AS moderator
 FROM `incident` AS i
 LEFT JOIN `users` AS u ON (i.moderator_id = u.user_id)
-WHERE i.user_id = '$lookup'
+WHERE i.user_id = '$user_id'
 ORDER BY i.incident_date
 SQL;
 
@@ -341,7 +360,7 @@ SQL;
 SELECT u.username AS moderator, bh.date, bh.banned, bh.permanent
 FROM `ban_history` AS bh
 LEFT JOIN `users` AS u ON (bh.moderator_id = u.user_id)
-WHERE bh.`user_id` = '$lookup'
+WHERE bh.`user_id` = '$user_id'
 ORDER BY bh.`date`
 SQL;
 
