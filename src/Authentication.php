@@ -40,6 +40,11 @@ class Authentication
      * @var Database
      */
     private $db;
+    
+    /**
+     * @var FilteredInput
+     */
+    private $input;
 
     /**
      * @var Settings
@@ -55,13 +60,14 @@ class Authentication
      * Create a new authenticator class.
      * @param Database $db The database instance.
      * @param Settings $settings The settings to use.
+     * @param FilteredInput $input The post input
      */
-    public function __construct(Database $db, Settings $settings)
+    public function __construct(Database $db, Settings $settings, FilteredInput $input)
     {
         $this->db = $db;
         $this->settings = $settings;
+        $this->input = $input;
     }
-
     /**
      * Authenticates the user.
      * @return bool <tt>true</tt> if the user was authenticated.
@@ -69,7 +75,7 @@ class Authentication
     public function authenticate()
     {
         // Figure out what kind of authentication we will be using
-        if (isset($_POST['accessor_token']) && isset($_POST['hmac']) && isset($_POST['uuid'])) {
+        if ($this->isAPIRequest()) {
             // API call
             $user_id = $this->authenticateAPIRequest();
         } else if ($this->settings->useWPLogin()) {
@@ -97,11 +103,11 @@ class Authentication
      */
     private function authenticateAPIRequest()
     {
-        $accessor_key = $this->settings->getAccessorKey($_POST['accessor_token']);
+        $accessor_key = $this->settings->getAccessorKey($this->input->accessor_token);
         if ($accessor_key !== false && $this->validatePost($accessor_key)) {
             try {
                 // Use the universally unique identifier to get the user info
-                $uuid = $this->db->sanitize(pack('H*', $_POST['uuid']));
+                $uuid = $this->db->sanitize(pack('H*', $this->input->uuid));
                 $row = $this->db->querySingleRow(
                     "SELECT `users`.`user_id`, `rank`.`name` AS rank
                      FROM `users`
@@ -255,9 +261,9 @@ class Authentication
 
     public function loginUser()
     {
-        if (isset($_POST['username']) && isset($_POST['password'])) {
-            $username = $this->db->sanitize($_POST['username']);
-            $password = $this->db->sanitize(hash(self::HASH_ALGO, $_POST['password'], true));
+        if ($this->input->exists('username') && $this->input->exists('password')) {
+            $username = $this->db->sanitize($this->input->username);
+            $password = $this->db->sanitize(hash(self::HASH_ALGO, $this->input->password, true));
 
             $sql = <<<EOF
 SELECT `users`.`user_id`, `rank`.`name` AS rank
@@ -293,8 +299,7 @@ EOF;
     {
         $msg = '';
         $hmac = '';
-        ksort($_POST);
-        foreach ($_POST as $key => $value) {
+        foreach ($this->input as $key => $value) {
             if ($key == 'hmac') {
                 $hmac = $value;
             } else {
@@ -312,9 +317,9 @@ EOF;
     
     private function isTimestampValid()
     {
-        if (isset($_POST['timestamp'])) {
+        if ($this->input->exists('timestamp')) {
             // Validate the timestamp
-            $timestamp = strtotime($_POST['timestamp']);
+            $timestamp = strtotime($this->input->timestamp);
             $current_time = time();
 
             // The timestamp can be valid for ten seconds in the past and two minutes into the future.
@@ -328,11 +333,11 @@ EOF;
     
     private function isNonceValid()
     {
-        if (isset($_POST['nonce'])) {
+        if ($this->input->exists('nonce')) {
             try {
                 // Check the nonce
                 // Get the md5 hash of the nonce (using md5 hash so the nonce will always be 16 bytes long).
-                $nonce = $this->db->sanitize(hash('md5', $_POST['nonce'], true));
+                $nonce = $this->db->sanitize(hash('md5', $this->input->nonce, true));
                 $sql = "SELECT COUNT(*) AS count FROM `auth_nonce` WHERE `nonce` = '{$nonce}'";
                 $row = $this->db->querySingleRow($sql);
                 if ($row['count'] == 0) {
@@ -384,5 +389,15 @@ EOF;
         $cookie_value = implode("|", $cookie);
 
         setcookie($this->settings->getCookieName(), $cookie_value, 0, '/', null, false, true);
+    }
+
+    public function shouldLoadWordpress()
+    {
+        return $this->settings->useWPLogin() && !$this->isAPIRequest();
+    }
+
+    public function isAPIRequest()
+    {
+        return $this->input->exists('accessor_token') && $this->input->exists('hmac') && $this->input->exists('uuid');
     }
 }

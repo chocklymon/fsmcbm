@@ -26,16 +26,13 @@
  * =============================
  */
 
+require_once('FilteredInput.php');
 require_once('Settings.php');
 require_once('Output.php');
 require_once('Database.php');
 require_once('Authentication.php');
 require_once('Controller.php');
 
-function startsWith($haystack, $needle)
-{
-    return $needle === "" || strpos($haystack, $needle) === 0;
-}
 
 
 /* =============================
@@ -47,22 +44,9 @@ function startsWith($haystack, $needle)
 mb_internal_encoding("UTF-8");
 
 // Get an instance of the various needed classes
+$input = new FilteredInput();
 $settings = new Settings();
 $output = new Output($settings);
-
-// If we are using wordpress load it now
-// Some plugins ('bbPress2 shortcode whitelist' and possibly others) cause a fatal
-// error when this is included inside of authentication.
-if ($settings->useWPLogin()
-    && !(isset($_POST['accessor_token']) && isset($_POST['hmac']) && isset($_POST['uuid']))
-) {
-    $wp_load_file = $settings->getWordpressLoadFile();
-    if (empty($wp_load_file) || !file_exists($wp_load_file)) {
-        $output->error('Configuration error. Unable to authenticate through wordpress!');
-        exit();
-    }
-    require_once($wp_load_file);
-}
 
 try {
     // Make sure that we have an action before continuing
@@ -73,7 +57,20 @@ try {
     }
     
     $db = new Database($settings);
-    $auth = new Authentication($db, $settings);
+    $auth = new Authentication($db, $settings, $input);
+
+    
+    // If we are using wordpress load it now
+    // Some plugins ('bbPress2 shortcode whitelist' and possibly others) cause a fatal
+    // error when this is included inside of authentication.
+    if ($auth->shouldLoadWordpress()) {
+        $wp_load_file = $settings->getWordpressLoadFile();
+        if (empty($wp_load_file) || !file_exists($wp_load_file)) {
+            $output->error('Configuration error. Unable to authenticate through wordpress!');
+            exit();
+        }
+        require_once($wp_load_file);
+    }
     
     if ($endpoint === 'login') {
         // Try to login the user
@@ -102,24 +99,19 @@ try {
             
             switch ($endpoint) {
                 case 'auto_complete':
-                    $actions->autoComplete();
+                    $actions->autoComplete($input);
                     break;
                 case 'lookup':
-                    // Modified from http://victorblog.com/2012/12/20/make-angularjs-http-service-behave-like-jquery-ajax/
-                    // TODO make this into a class for filtering inputs
-                    if (isset($_SERVER['CONTENT_TYPE']) && startsWith($_SERVER['CONTENT_TYPE'], 'application/json')) {
-                        $_POST = json_decode(file_get_contents('php://input'), true);
-                    }
-                    $actions->retrieveUserData();
+                    $actions->retrieveUserData($input);
                     break;
                 case 'add_user':
-                    $actions->addUser($user_id);
+                    $actions->addUser($user_id, $input);
                     break;
                 case 'add_incident':
-                    $actions->addIncident($user_id);
+                    $actions->addIncident($user_id, $input);
                     break;
                 case 'delete_incident':
-                    $actions->deleteIncident();
+                    $actions->deleteIncident($input);
                     break;
                 case 'get_bans':
                     $actions->getBans();
@@ -128,16 +120,16 @@ try {
                     $actions->getWatchlist();
                     break;
                 case 'search':
-                    $actions->search();
+                    $actions->search($input);
                     break;
                 case 'set_user_uuid':
-                    $actions->updateUserUUID();
+                    $actions->upsertUserUUID($input);
                     break;
                 case 'update_user':
-                    $actions->updateUser($user_id);
+                    $actions->updateUser($user_id, $input);
                     break;
                 case 'update_incident':
-                    $actions->updateIncident();
+                    $actions->updateIncident($input);
                     break;
             }
         }

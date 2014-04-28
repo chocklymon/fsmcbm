@@ -23,6 +23,7 @@
 
 require_once('MockDatabase.php');
 require_once('MockSettings.php');
+require_once('src/FilteredInput.php');
 require_once('src/Output.php');
 require_once('src/Controller.php');
 
@@ -43,6 +44,11 @@ class ControllerTest extends PHPUnit_Framework_TestCase
      * @var Output
      */
     private static $output;
+    
+    /**
+     * @var FilteredInput
+     */
+    private $input;
 
     public static function setUpBeforeClass()
     {
@@ -53,7 +59,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
     protected function setUp()
     {
         // Set up a fake post
-        $_POST = array(
+        $this->input = new FilteredInput(false, array(
             // Incident post fields
             'user_id'       => '5',
             'incident_date' => '',
@@ -74,7 +80,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
             // Shared
             'notes'         => "Don't worry, just have some cheese.",
             'id'            => '28',
-        );
+        ));
     }
 
     protected function tearDown()
@@ -98,7 +104,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
 
 
         // Run the test //
-        $controller->addIncident(1);
+        $controller->addIncident(1, $this->input);
 
 
         // Test that the query was constructed correctly //
@@ -115,11 +121,11 @@ class ControllerTest extends PHPUnit_Framework_TestCase
     {
         // Set Up //
         // The user id needs to be a positive number greater than zero.
-        $_POST['user_id'] = 0;
+        $this->input->user_id = 0;
         $controller = new Controller(new MockDatabase(), self::$output);
 
         // Run the test //
-        $controller->addIncident(1);
+        $controller->addIncident(1, $this->input);
     }
 
     public function testAddUser()
@@ -139,7 +145,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
 
 
         // Run the test //
-        $controller->addUser($moderator_id);
+        $controller->addUser($moderator_id, $this->input);
 
 
         // Test that the query was constructed correctly //
@@ -159,11 +165,11 @@ class ControllerTest extends PHPUnit_Framework_TestCase
     {
         // Set Up //
         // The user id needs to not be empty
-        $_POST['username'] = null;
+        $this->input->username = null;
         $controller = new Controller(new MockDatabase(), self::$output);
 
         // Run the test //
-        $controller->addUser(1);
+        $controller->addUser(1, $this->input);
     }
 
     /**
@@ -176,13 +182,13 @@ class ControllerTest extends PHPUnit_Framework_TestCase
         $controller = new Controller($db, self::$output);
 
         // Run the test //
-        $controller->addUser(1);
+        $controller->addUser(1, $this->input);
     }
 
     public function testAutoComplete()
     {
         // Set Up //
-        $_POST = array('term'=>self::USERNAME);
+        $input = new FilteredInput(false, array('term'=>self::USERNAME));
 
         $expected = '[{"label":"' . self::USERNAME . '","value":5}]';
         $this->expectOutputString($expected);
@@ -193,7 +199,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
         $controller = new Controller($db, self::$output);
 
         // Run the test //
-        $controller->autoComplete();
+        $controller->autoComplete($input);
 
         // Validate the query
         $expected_query = "SELECT user_id, username FROM users WHERE username LIKE '" . self::USERNAME . "%'";
@@ -206,11 +212,11 @@ class ControllerTest extends PHPUnit_Framework_TestCase
     public function testAutoComplete_invalidTerm()
     {
         // Set Up //
-        $_POST = array('term'=>'a');
+        $input = new FilteredInput(false, array('term'=>'a'));
         $controller = new Controller(new MockDatabase(), self::$output);
 
         // Run the test //
-        $controller->autoComplete();
+        $controller->autoComplete($input);
     }
 
     public function testBuildTable()
@@ -252,11 +258,11 @@ class ControllerTest extends PHPUnit_Framework_TestCase
         $this->expectOutputString('{"success":true}');
 
         $incident_id = 2;
-        $_POST['incident_id'] = $incident_id;
+        $input = new FilteredInput(false, array('incident_id' => $incident_id));
         $db = new MockDatabase();
         $controller = new Controller($db, self::$output);
 
-        $controller->deleteIncident();
+        $controller->deleteIncident($input);
 
         $this->assertEquals("DELETE FROM `incident` WHERE `incident_id` = $incident_id", $db->getLastQuery());
     }
@@ -266,11 +272,11 @@ class ControllerTest extends PHPUnit_Framework_TestCase
         $this->expectOutputString('{"error":"Invalid Incident ID"}');
 
         $incident_id = 'hippo';
-        $_POST['incident_id'] = $incident_id;
+        $input = new FilteredInput(false, array('incident_id' => $incident_id));
         $db = new MockDatabase();
         $controller = new Controller($db, self::$output);
 
-        $controller->deleteIncident();
+        $controller->deleteIncident($input);
 
         $this->assertEmpty($db->getLastQuery());
     }
@@ -305,7 +311,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
     {
         // Set Up //
         $user_id = 69;
-        $_POST = array('lookup'=>$user_id);
+        $input = new FilteredInput(false, array('lookup'=>$user_id));
 
         $expectedOutput = '{"user":"'.self::USERNAME.'"}';
         $this->expectOutputString($expectedOutput);
@@ -321,7 +327,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
         $controller = new Controller($db, self::$output);
 
         // Run the test //
-        $controller->retrieveUserData();
+        $controller->retrieveUserData($input);
 
 
         // Test that the query was constructed correctly //
@@ -337,20 +343,20 @@ class ControllerTest extends PHPUnit_Framework_TestCase
     public function testRetrieveUserData_invalidId()
     {
         // Set Up //
-        $_POST = array('lookup'=>'INVALID');
+        $input = new FilteredInput(false, array('lookup'=>'INVALID'));
 
         // Construct the database
         $db = new MockDatabase();
         $controller = new Controller($db, self::$output);
 
         // Run the test //
-        $controller->retrieveUserData();
+        $controller->retrieveUserData($input);
     }
 
     public function testSearch()
     {
         // Set Up //
-        $_POST = array('search'=>self::USERNAME);
+        $input = new FilteredInput(false, array('search'=>self::USERNAME));
 
         $expectedOutput = "<h4>Players</h4><h4>Incidents</h4>";
         $this->expectOutputString($expectedOutput);
@@ -365,7 +371,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
         $controller = new Controller($db, self::$output);
 
         // Run the test //
-        $controller->search();
+        $controller->search($input);
     }
 
     /**
@@ -374,14 +380,14 @@ class ControllerTest extends PHPUnit_Framework_TestCase
     public function testSearch_invalidSearch()
     {
         // Set Up //
-        $_POST = array('search'=>'b');
+        $input = new FilteredInput(false, array('search'=>'b'));
 
         // Construct the database
         $db = new MockDatabase();
         $controller = new Controller($db, self::$output);
 
         // Run the test //
-        $controller->search();
+        $controller->search($input);
     }
 
     public function testUpdateBanHistory()
@@ -406,8 +412,8 @@ class ControllerTest extends PHPUnit_Framework_TestCase
     {
         // Set Up //
         // Swap banned and permanent flags
-        $_POST['banned'] = 'false';
-        $_POST['permanent'] = 'true';
+        $this->input->banned = 'false';
+        $this->input->permanent = 'true';
 
         $expectedOutput = '<div class="success">Success!</div>';
         $this->expectOutputString($expectedOutput);
@@ -423,14 +429,14 @@ class ControllerTest extends PHPUnit_Framework_TestCase
         $now = $db->getDate();
 
         // Run the test //
-        $controller->updateUser(1);
+        $controller->updateUser(1, $this->input);
 
         $expected_select = "SELECT * FROM `users` WHERE `users`.`user_id` = 28";
         $expected_update = "UPDATE  `users` SET `username` = '" . self::USERNAME . "', `modified_date` = '$now',
                     `rank` =  '2',
                     `relations` =  'Friends with Jane12',
                     `notes` =  'Don\'t worry, just have some cheese.',
-                    `banned` =  '',
+                    `banned` =  '0',
                     `permanent` =  ''
                     WHERE  `users`.`user_id` = 28";
         $queries = $db->getQueries();
@@ -444,14 +450,14 @@ class ControllerTest extends PHPUnit_Framework_TestCase
     public function testUpdateUser_invalidId()
     {
         // Set Up //
-        $_POST = array('id'=>'bad');
+        $input = new FilteredInput(false, array('id'=>'bad'));
 
         // Construct the database
         $db = new MockDatabase();
         $controller = new Controller($db, self::$output);
 
         // Run the test //
-        $controller->updateUser(1);
+        $controller->updateUser(1, $input);
     }
 
     public function testUpdateIncident()
@@ -464,7 +470,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
         $controller = new Controller($db, self::$output);
 
         // Run the test //
-        $controller->updateIncident();
+        $controller->updateIncident($this->input);
     }
 
     /**
@@ -473,14 +479,14 @@ class ControllerTest extends PHPUnit_Framework_TestCase
     public function testUpdateIncident_invalidId()
     {
         // Set Up //
-        $_POST = array('id'=>'bad');
+        $input = new FilteredInput(false, array('id'=>'bad'));
 
         // Construct the database
         $db = new MockDatabase();
         $controller = new Controller($db, self::$output);
 
         // Run the test //
-        $controller->updateIncident();
+        $controller->updateIncident($input);
     }
 
 }
