@@ -70,7 +70,7 @@ class Authentication
     {
         // All requests should validate with the timestamp and nonce
         if ($this->validatePost()) {
-            if (isset($_POST['accessor_token']) && isset($_POST['hmac']) && isset($_POST['uuid'])) {
+            if ($this->isAPIRequest()) {
                 // API call
                 $user_id = $this->authenticateAPIRequest();
             } else if ($this->settings->useWPLogin()) {
@@ -359,4 +359,15 @@ EOF;
 
         setcookie($this->settings->getCookieName(), $cookie_value, 0, '/', null, false, true);
     }
+
+    public function shouldLoadWordpress()
+    {
+        return $this->settings->useWPLogin() && !$this->isAPIRequest();
+    }
+
+    public function isAPIRequest()
+    {
+        return isset($_POST['accessor_token']) && isset($_POST['hmac']) && isset($_POST['uuid']);
+    }
+
 }
