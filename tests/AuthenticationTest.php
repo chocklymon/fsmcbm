@@ -23,6 +23,7 @@
 
 require_once('MockDatabase.php');
 require_once('MockSettings.php');
+require_once('src/FilteredInput.php');
 require_once('src/Output.php');
 require_once('src/Authentication.php');
 
@@ -49,6 +50,11 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
      * @var Authentication
      */
     private $auth;
+    
+    /**
+     * @var FilteredInput
+     */
+    private $input;
 
     public static function setUpBeforeClass()
     {
@@ -56,7 +62,6 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
 
         // Store the true wp_load_file
         self::$wp_load_file = self::$settings->getWordpressLoadFile();
-
     }
 
     protected function setUp()
@@ -65,25 +70,23 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
         $nonce = mt_rand(0, 400000);
         $timestamp = MockDatabase::getDate();
 
-        $_POST = array(
-            'nonce' => $nonce,
-            'timestamp' => $timestamp,
-        );
+        $this->input = new FilteredInput(false);
+        $this->input->nonce = $nonce;
+        $this->input->timestamp = $timestamp;
 
-        $this->auth = new Authentication($this->getNonceFreeMockDB(), self::$settings);
+        $this->auth = new Authentication($this->getNonceFreeMockDB(), self::$settings, $this->input);
     }
 
     protected function tearDown()
     {
         // Reset anything that may have been changed
-        $_POST = array();
         self::$settings->setSetting('wp_load_file', self::$wp_load_file);
     }
 
     public function testAuthenticate_badTimestamp()
     {
         $this->setUpAPIRequest();
-        $_POST['timestamp'] = time() - 8000;
+        $this->input->timestamp = time() - 8000;
 
         $authenticated = $this->auth->authenticate();
         $this->assertFalse($authenticated);
@@ -96,7 +99,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
     {
         $this->setUpAPIRequest();
         $db = new MockDatabase(array(false));
-        $auth = new Authentication($db, self::$settings);
+        $auth = new Authentication($db, self::$settings, $this->input);
 
         $auth->authenticate();
     }
@@ -105,7 +108,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
     {
         $this->setUpAPIRequest();
         $db = new MockDatabase(array(array('count'=>1)));
-        $auth = new Authentication($db, self::$settings);
+        $auth = new Authentication($db, self::$settings, $this->input);
 
         $authenticated = $auth->authenticate();
         $this->assertFalse($authenticated);
@@ -114,7 +117,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
     public function testAuthenticateAPIRequest()
     {
         $this->setUpAPIRequest();
-        $auth = new Authentication($this->getModeratorMockDB(), self::$settings);
+        $auth = new Authentication($this->getModeratorMockDB(), self::$settings, $this->input);
 
         $authenticated = $auth->authenticate();
         $this->assertTrue($authenticated);
@@ -123,7 +126,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
     public function testAuthenticateAPIRequest_nonModerator()
     {
         $this->setUpAPIRequest();
-        $auth = new Authentication($this->getNonModeratorMockDB(), self::$settings);
+        $auth = new Authentication($this->getNonModeratorMockDB(), self::$settings, $this->input);
 
         $authenticated = $auth->authenticate();
         $this->assertFalse($authenticated);
@@ -132,7 +135,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
     public function testAuthenticateAPIRequest_badHMAC()
     {
         $this->setUpAPIRequest();
-        $_POST['uuid'] = '489';
+        $this->input->uuid = '489';
 
         $authenticated = $this->auth->authenticate();
         $this->assertFalse($authenticated);
@@ -145,7 +148,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
     {
         $this->setUpAPIRequest();
         $db = new MockDatabase(array(array('count'=>0), array(), false));
-        $auth = new Authentication($db, self::$settings);
+        $auth = new Authentication($db, self::$settings, $this->input);
 
         $auth->authenticate();
     }
@@ -153,7 +156,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
     public function testAuthenticateAPIRequest_noAccessor()
     {
         $this->setUpAPIRequest();
-        $_POST['accessor_token'] = 'invalid';
+        $this->input->accessor_token = 'invalid';
 
         $authenticated = $this->auth->authenticate();
         $this->assertFalse($authenticated);
@@ -217,7 +220,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
         $wp_current_user = (object) array('user_login'=>self::USERNAME);
         self::$settings->setSetting('use_wp_login', true);
         $db = $this->getModeratorMockDB();
-        $auth = new Authentication($db, self::$settings);
+        $auth = new Authentication($db, self::$settings, $this->input);
 
         // Run the test
         $authenticated = $auth->authenticate();
@@ -245,7 +248,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
         $wp_current_user = (object) array('user_login'=>self::USERNAME);
         self::$settings->setSetting('use_wp_login', true);
         $db = $this->getNonModeratorMockDB();
-        $auth = new Authentication($db, self::$settings);
+        $auth = new Authentication($db, self::$settings, $this->input);
 
         // Run the test
         $authenticated = $auth->authenticate();
@@ -265,7 +268,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
     public function testCleanUpNonce()
     {
         $db = new MockDatabase();
-        $auth = new Authentication($db, self::$settings);
+        $auth = new Authentication($db, self::$settings, $this->input);
         $auth->cleanUpNonce(1);
         // TODO assert
         $this->assertEquals(1, $db->getQueryCount());
@@ -275,7 +278,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
     public function testGetModeratorInfo()
     {
         $db = new MockDatabase(array(array('user_id'=>self::USER_ID, 'rank'=>'Admin')));;
-        $auth = new Authentication($db, self::$settings);
+        $auth = new Authentication($db, self::$settings, $this->input);
         $info = $auth->getModeratorInfo(self::USERNAME);
 
         $expected = array('id'=>28, 'rank'=>'Admin', 'username'=>self::USERNAME);
@@ -291,7 +294,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
     public function testGetModeratorInfo_nonAdmin()
     {
         $db = new MockDatabase(array(array('user_id'=>self::USER_ID, 'rank'=>'Regular')));;
-        $auth = new Authentication($db, self::$settings);
+        $auth = new Authentication($db, self::$settings, $this->input);
         $info = $auth->getModeratorInfo(self::USERNAME);
         $this->assertFalse($info);
     }
@@ -303,11 +306,11 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
      */
     public function testLoginUser()
     {
-        $_POST['username'] = self::USERNAME;
-        $_POST['password'] = 'password1';
+        $this->input->username = self::USERNAME;
+        $this->input->password = 'password1';
 
         $db = $this->getModeratorMockDB();
-        $auth = new Authentication($db, self::$settings);
+        $auth = new Authentication($db, self::$settings, $this->input);
 
         $this->assertTrue($auth->loginUser());
     }
@@ -317,11 +320,11 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
      */
     public function testLoginUser_databaseError()
     {
-        $_POST['username'] = self::USERNAME;
-        $_POST['password'] = 'password1';
+        $this->input->username = self::USERNAME;
+        $this->input->password = 'password1';
 
         $db = new MockDatabase(array(array('count'=>0), array(), false));
-        $auth = new Authentication($db, self::$settings);
+        $auth = new Authentication($db, self::$settings, $this->input);
 
         $auth->loginUser();
     }
@@ -333,19 +336,25 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
     {
         self::$settings->setSetting('cookie_secret', '');
 
-        $_POST['username'] = self::USERNAME;
-        $_POST['password'] = 'password1';
+        $this->input->username = self::USERNAME;
+        $this->input->password = 'password1';
 
         $db = $this->getModeratorMockDB();
-        $auth = new Authentication($db, self::$settings);
+        $auth = new Authentication($db, self::$settings, $this->input);
 
         $auth->loginUser();
     }
 
     public function testLoginUser_noUsername()
     {
-        $_POST['password'] = 'password1';
+        $this->input->password = 'password1';
         $this->assertFalse($this->auth->loginUser());
+    }
+    
+    public function testShouldLoadWordpress()
+    {
+        self::$settings->setSetting('use_wp_login', false);
+        $this->assertFalse($this->auth->shouldLoadWordpress());
     }
 
 
@@ -383,7 +392,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * Set up a valid API request, this modifies the global $_POST.
+     * Set up a valid API request, this modifies the input variable.
      */
     private function setUpAPIRequest()
     {
@@ -391,18 +400,18 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
         $secret_key = 'secret';
         self::$settings->setSetting('auth_secret_keys', array($accessor => $secret_key));
 
-        $_POST['accessor_token'] = $accessor;
-        $_POST['uuid'] = 'd9';
+        $this->input->accessor_token = $accessor;
+        $this->input->uuid = 'd9';
 
+        $this->input->keySort();
         $payload = '';
-        ksort($_POST);
-        foreach ($_POST as $key => $value) {
+        foreach ($this->input as $key => $value) {
             $payload .= $key . $value;
         }
 
         $hmac = hash_hmac(Authentication::HASH_ALGO, $payload, $secret_key);
 
-        $_POST['hmac'] = $hmac;
+        $this->input->hmac = $hmac;
     }
 
 }

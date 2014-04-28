@@ -14,6 +14,7 @@
             <file>tests/ControllerTest.php</file>
             <file>tests/DatabaseTest.php</file>
             <file>tests/DatabaseExceptionTest.php</file>
+            <file>tests/FilteredInputTest.php</file>
             <file>tests/OutputTest.php</file>
             <file>tests/SettingsTest.php</file>
         </testsuite>

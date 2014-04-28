@@ -26,6 +26,7 @@
  * =============================
  */
 
+require_once('FilteredInput.php');
 require_once('Settings.php');
 require_once('Output.php');
 require_once('Database.php');
@@ -43,6 +44,7 @@ require_once('Controller.php');
 mb_internal_encoding("UTF-8");
 
 // Get an instance of the various needed classes
+$input = new FilteredInput();
 $settings = new Settings();
 $output = new Output($settings);
 
@@ -55,7 +57,7 @@ try {
     }
     
     $db = new Database($settings);
-    $auth = new Authentication($db, $settings);
+    $auth = new Authentication($db, $settings, $input);
 
     
     // If we are using wordpress load it now
@@ -97,19 +99,19 @@ try {
             
             switch ($endpoint) {
                 case 'auto_complete':
-                    $actions->autoComplete();
+                    $actions->autoComplete($input);
                     break;
                 case 'lookup':
-                    $actions->retrieveUserData();
+                    $actions->retrieveUserData($input);
                     break;
                 case 'add_user':
-                    $actions->addUser($user_id);
+                    $actions->addUser($user_id, $input);
                     break;
                 case 'add_incident':
-                    $actions->addIncident($user_id);
+                    $actions->addIncident($user_id, $input);
                     break;
                 case 'delete_incident':
-                    $actions->deleteIncident();
+                    $actions->deleteIncident($input);
                     break;
                 case 'get_bans':
                     $actions->getBans();
@@ -118,16 +120,16 @@ try {
                     $actions->getWatchlist();
                     break;
                 case 'search':
-                    $actions->search();
+                    $actions->search($input);
                     break;
                 case 'set_user_uuid':
-                    $actions->updateUserUUID();
+                    $actions->upsertUserUUID($input);
                     break;
                 case 'update_user':
-                    $actions->updateUser($user_id);
+                    $actions->updateUser($user_id, $input);
                     break;
                 case 'update_incident':
-                    $actions->updateIncident();
+                    $actions->updateIncident($input);
                     break;
             }
         }

@@ -40,6 +40,11 @@ class Authentication
      * @var Database
      */
     private $db;
+    
+    /**
+     * @var FilteredInput
+     */
+    private $input;
 
     /**
      * @var Settings
@@ -56,10 +61,11 @@ class Authentication
      * @param Database $db The database instance.
      * @param Settings $settings The settings to use.
      */
-    public function __construct(Database $db, Settings $settings)
+    public function __construct(Database $db, Settings $settings, FilteredInput $input)
     {
         $this->db = $db;
         $this->settings = $settings;
+        $this->input = $input;
     }
 
     /**
@@ -99,12 +105,11 @@ class Authentication
      */
     private function authenticateAPIRequest()
     {
-        $accessor_key = $this->settings->getAccessorKey($_POST['accessor_token']);
+        $accessor_key = $this->settings->getAccessorKey($this->input->accessor_token);
         if ($accessor_key !== false ) {
             $msg = '';
             $hmac = '';
-            ksort($_POST);
-            foreach ($_POST as $key => $value) {
+            foreach ($this->input as $key => $value) {
                 if ($key == 'hmac') {
                     $hmac = $value;
                 } else {
@@ -116,7 +121,7 @@ class Authentication
                 // HMAC valid
                 try {
                     // Use the universally unique identifier to get the user info
-                    $uuid = $this->db->sanitize(pack('H*', $_POST['uuid']));
+                    $uuid = $this->db->sanitize(pack('H*', $this->input->uuid));
                     $row = $this->db->querySingleRow(
                         "SELECT `users`.`user_id`, `rank`.`name` AS rank
                          FROM `users`
@@ -271,9 +276,9 @@ class Authentication
 
     public function loginUser()
     {
-        if (isset($_POST['username']) && isset($_POST['password']) && $this->validatePost()) {
-            $username = $this->db->sanitize($_POST['username']);
-            $password = $this->db->sanitize(hash(self::HASH_ALGO, $_POST['password'], true));
+        if ($this->input->exists('username') && $this->input->exists('password') && $this->validatePost()) {
+            $username = $this->db->sanitize($this->input->username);
+            $password = $this->db->sanitize(hash(self::HASH_ALGO, $this->input->password, true));
 
             $sql = <<<EOF
 SELECT `users`.`user_id`, `rank`.`name` AS rank
@@ -307,9 +312,9 @@ EOF;
      */
     private function validatePost()
     {
-        if (isset($_POST['nonce']) && isset($_POST['timestamp'])) {
+        if ($this->input->exists('nonce') && $this->input->exists('timestamp')) {
             // Validate the payload
-            $timestamp = strtotime($_POST['timestamp']);
+            $timestamp = strtotime($this->input->timestamp);
             $current_time = time();
 
             // The timestamp can be valid for ten seconds in the past and two minutes into the future.
@@ -318,7 +323,7 @@ EOF;
                 try {
                     // Check the nonce
                     // Get the md5 hash of the nonce (using md5 hash so the nonce will always be 16 bytes long).
-                    $nonce = $this->db->sanitize(hash('md5', $_POST['nonce'], true));
+                    $nonce = $this->db->sanitize(hash('md5', $this->input->nonce, true));
                     $sql = "SELECT COUNT(*) AS count FROM `auth_nonce` WHERE `nonce` = '{$nonce}'";
                     $row = $this->db->querySingleRow($sql);
                     if ($row['count'] == 0) {
@@ -367,7 +372,7 @@ EOF;
 
     public function isAPIRequest()
     {
-        return isset($_POST['accessor_token']) && isset($_POST['hmac']) && isset($_POST['uuid']);
+        return $this->input->exists('accessor_token') && $this->input->exists('hmac') && $this->input->exists('uuid');
     }
 
 }

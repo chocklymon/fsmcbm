@@ -53,21 +53,22 @@ class Controller
 
     /**
      * Adds a new incident to the database.
-     * Uses the data posted into the page to create the incident.
      * @param int $moderator_id The id of the logged in moderator.
+     * @param FilteredInput $input The input to get the incident data from.
+     * @throws InvalidArgumentException
      */
-    public function addIncident($moderator_id)
+    public function addIncident($moderator_id, FilteredInput $input)
     {
-        $user_id       = $this->db->sanitize($_POST['user_id'], true);
+        $user_id       = $this->db->sanitize($input->user_id, true);
         $today         = $this->getNow();
-        $incident_date = $this->db->sanitize($_POST['incident_date']);
-        $incident_type = $this->db->sanitize($_POST['incident_type']);
-        $notes         = $this->db->sanitize($_POST['notes']);
-        $action_taken  = $this->db->sanitize($_POST['action_taken']);
-        $world         = $this->db->sanitize($_POST['world']);
-        $coord_x       = $this->db->sanitize($_POST['coord_x'], true);
-        $coord_y       = $this->db->sanitize($_POST['coord_y'], true);
-        $coord_z       = $this->db->sanitize($_POST['coord_z'], true);
+        $incident_date = $this->db->sanitize($input->incident_date);
+        $incident_type = $this->db->sanitize($input->incident_type);
+        $notes         = $this->db->sanitize($input->notes);
+        $action_taken  = $this->db->sanitize($input->action_taken);
+        $world         = $this->db->sanitize($input->world);
+        $coord_x       = $this->db->sanitize($input->coord_x, true);
+        $coord_y       = $this->db->sanitize($input->coord_y, true);
+        $coord_z       = $this->db->sanitize($input->coord_z, true);
 
         // Verify that we have a user id
         if($user_id === null || $user_id <= 0) {
@@ -92,17 +93,18 @@ class Controller
 
     /**
      * Adds a new user to the database.
-     * User information is gathered from the data posted into this page.
+     * @param type $user_id The id of the logged in moderator.
+     * @param FilteredInput $input The input to get the user data from.
+     * @throws InvalidArgumentException
      */
-    public function addUser($user_id)
+    public function addUser($user_id, FilteredInput $input)
     {
-        // Make sure that the user name isn't empty
-        if (empty($_POST['username'])) {
+        // Get the username and make sure it isn't empty
+        $username = $this->db->sanitize($input->username);
+        if (empty($username)) {
             throw new InvalidArgumentException("Username required.");
         }
-
-        $username = $this->db->sanitize($_POST['username']);
-
+        
         // See if this user is a duplicate
         $res = $this->db->query("SELECT `user_id` FROM `users` WHERE `username` = '$username'");
         if ($res->num_rows == 1) {
@@ -115,36 +117,36 @@ class Controller
         $insert = "INSERT INTO `users` (username,modified_date,";
         $values = "VALUES ('{$username}','{$this->getNow()}',";
         
-        if (isset($_POST['user_uuid'])) {
+        if ($input->exists('user_uuid')) {
             $insert .= 'uuid,';
-            $uuid = pack("H*", mb_ereg_replace('-', '', $_POST['user_uuid']));
+            $uuid = pack("H*", mb_ereg_replace('-', '', $input->user_uuid));
             if (strlen($uuid) != 16) {
                 throw new InvalidArgumentException("Invalid UUID");
             }
             $values .= "'{$this->db->sanitize($uuid)}',";
         }
-        if (isset($_POST['rank'])) {
+        if ($input->exists('rank')) {
             $insert .= 'rank,';
-            $values .= $this->db->sanitize($_POST['rank'], true) . ',';
+            $values .= $this->db->sanitize($input->rank, true) . ',';
         }// TODO have a way to specify a default rank
-        if (isset($_POST['relations'])) {
+        if ($input->exists('relations')) {
             $insert .= 'relations,';
-            $values .= "'{$this->db->sanitize($_POST['relations'])}',";
+            $values .= "'{$this->db->sanitize($input->relations)}',";
         }
-        if (isset($_POST['notes'])) {
+        if ($input->exists('notes')) {
             $insert .= 'notes,';
-            $values .= "'{$this->db->sanitize($_POST['notes'])}',";
+            $values .= "'{$this->db->sanitize($input->notes)}',";
         }
-        if (isset($_POST['banned'])) {
+        if ($input->exists('banned')) {
             $insert .= 'banned,';
-            $banned = $_POST['banned'] == 'on' ? '1' : '0';
+            $banned = $input->getBoolean('banned');
             $values .= "{$banned},";
         } else {
             $banned = false;
         }
-        if (isset($_POST['permanent'])) {
+        if ($input->exists('permanent')) {
             $insert .= 'permanent,';
-            $permanent = $_POST['permanent'] == 'on' ? '1' : '0';
+            $permanent = $input->getBoolean('permanent');
             $values .= "{$permanent},";
         } else {
             $permanent = false;
@@ -169,16 +171,19 @@ class Controller
 
 
     /**
-     * Finds possible user names to autocomplete a term provided to this page.
+     * Finds possible user names to autocomplete a term.
+     * @param FilteredInput $input The input to use to get the term data.
+     * @throws InvalidArgumentException
      */
-    public function autoComplete()
+    public function autoComplete(FilteredInput $input)
     {
         // Make sure that the term is at least two characters long
-        if(empty($_POST['term']) || mb_strlen($_POST['term']) < 2) {
+        $term = $input->term;
+        if(empty($term) || mb_strlen($term) < 2) {
             throw new InvalidArgumentException("AutoComplete term must be longer than one.");
         }
 
-        $term = $this->db->sanitize( $_POST['term'] );
+        $term = $this->db->sanitize($term);
 
         $res = $this->db->query(
             "SELECT user_id, username FROM users WHERE username LIKE '$term%'",
@@ -249,12 +254,13 @@ class Controller
         $this->output->reply();
     }
 
-    public function deleteIncident()
+    /**
+     * Delete an incident.
+     * @param FilteredInput $input The input to use to get the incident ID
+     */
+    public function deleteIncident(FilteredInput $input)
     {
-        $incident_id = 0;
-        if (isset($_POST['incident_id'])) {
-            $incident_id = $this->db->sanitize($_POST['incident_id'], true);
-        }
+        $incident_id = $this->db->sanitize($input->incident_id, true);
 
         if ($incident_id == 0) {
             $this->output->error("Invalid Incident ID");
@@ -320,10 +326,12 @@ SQL;
     /**
      * Retrieves the information for a user.
      * This includes all the users incidents (if any) and their user information.
+     * @param FilteredInput $input The input to use for getting the user's id.
+     * @throws InvalidArgumentException
      */
-    public function retrieveUserData()
+    public function retrieveUserData(FilteredInput $input)
     {
-        $lookup = $this->db->sanitize($_POST['lookup'], true);
+        $lookup = $this->db->sanitize($input->lookup, true);
 
         if($lookup <= 0) {
             // Invalid lookup
@@ -370,16 +378,19 @@ SQL;
 
     /**
      * Searches the text fields in the database for the provided search keyword.
+     * @param FilteredInput $input The input to use to get the search keyword.
+     * @throws InvalidArgumentException
      */
-    public function search()
+    public function search(FilteredInput $input)
     {
-        if (empty($_POST['search']) || mb_strlen($_POST['search']) < 2) {
+        $search = $input->search;
+        if (empty($search) || mb_strlen($search) < 2) {
             // Searches must contain at least two characters
             throw new InvalidArgumentException("Search string must be longer than one.");
         }
         $this->output->setHTMLMode(true);
 
-        $search = $this->db->sanitize($_POST['search']);
+        $search = $this->db->sanitize($search);
 
 
         // Get users matching the search
@@ -435,12 +446,14 @@ SQL;
 
     /**
      * Updates an exisiting user with new data.
-     * The data is retrieved from the data posted into this page.
+     * @param int $user_id The id of the moderator performing the update.
+     * @param FilteredInput $input The input to get the user information from.
+     * @throws InvalidArgumentException
      */
-    public function updateUser($user_id)
+    public function updateUser($user_id, FilteredInput $input)
     {
         // Sanitize the inputs
-        $player_id = $this->db->sanitize($_POST['id'], true);
+        $player_id = $this->db->sanitize($input->id, true);
 
         // Verify that we have a valid user id
         if($player_id <= 0) {
@@ -448,14 +461,14 @@ SQL;
         }
 
         $username = null;
-        if (isset($_POST['username'])) {
-            $username = $this->db->sanitize($_POST['username']);
+        if ($input->exists('username')) {
+            $username = $this->db->sanitize($input->username);
         }
-        $rank = $this->db->sanitize($_POST['rank']);
-        $banned = $_POST['banned'] == "true";
-        $permanent = $_POST['permanent'] == "true";
-        $relations = $this->db->sanitize($_POST['relations']);
-        $notes = $this->db->sanitize($_POST['notes']);
+        $rank = $this->db->sanitize($input->rank, true);
+        $banned = $input->getBoolean('banned');
+        $permanent = $input->getBoolean('permanent');
+        $relations = $this->db->sanitize($input->relations);
+        $notes = $this->db->sanitize($input->notes);
         $today = $this->getNow();
 
         // If the user is no longer banned, make sure the permanent flag is unchecked
@@ -516,11 +529,12 @@ SQL;
 
     /**
      * Updates an incident with new data.
-     * Data is retrieved from the data posted into this page.
+     * @param FilteredInput $input The input to use to get the incident data.
+     * @throws InvalidArgumentException
      */
-    public function updateIncident()
+    public function updateIncident(FilteredInput $input)
     {
-        $id = $this->db->sanitize($_POST['id'], true);
+        $id = $this->db->sanitize($input->id, true);
 
         // Verify that we have an incident id
         if($id <= 0) {
@@ -528,14 +542,14 @@ SQL;
         }
 
         $now = $this->getNow();
-        $incident_date = $this->db->sanitize($_POST['incident_date']);
-        $incident_type = $this->db->sanitize($_POST['incident_type']);
-        $notes         = $this->db->sanitize($_POST['notes']);
-        $action_taken  = $this->db->sanitize($_POST['action_taken']);
-        $world         = $this->db->sanitize($_POST['world']);
-        $coord_x       = $this->db->sanitize($_POST['coord_x'], true);
-        $coord_y       = $this->db->sanitize($_POST['coord_y'], true);
-        $coord_z       = $this->db->sanitize($_POST['coord_z'], true);
+        $incident_date = $this->db->sanitize($input->incident_date);
+        $incident_type = $this->db->sanitize($input->incident_type);
+        $notes         = $this->db->sanitize($input->notes);
+        $action_taken  = $this->db->sanitize($input->action_taken);
+        $world         = $this->db->sanitize($input->world);
+        $coord_x       = $this->db->sanitize($input->coord_x, true);
+        $coord_y       = $this->db->sanitize($input->coord_y, true);
+        $coord_z       = $this->db->sanitize($input->coord_z, true);
 
         $query = "UPDATE `incident` SET
             `modified_date` = '$now',
@@ -554,17 +568,27 @@ SQL;
         $this->output->success();
     }
 
-    public function updateUserUUID()
+    /**
+     * Updates the user's Universally Unique Identifier, or adds a new user
+     * if the users doesn't exist.
+     * @param FilteredInput $input The input to use to get the user data from.
+     * @throws InvalidArgumentException
+     */
+    public function upsertUserUUID(FilteredInput $input)
     {
         // Get the user ID
-        $username = $this->db->sanitize($_POST['username']);
+        $username = $this->db->sanitize($input->username);
         $result = $this->db->query("SELECT user_id FROM `users` WHERE `users`.`username` = '{$username}'");
         
         if ($result->num_rows == 0) {
             // Insert a new user
-            $this->addUser(1);
-        } else if (!empty($_POST['user_uuid'])) {
-            $uuid = pack("H*", mb_ereg_replace('-', '', $_POST['user_uuid']));
+            $this->addUser(1, $input);
+        } else if (empty($input->user_uuid)) {
+            // No UUID provided
+            $this->output->error('No UUID provided');
+        } else {
+            // Store the UUID
+            $uuid = pack("H*", mb_ereg_replace('-', '', $input->user_uuid));
             if (strlen($uuid) != 16) {
                 throw new InvalidArgumentException("Invalid UUID");
             }
@@ -580,8 +604,6 @@ SQL;
             $this->db->query($query);
 
             $this->output->success();
-        } else {
-            $this->output->error('No UUID provided');
         }
     }
 
