@@ -21,10 +21,65 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+var bm = {};
+bm.ranks = [{"value":"1","label":"Everyone"},{"value":"2","label":"Regular"},{"value":"3","label":"Donor"},{"value":"4","label":"Builder"},{"value":"5","label":"Engineer"},{"value":"6","label":"Moderator"},{"value":"7","label":"Admin"},{"value":"8","label":"Default"}];
+bm.worlds = [{
+                        value:"",
+                        label:""
+                    },
+                    {
+                        value:"world",
+                        label:"Alpha"
+                    },
+                    {
+                        value:"world3",
+                        label:"Delta"
+                    },
+                    {
+                        value:"world4",
+                        label:"Gamma"
+                    },
+                    {
+                        value:"omega",
+                        label:"Omega"
+                    },
+                    {
+                        value:"world_nether",
+                        label:"Alpha Nether"
+                    },
+                    {
+                        value:"world3_nether",
+                        label:"Delta Nether"
+                    },
+                    {
+                        value:"world4_nether",
+                        label:"Gamma Nether"
+                    },
+                    {
+                        value:"omega_nether",
+                        label:"Omega Nether"
+                    },
+                    {
+                        value:"world_the_end",
+                        label:"The End"
+                    },
+                    {
+                        value:"custom",
+                        label:"Custom"
+                    },
+                    {
+                        value:"dev",
+                        label:"Dev"
+                    },
+                    {
+                        value:"outworld",
+                        label:"Outworld"
+                    }];
+
 angular.module('banManager', ['ngRoute']).filter('checkmark', function() {
-  return function(input) {
-    return input ? '\u2713' : '\u2718';
-  };
+    return function(input) {
+        return input == 1 ? '\u2713' : '\u2718';
+    };
 }).config(['$routeProvider', function($routeProvider) {
     // Set up the routes
     $routeProvider
@@ -51,20 +106,14 @@ angular.module('banManager', ['ngRoute']).filter('checkmark', function() {
         .otherwise({ redirectTo: '/' });
 }]).controller('user', ['$scope', '$routeParams', '$http', function($scope, $routeParams, $http) {
     // TODO
-    $scope.incidents = [{
-        id:5,
-        moderator:'Nefyoni',
-        dateCreated:'2013-05-29',
-        dateModified:'2013-07-29',
-        type:'destruction',
-        date:'2013-05-28',
-        notes:'Something bad happened',
-        actionTaken:'Repaired the damage'
-    }];
+    $scope.worlds = bm.worlds;
+    $scope.ranks = bm.ranks;
     if ($routeParams.username) {
         $http.post("ban-manager.php?action=lookup", {username: $routeParams.username})
             .success(function(data) {
-                console.log(data);
+                if (data.user) {
+                    $scope.user = data.user;
+                }
                 if (data.incident) {
                     $scope.incidents = data.incident;
                 }
