@@ -312,9 +312,9 @@ EOF;
             $timestamp = strtotime($_POST['timestamp']);
             $current_time = time();
 
-            // The timestamp can be valid for ten seconds in the past and two minutes into the future.
+            // The timestamp can be valid for five minutes from the current time.
             // This gives a buffer to compensate for time differences and network latency.
-            if ($timestamp > ($current_time - 10) && $timestamp < ($current_time + 120)) {
+            if ($timestamp > ($current_time - 300) && $timestamp < ($current_time + 300)) {
                 try {
                     // Check the nonce
                     // Get the md5 hash of the nonce (using md5 hash so the nonce will always be 16 bytes long).
