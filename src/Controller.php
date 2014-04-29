@@ -455,7 +455,7 @@ SQL;
     public function updateUser($user_id, FilteredInput $input)
     {
         // Sanitize the inputs
-        $player_id = $this->db->sanitize($input->id, true);
+        $player_id = $this->db->sanitize($input->user_id, true);
 
         // Verify that we have a valid user id
         if($player_id <= 0) {
@@ -536,7 +536,7 @@ SQL;
      */
     public function updateIncident(FilteredInput $input)
     {
-        $id = $this->db->sanitize($input->id, true);
+        $id = $this->db->sanitize($input->incident_id, true);
 
         // Verify that we have an incident id
         if($id <= 0) {

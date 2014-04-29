@@ -146,12 +146,14 @@ angular.module('banManager', ['ngRoute'])
                     .success(setUser);
     };
     $scope.saveIncident = function(incident) {
-        // TODO
-        console.log(incident);
+        request('update_incident', incident).success(function(data){
+            console.log(data);
+        });
     };
     $scope.saveUser = function(user) {
-        // TODO
-        console.log(user);
+        request('update_user', user).success(function(data){
+            console.log(data);
+        });
     };
     
     // If we have a username, load it up

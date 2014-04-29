@@ -69,6 +69,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
             'coord_x'       => '150',
             'coord_y'       => '250',
             'coord_z'       => '-25',
+            'incident_id'   => '28',
 
             // User post fields
             'username'      => self::USERNAME,
@@ -79,7 +80,6 @@ class ControllerTest extends PHPUnit_Framework_TestCase
 
             // Shared
             'notes'         => "Don't worry, just have some cheese.",
-            'id'            => '28',
         ));
     }
 
@@ -431,14 +431,14 @@ class ControllerTest extends PHPUnit_Framework_TestCase
         // Run the test //
         $controller->updateUser(1, $this->input);
 
-        $expected_select = "SELECT * FROM `users` WHERE `users`.`user_id` = 28";
+        $expected_select = "SELECT * FROM `users` WHERE `users`.`user_id` = 5";
         $expected_update = "UPDATE  `users` SET `username` = '" . self::USERNAME . "', `modified_date` = '$now',
                     `rank` =  '2',
                     `relations` =  'Friends with Jane12',
                     `notes` =  'Don\'t worry, just have some cheese.',
                     `banned` =  '0',
                     `permanent` =  ''
-                    WHERE  `users`.`user_id` = 28";
+                    WHERE  `users`.`user_id` = 5";
         $queries = $db->getQueries();
         $this->assertEquals($expected_select, $queries[0]);
         $this->assertEquals($expected_update, $queries[2]);
