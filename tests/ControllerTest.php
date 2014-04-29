@@ -44,7 +44,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
      * @var Output
      */
     private static $output;
-    
+
     /**
      * @var FilteredInput
      */
@@ -76,6 +76,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
             'relations'     => 'Friends with Jane12',
             'banned'        => 'on',
             'permanent'     => 'off',
+            'user_uuid'     => 'a1634f374-80a4bb9a0b2200-266597ac0',
 
             // Shared
             'notes'         => "Don't worry, just have some cheese.",
@@ -149,7 +150,8 @@ class ControllerTest extends PHPUnit_Framework_TestCase
 
 
         // Test that the query was constructed correctly //
-        $expected_user = "INSERT INTO `users` (username,modified_date,rank,relations,notes,banned,permanent) VALUES ('" . self::USERNAME . "','{$now}',2,'Friends with Jane12','Don\'t worry, just have some cheese.',1,0)";
+        $uuid = pack("H*", mb_ereg_replace('-', '', $this->input->user_uuid));
+        $expected_user = "INSERT INTO `users` (username,modified_date,uuid,rank,relations,notes,banned,permanent) VALUES ('" . self::USERNAME . "','{$now}','{$uuid}',2,'Friends with Jane12','Don\'t worry, just have some cheese.',1,0)";
         $expected_ban_history = "INSERT INTO `ban_history` (`user_id`, `moderator_id`, `date`, `banned`, `permanent`)
                 VALUES ('{$new_user_id}', '{$moderator_id}', '{$now}', '1', '')";
 
@@ -489,6 +491,61 @@ class ControllerTest extends PHPUnit_Framework_TestCase
 
         // Run the test //
         $controller->updateIncident($input);
+    }
+
+    public function testUpsertUserUUID_newUser()
+    {
+        $new_user_id = 29;
+        $this->expectOutputString((string) $new_user_id);
+
+        // Construct the database
+        $db = new MockDatabase(array(new FakeQueryResult(), new FakeQueryResult(), $new_user_id));
+
+        // Create the controller
+        $controller = new Controller($db, self::$output);
+
+        $controller->upsertUserUUID($this->input);
+    }
+
+    public function testUpsertUserUUID_updateUser()
+    {
+        $expectedOutput = '<div class="success">Success!</div>';
+        $this->expectOutputString($expectedOutput);
+
+        // Construct the database
+        $db = new MockDatabase(array(new FakeQueryResult(array('user_id'=>29)), new FakeQueryResult()));
+
+        // Create the controller
+        $controller = new Controller($db, self::$output);
+
+        $controller->upsertUserUUID($this->input);
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     * @expectedExceptionMessage Invalid UUID
+     */
+    public function testUpsertUserUUID_badUUID()
+    {
+        // Set up the controller and input
+        $this->input->user_uuid = '';
+        $db = new MockDatabase(array(new FakeQueryResult(array('user_id'=>29)), new FakeQueryResult()));
+        $controller = new Controller($db, self::$output);
+
+        $controller->upsertUserUUID($this->input);
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     * @expectedExceptionMessage No UUID provided
+     */
+    public function testUpsertUserUUID_noUUID()
+    {
+        $db = new MockDatabase(array(new FakeQueryResult(array(1))));
+        $input = new FilteredInput(false);
+        $controller = new Controller($db, self::$output);
+
+        $controller->upsertUserUUID($input);
     }
 
 }

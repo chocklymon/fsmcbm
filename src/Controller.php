@@ -104,7 +104,7 @@ class Controller
         if (empty($username)) {
             throw new InvalidArgumentException("Username required.");
         }
-        
+
         // See if this user is a duplicate
         $res = $this->db->query("SELECT `user_id` FROM `users` WHERE `username` = '$username'");
         if ($res->num_rows == 1) {
@@ -116,7 +116,7 @@ class Controller
         // Get the user's data from the post
         $insert = "INSERT INTO `users` (username,modified_date,";
         $values = "VALUES ('{$username}','{$this->getNow()}',";
-        
+
         if ($input->exists('user_uuid')) {
             $insert .= 'uuid,';
             $uuid = pack("H*", mb_ereg_replace('-', '', $input->user_uuid));
@@ -142,6 +142,7 @@ class Controller
             $banned = $input->getBoolean('banned');
             $values .= "{$banned},";
         } else {
+            // Banned isn't set, assume that new users are not banned
             $banned = false;
         }
         if ($input->exists('permanent')) {
@@ -151,7 +152,7 @@ class Controller
         } else {
             $permanent = false;
         }
-        
+
         // Remove the trailing ','
         $insert = substr($insert, 0, -1);
         $values = substr($values, 0, -1);
@@ -579,31 +580,31 @@ SQL;
         // Get the user ID
         $username = $this->db->sanitize($input->username);
         $result = $this->db->query("SELECT user_id FROM `users` WHERE `users`.`username` = '{$username}'");
-        
+
         if ($result->num_rows == 0) {
             // Insert a new user
             $this->addUser(1, $input);
-        } else if (empty($input->user_uuid)) {
-            // No UUID provided
-            $this->output->error('No UUID provided');
-        } else {
+        } else if ($input->exists('user_uuid')) {
             // Store the UUID
             $uuid = pack("H*", mb_ereg_replace('-', '', $input->user_uuid));
             if (strlen($uuid) != 16) {
                 throw new InvalidArgumentException("Invalid UUID");
             }
-            
+
             $row = $result->fetch_assoc();
             $result->free();
 
             // Perform the udpate
             $uuid = $this->db->sanitize($uuid);
-            $query = "UPDATE `users` SET uuid = '{$uuid}' 
+            $query = "UPDATE `users` SET uuid = '{$uuid}'
                        WHERE  `users`.`user_id` = {$row['user_id']}";
 
             $this->db->query($query);
 
             $this->output->success();
+        } else {
+            // No UUID provided
+            throw new InvalidArgumentException("No UUID provided");
         }
     }
 
