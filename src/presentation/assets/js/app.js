@@ -76,7 +76,7 @@ bm.worlds = [{
                         label:"Outworld"
                     }];
 
-angular.module('banManager', ['ngRoute'])
+angular.module('banManager', ['ngRoute', 'ui.bootstrap'])
 .factory('userCache', ['$cacheFactory', function($cacheFactory) {
     return $cacheFactory('userCache', {capacity:1});
 }])
@@ -150,7 +150,7 @@ angular.module('banManager', ['ngRoute'])
             $scope.history = data.history;
 
             // Update the navigation to point to this user
-            var navScope = angular.element('#manage_user').scope();
+            var navScope = angular.element(document.getElementById('manage_user')).scope();
             if (!navScope.data) {
                 navScope.data = {};
             }
@@ -202,4 +202,17 @@ angular.module('banManager', ['ngRoute'])
         });
 }]).controller('search', ['$scope', '$routeParams', '$http', function($scope, $routeParams, $http) {
     console.log($routeParams);
+}])
+.controller('TypeaheadCtrl', ['$scope', '$location', 'request', function TypeaheadCtrl($scope, $location, request) {
+    // Loads autocomplete terms via AJAX
+    $scope.getLocation = function(val) {
+        return request('auto_complete', {
+              term: val
+        }).then(function(res){
+            return res.data;
+        });
+    };
+    $scope.welcome = function() {
+        $location.path('/user/'+$scope.selected);
+    };
 }]);
