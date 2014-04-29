@@ -76,7 +76,16 @@ bm.worlds = [{
                         label:"Outworld"
                     }];
 
-angular.module('banManager', ['ngRoute']).filter('checkmark', function() {
+angular.module('banManager', ['ngRoute'])
+.factory('userCache', ['$cacheFactory', function($cacheFactory) {
+    return $cacheFactory('userCache', {capacity:1});
+}])
+.factory('request', ['$http', function($http){
+    return function(endpoint, payload) {
+        return $http.post('ban-manager.php?action='+endpoint, payload);
+    };
+}])
+.filter('checkmark', function() {
     return function(input) {
         return input == 1 ? '\u2713' : '\u2718';
     };
@@ -104,23 +113,58 @@ angular.module('banManager', ['ngRoute']).filter('checkmark', function() {
             templateUrl: 'presentation/views/search.html'
         })
         .otherwise({ redirectTo: '/' });
-}]).controller('user', ['$scope', '$routeParams', '$http', function($scope, $routeParams, $http) {
+}]).controller('user', ['$scope', '$routeParams', 'userCache', 'request', function($scope, $routeParams, userCache, request) {
+    // Create a function to set the data in the scope
+    var setUser = function(data) {
+        // Make sure we have the data
+        if (data && data.user) {
+            // Store a copy of the original data
+            userCache.put(data.user.username, data);
+
+            // Set the data into the scope
+            $scope.user = data.user;
+            $scope.incidents = data.incident;
+            $scope.history = data.history;
+
+            // Update the navigation to point to this user
+            var navScope = angular.element('#manage_user').scope();
+            if (!navScope.data) {
+                navScope.data = {};
+            }
+            navScope.data.username = data.user.username;
+        }
+    };
+    
     // TODO
     $scope.worlds = bm.worlds;
     $scope.ranks = bm.ranks;
+    
+    // Button functions
+    $scope.reset = function() {
+        // Reload from the server
+        request('lookup', {username: $routeParams.username})
+                    .success(setUser);
+    };
+    $scope.saveIncident = function(incident) {
+        // TODO
+        console.log(incident);
+    };
+    $scope.saveUser = function(user) {
+        // TODO
+        console.log(user);
+    };
+    
+    // If we have a username, load it up
     if ($routeParams.username) {
-        $http.post("ban-manager.php?action=lookup", {username: $routeParams.username})
-            .success(function(data) {
-                if (data.user) {
-                    $scope.user = data.user;
-                }
-                if (data.incident) {
-                    $scope.incidents = data.incident;
-                }
-                if (data.history) {
-                    $scope.history = data.history;
-                }
-            });
+        // See if this user is cached
+        var cachedUser = userCache.get($routeParams.username);
+        if (cachedUser) {
+            setUser(cachedUser);
+        } else {
+            // Not cached, request the user from the server
+            request('lookup', {username: $routeParams.username})
+                    .success(setUser);
+        }
     }
 }]).controller('userList', ['$scope', '$location', '$http', function($scope, $location, $http) {
     var endpoint = $location.path() === '/bans' ? 'get_bans' : 'get_watchlist';

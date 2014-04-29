@@ -10,7 +10,7 @@
         <div class="container" data-ng-app="banManager">
             <div class="bm-header ui-tabs">
                 <ul class="ui-tabs-nav ui-helper-reset ui-helper-clearfix ui-widget-header ui-corner-all">
-                    <li><a href="#/user">Manage</a></li>
+                    <li><a id='manage_user' ng-href="#/user/{{data.username}}">Manage</a></li>
                     <li><a href="#/bans">Bans</a></li>
                     <li><a href="#/watchlist">Watch-List</a></li>
                     <li><a href="#/search">Search</a></li>

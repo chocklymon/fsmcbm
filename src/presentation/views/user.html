@@ -20,6 +20,8 @@
             <br/>
             <label for="user_notes">Notes:</label>
             <textarea id="user_notes" ng-model="user.notes"></textarea>
+            <br/>
+            <button ng-click="saveUser(user)">Save</button>
         </div>
         <div>
             <div ng-repeat="incident in incidents" class="form">
@@ -52,20 +54,26 @@
                 <input type="text" id="coord_y_{{incident.id}}" class="int" ng-model="incident.coord_y"/>
                 <label for="coord_y_{{incident.id}}" class="int">Z:</label>
                 <input type="text" id="coord_y_{{incident.id}}" class="int" ng-model="incident.coord_z"/>
+                <br/>
+                <button ng-click="saveIncident(incident)">Save</button>
             </div>
         </div>
-        <table>
-            <thead>
-                <tr><th>Moderator</th><th>Date</th><th>Banned</th><th>Permanent</th></tr>
-            </thead>
-            <tbody>
-                <tr ng-repeat="ban in history">
-                    <td>{{ban.moderator}}</td>
-                    <td>{{ban.date}}</td>
-                    <td>{{ban.banned|checkmark}}</td>
-                    <td>{{ban.permanent|checkmark}}</td>
-                </tr>
-            </tbody>
-        </table>
+        <div>
+            <h3>Ban History</h3>
+            <table>
+                <thead>
+                    <tr><th>Moderator</th><th>Date</th><th>Banned</th><th>Permanent</th></tr>
+                </thead>
+                <tbody>
+                    <tr ng-repeat="ban in history">
+                        <td>{{ban.moderator}}</td>
+                        <td>{{ban.date}}</td>
+                        <td>{{ban.banned|checkmark}}</td>
+                        <td>{{ban.permanent|checkmark}}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <button ng-click="reset()">Cancel</button>
     </div>
 </div>
