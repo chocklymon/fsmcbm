@@ -89,7 +89,7 @@ angular.module('banManager', ['ngRoute'])
     return function(input) {
         return input == 1 ? '\u2713' : '\u2718';
     };
-}).config(['$routeProvider', function($routeProvider) {
+}).config(['$routeProvider', '$httpProvider', function($routeProvider, $httpProvider) {
     // Set up the routes
     $routeProvider
         .when('/', {
@@ -113,7 +113,30 @@ angular.module('banManager', ['ngRoute'])
             templateUrl: 'presentation/views/search.html'
         })
         .otherwise({ redirectTo: '/' });
-}]).controller('user', ['$scope', '$routeParams', 'userCache', 'request', function($scope, $routeParams, userCache, request) {
+
+    // Set up the http request handler
+    $httpProvider.interceptors.push(function(){
+        return {
+            'requestError' : function(rejection) {
+                // TODO handle the error
+                return rejection;
+            },
+            'response' : function(response) {
+                if (response.data && response.data.error) {
+                    // TODO handle errors
+                    console.warn(response.data);
+                }
+                return response;
+            },
+            'responseError' : function(rejection) {
+                // TODO handle errors
+                console.warn(rejection);
+                return rejection;
+            }
+        };
+    });
+}])
+.controller('user', ['$scope', '$routeParams', 'userCache', 'request', function($scope, $routeParams, userCache, request) {
     // Create a function to set the data in the scope
     var setUser = function(data) {
         // Make sure we have the data
