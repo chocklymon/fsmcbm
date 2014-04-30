@@ -513,7 +513,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
         $this->expectOutputString($expectedOutput);
 
         // Construct the database
-        $db = new MockDatabase(array(new FakeQueryResult(array('user_id'=>29)), new FakeQueryResult()));
+        $db = new MockDatabase(array(new FakeQueryResult(array(array('user_id'=>29))), new FakeQueryResult()));
 
         // Create the controller
         $controller = new Controller($db, self::$output);
