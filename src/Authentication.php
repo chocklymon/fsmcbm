@@ -99,27 +99,22 @@ class Authentication
     /**
      * Authenticates that an API request is valid.
      * @return int The user ID or <tt>null</tt> if the user doesn't validate.
-     * @throws AuthenticationException If a database exception occurs.
      */
     private function authenticateAPIRequest()
     {
         $accessor_key = $this->settings->getAccessorKey($this->input->accessor_token);
         if ($accessor_key !== false && $this->validatePost($accessor_key)) {
-            try {
-                // Use the universally unique identifier to get the user info
-                $uuid = $this->db->sanitize(pack('H*', $this->input->uuid));
-                $row = $this->db->querySingleRow(
-                    "SELECT `users`.`user_id`, `rank`.`name` AS rank
-                     FROM `users`
-                     LEFT JOIN `rank` ON (`users`.`rank` = `rank`.`rank_id`)
-                     WHERE `uuid` = '$uuid'",
-                    'Moderator not found.'
-                );
-                if ($row['rank'] == 'Admin' || $row['rank'] == 'Moderator') {
-                    return $row['user_id'];
-                }
-            } catch (DatabaseException $ex) {
-                throw new AuthenticationException('Authentication failed due to database issue.', $ex->getCode(), $ex);
+            // Use the universally unique identifier to get the user info
+            $uuid = $this->db->sanitize(pack('H*', $this->input->uuid));
+            $row = $this->db->querySingleRow(
+                "SELECT `users`.`user_id`, `rank`.`name` AS rank
+                 FROM `users`
+                 LEFT JOIN `rank` ON (`users`.`rank` = `rank`.`rank_id`)
+                 WHERE `uuid` = '$uuid'",
+                'Moderator not found.'
+            );
+            if ($row['rank'] == 'Admin' || $row['rank'] == 'Moderator') {
+                return $row['user_id'];
             }
         }
         return null;
@@ -131,32 +126,13 @@ class Authentication
      */
     private function authenticateUser()
     {
-        $cookie_name = $this->settings->getCookieName();
-        if (isset($_COOKIE[$cookie_name])) {
-            $cookie = explode('|', $_COOKIE[$cookie_name]);
-            if (count($cookie) == 4) {
-
-                // Check if the logout time has been reached
-                if ($this->settings->getLogoutTime() > 0
-                    && time() - $cookie[2] > $this->settings->getLogoutTime()
-                ) {
-                    // Max login time has been reached.
-                    $this->expireCookie();
-                    return null;
-                }
-
-                // Check the cookies HMAC
-                $value = $cookie[0] . $cookie[1] . $cookie[2];
-                $key = $this->settings->getCookieKey();
-                if (empty($key)) {
-                    throw new AuthenticationException('Configuration error.');
-                }
-
-                if (hash_hmac(self::HASH_ALGO, $value, $key) == $cookie[3]) {
-                    // Cookie hasn't been modified
-                    return (int) $cookie[0];
-                }
-            }
+        $cookie = $this->getCookie();
+        if ($this->isCookieValid($cookie)) {
+            // Cookie valid, return the ID from the cookie
+            return (int) $cookie[0];
+        } else if (!empty($cookie)) {
+            // Cookie provided, but invalid. Expire it now
+            $this->expireCookie();
         }
         return null;
     }
@@ -176,8 +152,8 @@ class Authentication
         }
         require_once($wp_load);
 
-        if (is_user_logged_in()) {
-            $wp_current_user = wp_get_current_user();
+        if (is_user_logged_in()) {// Wordpress function
+            $wp_current_user = wp_get_current_user();// Wordpress function
             $moderator_name = $wp_current_user->user_login;
 
             $moderator_info = $this->getModeratorInfo($moderator_name);
@@ -259,6 +235,10 @@ class Authentication
         return $info;
     }
 
+    /**
+     * Logs in the user.
+     * @return boolean true if the user was logged in correctly.
+     */
     public function loginUser()
     {
         if ($this->input->exists('username') && $this->input->exists('password')) {
@@ -275,15 +255,50 @@ WHERE
      `users`.`username` = '{$username}'
 AND  `passwords`.`password_hash` = '{$password}'
 EOF;
-            try {
-                $result = $this->db->querySingleRow($sql);
+            // Query a single row, this will throw an exception if a single row isn't found
+            $result = $this->db->querySingleRow($sql);
 
-                // User found and password matches, set the login cookie and return true
-                $this->setCookie($result['user_id'], $username);
-                return true;
-            } catch (\DatabaseException $ex) {
-                throw new \AuthenticationException('Authentication failed due to database issue.', $ex->getCode(), $ex);
+            // User found and password matches, set the login cookie and return true
+            $this->setCookie($result['user_id'], $username);
+            return true;
+        }
+        return false;
+    }
+    
+    /**
+     * Returns if the input indicates that it is an API request.
+     * @return boolean true if the input data indicates we have an API request.
+     */
+    public function isAPIRequest()
+    {
+        return $this->input->exists('accessor_token') && $this->input->exists('hmac') && $this->input->exists('uuid');
+    }
+    
+    /**
+     * Checks if the provided cookie data is valid.
+     * @param array $cookie The cookie data as an array.
+     * @return boolean true if the cookie is valid
+     * @throws AuthenticationException If the cookie key is not set in the
+     * configuration.
+     */
+    private function isCookieValid($cookie)
+    {
+        // The cookie should have four parts
+        if (!empty($cookie) && count($cookie) == 4) {
+            // Check if the logout time has been reached, if there is one
+            $logout_time = $this->settings->getLogoutTime();
+            if (($logout_time > 0) && (time() - $cookie[2] > $logout_time)) {
+                // Max login time has been reached.
+                return false;
             }
+
+            // Check the cookies HMAC
+            $value = $cookie[0] . $cookie[1] . $cookie[2];
+            $key = $this->settings->getCookieKey();
+            if (empty($key)) {
+                throw new AuthenticationException('Configuration error.');
+            }
+            return hash_hmac(self::HASH_ALGO, $value, $key) == $cookie[3];
         }
         return false;
     }
@@ -307,14 +322,37 @@ EOF;
             }
         }
 
-        if (hash_hmac(self::HASH_ALGO, $msg, $hmac_key) == $hmac) {
-            // HMAC valid
-            return true;
-        } else {
-            return false;
-        }
+        return hash_hmac(self::HASH_ALGO, $msg, $hmac_key) == $hmac;
     }
     
+    /**
+     * Checks if the nonce inside of the input is valid
+     * @return boolean true if the nonce is valid.
+     */
+    private function isNonceValid()
+    {
+        if ($this->input->exists('nonce')) {
+            // Check the nonce
+            // Get the md5 hash of the nonce (using md5 hash so the nonce will always be 16 bytes long)
+            $nonce = $this->db->sanitize(hash('md5', $this->input->nonce, true));
+            $sql = "SELECT COUNT(*) AS count FROM `auth_nonce` WHERE `nonce` = '{$nonce}'";
+            $row = $this->db->querySingleRow($sql);
+            if ($row['count'] == 0) {
+                // Nonce hasn't been used, save it and return true
+                $date_time = $this->db->getDate();
+                $sql = "INSERT INTO `auth_nonce` (`nonce`, `timestamp`) VALUES ('{$nonce}', '{$date_time}')";
+                $this->db->query($sql);
+
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    /**
+     * Checks if the timestamp inside of the input is valid.
+     * @return boolean true if the timestamp falls within the acceptable range
+     */
     private function isTimestampValid()
     {
         if ($this->input->exists('timestamp')) {
@@ -324,49 +362,24 @@ EOF;
 
             // The timestamp can be valid for five minutes from the current time.
             // This gives a buffer to compensate for time differences and network latency.
-            if ($timestamp > ($current_time - 300) && $timestamp < ($current_time + 300)) {
-                return true;
-            }
+            return $timestamp > ($current_time - 300) && $timestamp < ($current_time + 300);
         }
         return false;
     }
     
-    private function isNonceValid()
-    {
-        if ($this->input->exists('nonce')) {
-            try {
-                // Check the nonce
-                // Get the md5 hash of the nonce (using md5 hash so the nonce will always be 16 bytes long).
-                $nonce = $this->db->sanitize(hash('md5', $this->input->nonce, true));
-                $sql = "SELECT COUNT(*) AS count FROM `auth_nonce` WHERE `nonce` = '{$nonce}'";
-                $row = $this->db->querySingleRow($sql);
-                if ($row['count'] == 0) {
-                    // Nonce hasn't been used, save it and return true
-                    $date_time = $this->db->getDate();
-                    $sql = "INSERT INTO `auth_nonce` (`nonce`, `timestamp`) VALUES ('{$nonce}', '{$date_time}')";
-                    $this->db->query($sql);
-
-                    return true;
-                }
-            } catch (DatabaseException $ex) {
-                throw new AuthenticationException('Authentication failed due to database issue.', $ex->getCode(), $ex);
-            }
-        }
-        return false;
-    }
-
     /**
-     * Validates that the post data is valid.
-     * More specifically checks that the post's nonce hasn't been used, that the
-     * timestamp is in range, and that the HMAC is correct for the given key.
-     * @param string $hmac_key
-     * @return boolean <tt>true</tt> if the post passes validation.
-     * @throws AuthenticationException If there is a problem with the database
-     * connection.
+     * Gets the authentication cookie.
+     * @return array The cookie's data as an array, or null if the cookie
+     * doesn't exist.
      */
-    private function validatePost($hmac_key)
+    private function getCookie()
     {
-        return $this->isTimestampValid() && $this->isHMACValid($hmac_key) && $this->isNonceValid();
+        $cookie_name = $this->settings->getCookieName();
+        if (isset($_COOKIE[$cookie_name])) {
+            return explode('|', $_COOKIE[$cookie_name]);
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -391,13 +404,24 @@ EOF;
         setcookie($this->settings->getCookieName(), $cookie_value, 0, '/', null, false, true);
     }
 
+    /**
+     * Indicate if wordpress should be loaded for use with authentication.
+     * @return boolean true if Wordpress should be loaded
+     */
     public function shouldLoadWordpress()
     {
         return $this->settings->useWPLogin() && !$this->isAPIRequest();
     }
 
-    public function isAPIRequest()
+    /**
+     * Validates that the post data is valid.
+     * More specifically checks that the post's nonce hasn't been used, that the
+     * timestamp is in range, and that the HMAC is correct for the given key.
+     * @param string $hmac_key
+     * @return boolean <tt>true</tt> if the post passes validation.
+     */
+    private function validatePost($hmac_key)
     {
-        return $this->input->exists('accessor_token') && $this->input->exists('hmac') && $this->input->exists('uuid');
+        return $this->isTimestampValid() && $this->isHMACValid($hmac_key) && $this->isNonceValid();
     }
 }

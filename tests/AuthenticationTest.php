@@ -92,16 +92,13 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
         $this->assertFalse($authenticated);
     }
 
-    /**
-     * @expectedException AuthenticationException
-     */
-    public function testAuthenticate_databaseError()
+    public function testAuthenticate_noTimestamp()
     {
         $this->setUpAPIRequest();
-        $db = new MockDatabase(array(false));
-        $auth = new Authentication($db, self::$settings, $this->input);
+        $this->input->timestamp = null;
 
-        $auth->authenticate();
+        $authenticated = $this->auth->authenticate();
+        $this->assertFalse($authenticated);
     }
 
     public function testAuthenticate_nonceUsed()
@@ -139,18 +136,6 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
 
         $authenticated = $this->auth->authenticate();
         $this->assertFalse($authenticated);
-    }
-
-    /**
-     * @expectedException AuthenticationException
-     */
-    public function testAuthenticateAPIRequest_databaseError()
-    {
-        $this->setUpAPIRequest();
-        $db = new MockDatabase(array(array('count'=>0), array(), false));
-        $auth = new Authentication($db, self::$settings, $this->input);
-
-        $auth->authenticate();
     }
 
     public function testAuthenticateAPIRequest_noAccessor()
@@ -199,16 +184,28 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
         $this->assertFalse($this->auth->authenticate(), "Cookie user should NOT have been authenticated.");
     }
 
+    /**
+     * Run in a separate process since this will try to expire the cookie.
+     * @runInSeparateProcess
+     */
     public function testAuthenticateUsingCookie_badCookie()
     {
         $_COOKIE[self::$settings->getCookieName()] = '1|notch';
         $this->assertFalse($this->auth->authenticate(), "Cookie user should NOT have been authenticated.");
     }
 
+    /**
+     * Run in a separate process since this will try to expire the cookie.
+     * @runInSeparateProcess
+     */
     public function testAuthenticateUsingCookie_badHMAC()
     {
+        // Set up for testing the cookie
         $_COOKIE[self::$settings->getCookieName()] = '1|notchy|139656221|8c6e7d97248140d2155f36094d955a8f53339a89';
         self::$settings->setSetting('cookie_secret', 'secret_key');
+        self::$settings->setSetting('session_duration', 1);
+        
+        // Test that the cookie doesn't authenticate
         $this->assertFalse($this->auth->authenticate(), "Cookie user should NOT have been authenticated.");
     }
 
@@ -313,20 +310,6 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
         $auth = new Authentication($db, self::$settings, $this->input);
 
         $this->assertTrue($auth->loginUser());
-    }
-
-    /**
-     * @expectedException AuthenticationException
-     */
-    public function testLoginUser_databaseError()
-    {
-        $this->input->username = self::USERNAME;
-        $this->input->password = 'password1';
-
-        $db = new MockDatabase(array(false));
-        $auth = new Authentication($db, self::$settings, $this->input);
-
-        $auth->loginUser();
     }
 
     /**
