@@ -71,54 +71,38 @@ class OutputTest extends PHPUnit_Framework_TestCase
         /* Commented out, because when running the the command line PHP doesn't actually set headers.
         $headers_list = headers_list();
         $this->assertNotEmpty($headers_list);
-        $this->assertContains('Content-Type: text/html');
+        $this->assertContains('Content-Type: application/json');
         // */
         header_remove();
     }
 
-    public function testAppend_html()
-    {
-        $s1 = "<div>Hello World</div>";
-        $s2 = "<p>This is a paragraph.</p>";
-        $this->expectOutputString($s1 . $s2);
-
-        $this->output->setHTMLMode(true);
-        $this->output->append($s1);
-        $this->output->append($s2);
-
-        $this->output->reply();
-    }
-
-    public function testAppend_json()
+    public function testAppend()
     {
         $expected = '[{"hello":"hi"},{"world":"hi"}]';
         $this->expectOutputString($expected);
 
-        $this->output->setHTMLMode(false);
         $this->output->append(array('hello'=>'hi'));
         $this->output->append(array('world'=>'hi'));
 
         $this->output->reply();
     }
 
-    public function testAppend_json_subkey()
+    public function testAppend_subkey()
     {
         $expected = '{"hello":"world","cheese":["cheddar","colby"]}';
         $this->expectOutputString($expected);
 
-        $this->output->setHTMLMode(false);
         $this->output->append('world', 'hello');
         $this->output->append(array('cheddar','colby'), 'cheese');
 
         $this->output->reply();
     }
 
-    public function testAppend_json_subarray()
+    public function testAppend_subarray()
     {
         $expected = '{"cheese":["cheddar","colby"]}';
         $this->expectOutputString($expected);
 
-        $this->output->setHTMLMode(false);
         $this->output->append('cheddar', 'cheese', true);
         $this->output->append('colby', 'cheese', true);
 
@@ -128,7 +112,6 @@ class OutputTest extends PHPUnit_Framework_TestCase
     public function testClear()
     {
         // Setup
-        $this->output->setHTMLMode(false);
         $this->output->append(array("hello"=>"world"));
 
         // Act
@@ -140,52 +123,28 @@ class OutputTest extends PHPUnit_Framework_TestCase
         $this->output->reply();
     }
 
-    public function testError_html()
-    {
-        $message = 'PHP Unit Testing Error';
-        $expected = '<div class="error">' . $message . '</div>';
-        $this->expectOutputString($expected);
-
-        $this->output->setHTMLMode(true);
-        $this->output->error($message, null, false);
-        $this->output->reply();
-    }
-
-    public function testError_html_debugOn()
-    {
-        self::$settings->setDebugMode(true);
-        $message = 'PHP Unit Testing Error';
-        $debug_message = 'A super fatal error has occured';
-        $expected = "<div class=\"error\">{$message}</div><div style='display:none'><pre>{$debug_message}</pre></div>";
-        $this->expectOutputString($expected);
-
-        $this->output->setHTMLMode(true);
-        $this->output->error($message, $debug_message, false);
-        $this->output->reply();
-    }
-
-    public function testError_json()
+    public function testError()
     {
         $message = 'PHP Unit Testing Error';
         $expected = '{"error":"' . $message . '"}';
         $this->expectOutputString($expected);
 
-        $this->output->setHTMLMode(false);
         $this->output->error($message, null, false);
         $this->output->reply();
     }
 
-    public function testError_json_debugOn()
+    public function testError_debugOn()
     {
         self::$settings->setDebugMode(true);
+        $output = new Output(self::$settings);
+        
         $message = 'PHP Unit Testing Error';
         $debug_message = 'A super fatal error has occured';
         $expected = '{"error":"' . $message . '","debug":"' . $debug_message . '"}';
         $this->expectOutputString($expected);
 
-        $this->output->setHTMLMode(false);
-        $this->output->error($message, $debug_message, false);
-        $this->output->reply();
+        $output->error($message, $debug_message, false);
+        $output->reply();
     }
 
     public function testException()
@@ -195,39 +154,28 @@ class OutputTest extends PHPUnit_Framework_TestCase
         $this->expectOutputString($expected);
         $ex = new Exception($message);
 
-        $this->output->setHTMLMode(false);
         $this->output->exception($ex);
     }
 
     public function testException_debugOn()
     {
         self::$settings->setDebugMode(true);
+        $output = new Output(self::$settings);
+        
         $message = 'PHP Unit Testing Error';
         $ex = new Exception($message);
         $stack = json_encode($ex->getTrace());
         $expected = '{"error":"' . $message . '","debug":{"stacktrace":' . $stack . '}}';
         $this->expectOutputString($expected);
 
-
-        $this->output->setHTMLMode(false);
-        $this->output->exception($ex);
+        $output->exception($ex);
     }
 
-    public function testSuccess_html()
-    {
-        $expected = '<div class="success">Success!</div>';
-        $this->expectOutputString($expected);
-
-        $this->output->setHTMLMode(true);
-        $this->output->success();
-    }
-
-    public function testSuccess_json()
+    public function testSuccess()
     {
         $expected = '{"success":true}';
         $this->expectOutputString($expected);
 
-        $this->output->setHTMLMode(false);
         $this->output->success();
     }
 
@@ -245,19 +193,19 @@ class OutputTest extends PHPUnit_Framework_TestCase
     public function testPrepareHTML_truncate()
     {
         $string   = 'I <i>like</i> cheese & pickles. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis in nisl sem. Donec quis imperdiet nibh.';
-        $expected = 'I &lt;i&gt;like&lt;/i&gt; cheese &amp; pickles. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis in nisl&hellip;';
+        $expected = 'I &lt;i&gt;like&lt;/i&gt; cheese &amp; pickles. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis in nisl sem. Donec quis…';
 
         $actual = $this->output->prepareHTML($string, true);
 
         $this->assertEquals($expected, $actual);
     }
 
-    public function testPrepareHTML_invalidMax()
+    public function testGetTruncated_invalidMax()
     {
         $string   = 'Micheal is Green';
-        $expected = 'Mic&hellip;';
+        $expected = 'Mic…';
 
-        $actual = $this->output->prepareHTML($string, true, 0);
+        $actual = $this->output->getTruncated($string, 0);
 
         $this->assertEquals($expected, $actual);
     }
