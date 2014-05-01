@@ -214,42 +214,7 @@ class Controller
 
         $this->output->reply();
     }
-
-
-    /**
-     * Performs the provided query and builds a table of users from the results.
-     * @param string $query The query to retrieve the data, needs to return the
-     * user name, rank, and notes.
-     * @param array $headers The table headers and output IDs.
-     * @param string $id_key The ID key to use for the table rows.
-     */
-    public function buildTable($query, $keys = array(), $id_key = 'user_id')
-    {
-        if (empty($keys)) {
-            $keys = array(
-                'username',
-                'incident_date',
-                'incident_type',
-                'action_taken'
-            );
-        }
-
-        $res = $this->db->query($query);
-
-        while ($row = $res->fetch_assoc()) {
-            $rowData = array();
-            foreach ($keys as $key) {
-                $rowData[$key] = $this->output->prepareHTML($row[$key], true);
-            }
-            $this->output->append(
-                $rowData
-            );
-        }
-
-        $res->free();
-
-        $this->output->reply();
-    }
+    
 
     /**
      * Delete an incident.
@@ -285,7 +250,8 @@ class Controller
                 GROUP BY u.user_id
                 ORDER BY i.incident_date DESC";
 
-        $this->buildTable($query);
+        $this->db->queryRowsIntoOutput($query, $this->output);
+        $this->output->reply();
     }
 
     /**
@@ -317,7 +283,8 @@ WHERE i2.user_id IS NULL
 ORDER BY i.incident_date DESC
 SQL;
 
-        $this->buildTable($query);
+        $this->db->queryRowsIntoOutput($query, $this->output);
+        $this->output->reply();
     }
 
     /**
@@ -391,14 +358,11 @@ SQL;
             // Searches must contain at least two characters
             throw new InvalidArgumentException("Search string must be longer than one.");
         }
-        $this->output->setHTMLMode(true);
 
         $search = $this->db->sanitize($search);
 
 
         // Get users matching the search
-        $this->output->append('<h4>Players</h4>');
-
         $query = <<<SQL
 SELECT u.user_id, u.username, u.banned, r.name AS rank, u.relations, u.notes
 FROM `users` AS u
@@ -409,22 +373,10 @@ WHERE
    OR u.relations LIKE '%$search%'
    OR u.notes LIKE '%$search%'
 SQL;
+        $this->db->queryRowsIntoOutput($query, $this->output, 'users');
 
-        $headers = array(
-            'username'  => 'Name',
-            'banned'    => 'Banned',
-            'rank'      => 'Rank',
-            'relations' => 'Relations',
-            'notes'     => 'Notes'
-        );
-
-        $this->buildTable($query, $headers);
-
-
+        
         // Get incidents matching the search
-        $this->output->clear();
-        $this->output->append('<h4>Incidents</h4>');
-
         $query = <<<SQL
 SELECT  u.user_id, u.username, i.incident_date, i.incident_type, i.action_taken
 FROM `incident` AS i
@@ -435,15 +387,9 @@ WHERE
    OR i.incident_type LIKE '%$search%'
    OR i.action_taken LIKE '%$search%'
 SQL;
-
-        $headers = array(
-            'username'      => 'Player',
-            'incident_date' => 'Date',
-            'incident_type' => 'Type',
-            'action_taken'  => 'Action Taken'
-        );
-
-        $this->buildTable($query, $headers);
+        $this->db->queryRowsIntoOutput($query, $this->output, 'incidents');
+        
+        $this->output->reply();
     }
 
 

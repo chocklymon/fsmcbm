@@ -149,7 +149,7 @@ class MockDatabase extends Database
      * @param string $error_message An optional error message to output if
      * the query fails.
      */
-    public function queryRowsIntoOutput($sql, Output $output, $key, $error_message = 'Nothing found.')
+    public function queryRowsIntoOutput($sql, Output $output, $key = null, $error_message = 'Nothing found.')
     {
         return $this->query($sql);
     }

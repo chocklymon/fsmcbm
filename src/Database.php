@@ -176,7 +176,7 @@ class Database
      * the query fails.
      * @throws DatabaseException If the query fails.
      */
-    public function queryRowsIntoOutput($sql, Output $output, $key, $error_message = 'Nothing found.')
+    public function queryRowsIntoOutput($sql, Output $output, $key = null, $error_message = 'Nothing found.')
     {
         $result = $this->query($sql, $error_message);
 

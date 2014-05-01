@@ -221,40 +221,6 @@ class ControllerTest extends PHPUnit_Framework_TestCase
         $controller->autoComplete($input);
     }
 
-    public function testBuildTable()
-    {
-        // Set Up //
-        $expected = '[{"username":"'.self::USERNAME.'","incident_date":"12\/12\/2012","incident_type":"Theft","action_taken":"Banned"}]';
-        $this->expectOutputString($expected);
-
-        $db = new MockDatabase(
-            array(new FakeQueryResult(array(array(
-                'user_id'       => 29,
-                'username'      => self::USERNAME,
-                'incident_date' => '12/12/2012',
-                'incident_type' => 'Theft',
-                'action_taken'  => 'Banned',
-            ))))
-        );
-        $controller = new Controller($db, self::$output);
-
-        // Run the test //
-        $controller->buildTable("FAKE QUERY");
-    }
-
-    public function testBuildTable_noResults()
-    {
-        // Set Up //
-        $expected = "[]";
-        $this->expectOutputString($expected);
-
-        $db = new MockDatabase(array(new FakeQueryResult()));
-        $controller = new Controller($db, self::$output);
-
-        // Run the test //
-        $controller->buildTable("FAKE QUERY");
-    }
-
     public function testDeleteIncident()
     {
         $this->expectOutputString('{"success":true}');
@@ -360,7 +326,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
         // Set Up //
         $input = new FilteredInput(false, array('search'=>self::USERNAME));
 
-        $expectedOutput = "<h4>Players</h4><h4>Incidents</h4>";
+        $expectedOutput = "[]";
         $this->expectOutputString($expectedOutput);
 
         // Construct the database
@@ -417,7 +383,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
         $this->input->banned = 'false';
         $this->input->permanent = 'true';
 
-        $expectedOutput = '<div class="success">Success!</div>';
+        $expectedOutput = '{"success":true}';
         $this->expectOutputString($expectedOutput);
 
         // Construct the database
@@ -465,7 +431,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
     public function testUpdateIncident()
     {
         // Set Up //
-        $expectedOutput = '<div class="success">Success!</div>';
+        $expectedOutput = '{"success":true}';
         $this->expectOutputString($expectedOutput);
 
         $db = new MockDatabase();
@@ -494,7 +460,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
     public function testUpsertUserUUID_newUser()
     {
         $new_user_id = 29;
-        $this->expectOutputString((string) $new_user_id);
+        $this->expectOutputString('{"user_id":'.$new_user_id.'}');
 
         // Construct the database
         $db = new MockDatabase(array(new FakeQueryResult(), new FakeQueryResult(), $new_user_id));
@@ -507,7 +473,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
 
     public function testUpsertUserUUID_updateUser()
     {
-        $expectedOutput = '<div class="success">Success!</div>';
+        $expectedOutput = '{"success":true}';
         $this->expectOutputString($expectedOutput);
 
         // Construct the database
