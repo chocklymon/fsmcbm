@@ -32,7 +32,7 @@ require_once('src/FilteredInput.php');
 class FilteredInputTest extends PHPUnit_Framework_TestCase
 {
     /**
-     * @var FilteredInput 
+     * @var FilteredInput
      */
     private $input;
 
@@ -40,83 +40,83 @@ class FilteredInputTest extends PHPUnit_Framework_TestCase
     {
         $this->input = new FilteredInput(false);
     }
-    
+
     public function testConstructorLoadNow()
     {
         $input = new FilteredInput(true, array('hello'=>'world'));
         $this->assertEquals('world', $input->hello);
     }
-    
+
     public function testGetterAndSetter()
     {
         $test_data = 'Greetings world';
         $this->input->test = $test_data;
         $this->assertEquals($test_data, $this->input->test);
     }
-    
+
     public function testGetterNull()
     {
         $this->assertNull($this->input->no_key_lives_here);
     }
-    
+
     public function testExistsFalse()
     {
         $this->assertFalse($this->input->exists('no_key_lives_here'));
     }
-    
+
     public function testExistsTrue()
     {
         $this->input->test = '';
         $this->assertTrue($this->input->exists('test'));
     }
-    
+
     public function testGetBooleanOn()
     {
         $this->input->test = 'on';
         $this->assertEquals(1, $this->input->getBoolean('test'));
     }
-    
+
     public function testGetBooleanOff()
     {
         $this->input->test = 'off';
         $this->assertEquals(0, $this->input->getBoolean('test'));
     }
-    
+
     public function testGetBooleanValue()
     {
         $this->input->test = "I'm truthy";
         $this->assertTrue($this->input->getBoolean('test'));
     }
-    
+
     public function testKeySort()
     {
         $this->input->b = '2';
         $this->input->a = '1';
         $this->input->keySort();
-        
+
         $this->input->rewind();
         $this->assertEquals('1', $this->input->current());
         $this->assertEquals('2', $this->input->next());
     }
-    
+
     public function testLoadPost()
     {
         $_POST = array('hello'=>'world');
         $this->input->loadPost();
     }
-    
+
     public function testLoadPostJSON()
     {
         $_POST = array();
         $_SERVER['CONTENT_TYPE'] = 'application/json;charset=UTF-8';
         $this->input->loadPost();
     }
-    
+
     public function testImplementsIterator()
     {
         $this->input->a = 'a';
         $this->input->b = 'b';
-        
+
         // Set the first expected value
         $expected_value = 'a';
         foreach ($this->input as $key => $value) {
