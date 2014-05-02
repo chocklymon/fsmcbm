@@ -8,12 +8,12 @@
     <body>
         <div class="container" data-ng-app="banManager">
             <div class="bm-header ui-tabs">
-                <ul class="ui-tabs-nav ui-helper-reset ui-helper-clearfix ui-widget-header ui-corner-all">
-                    <li><a id='manage_user' data-ng-href="#/user/{{data.username}}">Manage</a></li>
-                    <li><a href="#/bans">Bans</a></li>
-                    <li><a href="#/watchlist">Watch-List</a></li>
-                    <li><a href="#/search">Search</a></li>
-                </ul>
+                <tabset justified="true">
+                    <tab heading="User" select="tab.switch('user')"></tab>
+                    <tab heading="Bans" select="tab.switch('bans')"></tab>
+                    <tab heading="Watchlist" select="tab.switch('watchlist')"></tab>
+                    <tab heading="Search" select="tab.switch('search')"></tab>
+                </tabset>
             </div>
             <div data-ng-controller="TypeaheadCtrl">
                 <input type="text"
@@ -25,6 +25,8 @@
                        typeahead-on-select="welcome()"
                        class="form-control" />
                 <i ng-show="loadingLocations" class="glyphicon glyphicon-refresh"></i>
+                <input type="text"
+                       ng-model="search.text" />
             </div>
             <div data-ng-view></div>
         </div>
