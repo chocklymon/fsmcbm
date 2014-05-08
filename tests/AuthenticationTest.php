@@ -162,7 +162,6 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
      */
     public function testAuthenticateUsingCookie_badTimeStamp()
     {
-        $this->markTestSkipped('Skipping until setting headers is fixed in PHPUnit');
         $_COOKIE[self::$settings->getCookieName()] = '1|notch|139656221|8c6e7d97248140d2155f36094d955a8f53339a89';// timestamp = 2032-12-12
         self::$settings->setSetting('cookie_secret', 'secret_key');
         self::$settings->setSetting('session_duration', 1);
@@ -191,7 +190,6 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
      */
     public function testAuthenticateUsingCookie_badCookie()
     {
-        $this->markTestSkipped('Skipping until setting headers is fixed in PHPUnit');
         $_COOKIE[self::$settings->getCookieName()] = '1|notch';
         $this->assertFalse($this->auth->authenticate(), "Cookie user should NOT have been authenticated.");
     }
@@ -202,7 +200,6 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
      */
     public function testAuthenticateUsingCookie_badHMAC()
     {
-        $this->markTestSkipped('Skipping until setting headers is fixed in PHPUnit');
         // Set up for testing the cookie
         $_COOKIE[self::$settings->getCookieName()] = '1|notchy|139656221|8c6e7d97248140d2155f36094d955a8f53339a89';
         self::$settings->setSetting('cookie_secret', 'secret_key');
@@ -306,7 +303,6 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
      */
     public function testLoginUser()
     {
-        $this->markTestSkipped('Skipping until setting headers is fixed in PHPUnit');
         $this->input->username = self::USERNAME;
         $this->input->password = 'password1';
 

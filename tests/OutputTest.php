@@ -64,7 +64,6 @@ class OutputTest extends PHPUnit_Framework_TestCase
      */
     public function testReply_headers()
     {
-        $this->markTestSkipped('Skipping until setting headers is fixed in PHPUnit');
         ob_start();
         $this->output->reply();
 
