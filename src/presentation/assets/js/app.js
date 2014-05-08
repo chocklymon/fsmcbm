@@ -77,8 +77,27 @@ bm.worlds = [{
                     }];
 
 angular.module('banManager', ['ngRoute', 'ui.bootstrap'])
-.factory('userCache', ['$cacheFactory', function($cacheFactory) {
-    return $cacheFactory('userCache', {capacity:1});
+.factory('CurrentUser', [function() {
+    var cachedUser,
+        getUsername = function() {
+            if (cachedUser) {
+                return cachedUser.user.username;
+            } else {
+                return null;
+            }
+        };
+    return {
+        set: function(user) {
+            cachedUser = user;
+        },
+        get: function() {
+            return cachedUser;
+        },
+        getUsername: getUsername,
+        matches: function(username) {
+            return username === getUsername();
+        }
+    };
 }])
 .factory('request', ['$http', function($http){
     return function(endpoint, payload) {
@@ -89,7 +108,8 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap'])
     return function(input) {
         return input == 1 ? '\u2713' : '\u2718';
     };
-}).config(['$routeProvider', '$httpProvider', function($routeProvider, $httpProvider) {
+})
+.config(['$routeProvider', '$httpProvider', function($routeProvider, $httpProvider) {
     // Set up the routes
     $routeProvider
         .when('/', {
@@ -136,25 +156,18 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap'])
         };
     });
 }])
-.controller('user', ['$scope', '$routeParams', 'userCache', 'request', function($scope, $routeParams, userCache, request) {
+.controller('user', ['$scope', '$routeParams', 'CurrentUser', 'request', function($scope, $routeParams, CurrentUser, request) {
     // Create a function to set the data in the scope
     var setUser = function(data) {
         // Make sure we have the data
         if (data && data.user) {
             // Store a copy of the original data
-            userCache.put(data.user.username, data);
+            CurrentUser.set(data);
 
             // Set the data into the scope
             $scope.user = data.user;
             $scope.incidents = data.incident;
             $scope.history = data.history;
-
-            // Update the navigation to point to this user
-            var navScope = angular.element(document.getElementById('manage_user')).scope();
-            if (!navScope.data) {
-                navScope.data = {};
-            }
-            navScope.data.username = data.user.username;
         }
     };
     
@@ -182,16 +195,16 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap'])
     // If we have a username, load it up
     if ($routeParams.username) {
         // See if this user is cached
-        var cachedUser = userCache.get($routeParams.username);
-        if (cachedUser) {
-            setUser(cachedUser);
+        if (CurrentUser.matches($routeParams.username)) {
+            setUser(CurrentUser.get());
         } else {
             // Not cached, request the user from the server
             request('lookup', {username: $routeParams.username})
                     .success(setUser);
         }
     }
-}]).controller('userList', ['$scope', '$location', '$http', function($scope, $location, $http) {
+}])
+.controller('userList', ['$scope', '$location', '$http', function($scope, $location, $http) {
     var endpoint = $location.path() === '/bans' ? 'get_bans' : 'get_watchlist';
     $scope.lookupUser = function(username) {
         $location.path('/user/'+username);
@@ -200,19 +213,65 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap'])
         .success(function(data) {
             $scope.users = data;
         });
-}]).controller('search', ['$scope', '$routeParams', '$http', function($scope, $routeParams, $http) {
+}])
+.controller('search', ['$scope', '$routeParams', '$http', function($scope, $routeParams, $http) {
     console.log($routeParams);
 }])
-.controller('TypeaheadCtrl', ['$scope', '$location', 'request', function TypeaheadCtrl($scope, $location, request) {
+.controller('NavigationController', ['$scope', '$location', 'request', 'CurrentUser', function($scope, $location, request, CurrentUser) {
+    
+    $scope.tabs = [
+        {link : 'user', label: 'Manage'},
+        {link : 'bans', label: 'Bans'},
+        {link : 'watchlist', label: 'Watchlist'},
+        {link : 'search', label: 'Search'}
+    ]; 
+    
+    // Try to find the currently selected tab
+    var getSelectedTab = function() {
+        for (var i=0; i<$scope.tabs.length; i++) {
+            if ($location.path().indexOf($scope.tabs[i].link) !== -1) {
+                return $scope.tabs[i];
+            }
+        }
+    };
+    
+    $scope.selectedTab = getSelectedTab();
+    
+    // Change what tab is selected
+    $scope.selectTab = function(tab) {
+        if (tab === $scope.tabs[0] && CurrentUser.getUsername()) {
+            $scope.loadUser(CurrentUser.getUsername());
+        } else {
+            $location.path(tab.link);
+        }
+        $scope.selectedTab = tab;
+    };
+
+    // Set the class for each tab
+    $scope.tabClass = function(tab) {
+        if ($scope.selectedTab == tab) {
+            return "active";
+        } else {
+            return "";
+        }
+    };
+    
     // Loads autocomplete terms via AJAX
-    $scope.getLocation = function(val) {
+    $scope.getPossibleUsernames = function(val) {
         return request('auto_complete', {
               term: val
         }).then(function(res){
             return res.data;
         });
     };
-    $scope.welcome = function() {
-        $location.path('/user/'+$scope.selected);
+    
+    // Loads a selected user
+    $scope.loadUser = function(username) {
+        $location.path('/user/' + username);
     };
+    
+    // Watch for changes on the route
+    $scope.$on('$routeChangeSuccess', function() {
+        $scope.selectedTab = getSelectedTab();
+    });
 }]);
