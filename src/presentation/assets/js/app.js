@@ -99,6 +99,17 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap'])
         }
     };
 }])
+.factory('CurrentSearch', [function() {
+    var term = "";
+    return {
+        set: function(searchTerm) {
+            term = searchTerm;
+        },
+        get: function() {
+            return term;
+        }
+    };
+}])
 .factory('request', ['$http', function($http){
     return function(endpoint, payload) {
         return $http.post('ban-manager.php?action='+endpoint, payload);
@@ -209,15 +220,27 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap'])
     $scope.lookupUser = function(username) {
         $location.path('/user/'+username);
     };
+    // TODO use request
     $http.get("ban-manager.php?action=" + endpoint)
         .success(function(data) {
             $scope.users = data;
         });
 }])
-.controller('search', ['$scope', '$routeParams', '$http', function($scope, $routeParams, $http) {
-    console.log($routeParams);
+.controller('search', ['$scope', '$routeParams', '$location', 'request', function($scope, $routeParams, $location, request) {
+    // TODO remove this duplication of lookup user from the userlist
+    $scope.lookupUser = function(username) {
+        $location.path('/user/'+username);
+    };
+        
+    if ($routeParams.term) {
+        request('search', {search: $routeParams.term})
+            .success(function(data){
+                console.log(data);
+                $scope.users = data.users;
+            });
+    }
 }])
-.controller('NavigationController', ['$scope', '$location', 'request', 'CurrentUser', function($scope, $location, request, CurrentUser) {
+.controller('NavigationController', ['$scope', '$location', 'request', 'CurrentUser', 'CurrentSearch', function($scope, $location, request, CurrentUser, CurrentSearch) {
     
     $scope.tabs = [
         {link : 'user', label: 'Manage'},
@@ -234,13 +257,20 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap'])
             }
         }
     };
+    var search = function() {
+        $location.path('search/' + CurrentSearch.get());
+    }
     
     $scope.selectedTab = getSelectedTab();
     
     // Change what tab is selected
     $scope.selectTab = function(tab) {
         if (tab === $scope.tabs[0] && CurrentUser.getUsername()) {
+            // User tab, load the current user
             $scope.loadUser(CurrentUser.getUsername());
+        } else if (tab === $scope.tabs[3] &&  CurrentSearch.get()) {
+            // Search tab, load the current search term
+            search();
         } else {
             $location.path(tab.link);
         }
@@ -269,6 +299,14 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap'])
     $scope.loadUser = function(username) {
         $location.path('/user/' + username);
     };
+    
+    // Performs the search
+    
+    $scope.search = function() {
+        CurrentSearch.set($scope.search.text);
+        search();
+    };
+    $scope.search.text = "";
     
     // Watch for changes on the route
     $scope.$on('$routeChangeSuccess', function() {

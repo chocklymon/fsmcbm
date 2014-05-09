@@ -3,16 +3,19 @@
         <a href="" ng-click="selectTab(tab)">{{tab.label}}</a>
     </li>
 </ul>
-<div>
+<form ng-submit="search()">
+    <i ng-show="loadingLocations" class="glyphicon glyphicon-refresh"></i>
     <input type="text"
            ng-model="selected"
-           placeholder="Find user by name"
-           typeahead="user.label for user in getLocation($viewValue)"
+           placeholder="Find user by name..."
+           typeahead="user.label for user in getPossibleUsernames($viewValue)"
            typeahead-loading="loadingLocations"
            typeahead-min-length="2"
            typeahead-on-select="loadUser(selected)"
            class="form-control" />
-    <i ng-show="loadingLocations" class="glyphicon glyphicon-refresh"></i>
+    
     <input type="text"
+           placeholder="Search..."
            ng-model="search.text" />
-</div>
+  <input type="submit" id="submit" value="Search" />
+</form>
