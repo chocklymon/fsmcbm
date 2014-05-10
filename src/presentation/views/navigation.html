@@ -1,21 +1,37 @@
+<alert ng-repeat="alert in alerts" type="{{alert.type}}" close="closeAlert($index)">{{alert.msg}}</alert>
+<form class="row" ng-submit="search()">
+    <div class="col-md-2 text-right">
+        <span ng-show="loadingLocations" class="glyphicon glyphicon-refresh"></span>
+    </div>
+    <div class="col-md-6">
+        <div class="form-group has-feedback">
+            <input type="text"
+                   ng-model="selected"
+                   placeholder="Find user by name..."
+                   typeahead="user.label for user in getPossibleUsernames($viewValue)"
+                   typeahead-loading="loadingLocations"
+                   typeahead-min-length="2"
+                   typeahead-on-select="loadUser(selected)"
+                   class="form-control" />
+        </div>
+        <div class="input-group sm-row">
+            <input ng-model="search.text" type="text" class="form-control" placeholder="Search..." />
+            <span class="input-group-btn">
+                <input type="submit" id="submit" value="Search" class="btn btn-default" />
+            </span>
+        </div>
+    </div>
+    <div class="col-xs-5 col-xs-offset-7 col-sm-3 col-md-2 col-md-offset-0 text-center">
+        <div class="form-group">
+            <button class="btn btn-primary">Add User</button>
+        </div>
+        <div class="form-group">
+            <button class="btn btn-primary">Add Incident</button>
+        </div>
+    </div>
+</form>
 <ul class="nav nav-tabs nav-justified">
     <li ng-class="tabClass(tab)" ng-repeat="tab in tabs">
         <a href="" ng-click="selectTab(tab)">{{tab.label}}</a>
     </li>
 </ul>
-<form ng-submit="search()">
-    <i ng-show="loadingLocations" class="glyphicon glyphicon-refresh"></i>
-    <input type="text"
-           ng-model="selected"
-           placeholder="Find user by name..."
-           typeahead="user.label for user in getPossibleUsernames($viewValue)"
-           typeahead-loading="loadingLocations"
-           typeahead-min-length="2"
-           typeahead-on-select="loadUser(selected)"
-           class="form-control" />
-    
-    <input type="text"
-           placeholder="Search..."
-           ng-model="search.text" />
-  <input type="submit" id="submit" value="Search" />
-</form>

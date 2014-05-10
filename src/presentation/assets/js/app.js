@@ -269,7 +269,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap'])
     };
     var search = function() {
         $location.path('search/' + CurrentSearch.get());
-    }
+    };
     
     $scope.selectedTab = getSelectedTab();
     
@@ -278,9 +278,14 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap'])
         if (tab === $scope.tabs[0] && CurrentUser.getUsername()) {
             // User tab, load the current user
             $scope.loadUser(CurrentUser.getUsername());
-        } else if (tab === $scope.tabs[3] &&  CurrentSearch.get()) {
+        } else if (tab === $scope.tabs[3]) {
             // Search tab, load the current search term
-            search();
+            if (CurrentSearch.get()) {
+                search();
+            } else {
+                // No search, exit now
+                return;
+            }
         } else {
             $location.path(tab.link);
         }
@@ -289,8 +294,10 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap'])
 
     // Set the class for each tab
     $scope.tabClass = function(tab) {
-        if ($scope.selectedTab == tab) {
+        if ($scope.selectedTab === tab) {
             return "active";
+        } else if (tab === $scope.tabs[3] && !CurrentSearch.get()) {
+            return "disabled";
         } else {
             return "";
         }
@@ -317,6 +324,15 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap'])
         search();
     };
     $scope.search.text = "";
+    
+    // Alerts
+    $scope.alerts = [];
+    $scope.closeAlert = function(index) {
+        $scope.alerts.splice(index, 1);
+    };
+    $scope.addAlert = function() {
+        $scope.alerts.push({type: 'danger', msg: 'Another alert!'});
+    };
     
     // Watch for changes on the route
     $scope.$on('$routeChangeSuccess', function() {

@@ -1,0 +1,32 @@
+.tabarea {
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    padding: 15px 6px 6px;
+    min-height: 100px;
+}
+
+.sm-row {
+    margin-bottom: 15px;
+}
+
+.form-horizontal {
+    padding-bottom: 15px;
+    margin-bottom: 25px;
+    border-bottom: 1px solid #ddd;
+}
+
+/* Small devices (tablets, 768px and up) */
+@media (min-width: 768px) {
+    .tabarea {
+        border-radius: 0 0 4px 4px;
+        border-top: none;
+    }
+}
+
+/* Medium devices (desktops, 992px and up) */
+@media (min-width: 992px) {
+    .sm-row {
+        margin-bottom: 0;
+    }
+}
+

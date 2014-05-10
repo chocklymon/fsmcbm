@@ -1,66 +1,128 @@
 <div ng-switch="!user">
     <p ng-switch-when="true">Select a user to manage.</p>
     <div ng-switch-default="">
-        <div class="form">
-            <label for="username">Username:</label>
-            <input type="text" id="username" ng-model="user.username"/>
-            <label for="user_mod_date">Modified Date:</label>
-            <input type="text" id="user_mod_date" ng-model="user.modified_date"/>
-            <br/>
-            <label for="user_banned">Banned:</label>
-            <input type="checkbox" id="user_banned" ng-model="user.banned" ng-true-value="1" ng-false-value="0"/>
-            <label for="user_permanent">Permanent:</label>
-            <input type="checkbox" id="user_permanent" ng-model="user.permanent" ng-true-value="1" ng-false-value="0"/>
-            <br/>
-            <label for="rank">Rank:</label>
-            <select id="rank" ng-model="user.rank" ng-options="r.value as r.label for r in ranks"></select>
-            <br/>
-            <label for="user_relations">Relations:</label>
-            <textarea id="user_relations" ng-model="user.relations"></textarea>
-            <br/>
-            <label for="user_notes">Notes:</label>
-            <textarea id="user_notes" ng-model="user.notes"></textarea>
-            <br/>
-            <button ng-click="saveUser(user)">Save</button>
+        <div class="form-horizontal">
+            <div class="form-group">
+                <label for="username" class="col-sm-2 control-label">Username:</label>
+                <div class="col-sm-2">
+                    <input type="text" class="form-control" id="username" ng-model="user.username"/>
+                </div>
+                <label for="user_mod_date" class="col-sm-2 control-label">Modified Date:</label>
+                <div class="col-sm-2">
+                    <input type="text" class="col-sm-2 form-control" id="user_mod_date" ng-model="user.modified_date"/>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="user_banned" class="col-xs-4 col-sm-2 control-label">Banned:</label>
+                <div class="col-xs-2">
+                    <div class="checkbox">
+                        <input type="checkbox" id="user_banned" ng-model="user.banned" ng-true-value="1" ng-false-value="0"/>
+                    </div>
+                </div>
+                <label for="user_permanent" class="col-xs-4 col-sm-2 control-label">Permanent:</label>
+                <div class="col-xs-2">
+                    <div class="checkbox">
+                        <input type="checkbox" id="user_permanent" ng-model="user.permanent" ng-true-value="1" ng-false-value="0"/>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="rank" class="col-sm-2 control-label">Rank:</label>
+                <div class="col-sm-3">
+                    <select id="rank" class="form-control" ng-model="user.rank" ng-options="r.value as r.label for r in ranks"></select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="user_relations" class="col-sm-2 control-label">Relations:</label>
+                <div class="col-sm-6">
+                    <textarea id="user_relations" class="form-control" ng-model="user.relations"></textarea>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="user_notes" class="col-sm-2 control-label">Notes:</label>
+                <div class="col-sm-6">
+                    <textarea id="user_notes" class="form-control" ng-model="user.notes"></textarea>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xs-3 col-sm-2 col-xs-offset-8 col-sm-offset-7">
+                    <button class="btn btn-default" ng-click="saveUser(user)">Save</button>
+                </div>
+            </div>
         </div>
         <div>
-            <div ng-repeat="incident in incidents" class="form">
-                <label>Moderator:</label>
-                <input type="text" readonly="readonly" ng-model="incident.moderator"/>
-                <br/>
-                <label>Created Date:</label>
-                <input type="text" readonly="readonly" ng-model="incident.created_date"/>
-                <label>Last Modified:</label>
-                <input type="text" readonly="readonly" ng-model="incident.modified_date"/>
-                <br/>
-                <label for="type_{{incident.id}}">Incident type:</label>
-                <input type="text" id="type_{{incident.id}}" ng-model="incident.incident_type"/>
-                <label for="date_{{incident.id}}">Incident Date:</label>
-                <input type="text" id="date_{{incident.id}}" ng-model="incident.incident_date"/>
-                <br/>
-                <label for="notes_{{incident.id}}">Notes:</label>
-                <textarea id="notes_{{incident.id}}" ng-model="incident.notes"></textarea>
-                <br/>
-                <label for="action_{{incident.id}}">Action Taken:</label>
-                <textarea id="action_{{incident.id}}" ng-model="incident.action_taken"></textarea>
-                <br/>
-                Key Location
-                <br/>
-                <label for="world_{{incident.id}}">World:</label>
-                <select id="world_{{incident.id}}" ng-model="incident.world" ng-options="w.value as w.label for w in worlds"></select>
-                <label for="coord_x_{{incident.id}}" class="int">X:</label>
-                <input type="text" id="coord_x_{{incident.id}}" class="int" ng-model="incident.coord_x"/>
-                <label for="coord_y_{{incident.id}}" class="int">Y:</label>
-                <input type="text" id="coord_y_{{incident.id}}" class="int" ng-model="incident.coord_y"/>
-                <label for="coord_y_{{incident.id}}" class="int">Z:</label>
-                <input type="text" id="coord_y_{{incident.id}}" class="int" ng-model="incident.coord_z"/>
-                <br/>
-                <button ng-click="saveIncident(incident)">Save</button>
+            <div ng-repeat="incident in incidents" class="form-horizontal">
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">Moderator:</label>
+                    <div class="col-sm-2">
+                        <input type="text" readonly="readonly" class="form-control" ng-model="incident.moderator"/>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">Created Date:</label>
+                    <div class="col-sm-2">
+                        <input type="text" readonly="readonly" class="form-control" ng-model="incident.created_date"/>
+                    </div>
+                    <label class="col-sm-2 control-label">Last Modified:</label>
+                    <div class="col-sm-2">
+                        <input type="text" readonly="readonly" class="form-control" ng-model="incident.modified_date"/>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="type_{{incident.id}}" class="col-sm-2 control-label">Incident type:</label>
+                    <div class="col-sm-2">
+                        <input type="text" class="form-control" id="type_{{incident.id}}" ng-model="incident.incident_type"/>
+                    </div>
+                    <label for="date_{{incident.id}}" class="col-sm-2 control-label">Incident Date:</label>
+                    <div class="col-sm-2">
+                        <input type="text" class="form-control" id="date_{{incident.id}}" ng-model="incident.incident_date"/>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="notes_{{incident.id}}" class="col-sm-2 control-label">Notes:</label>
+                    <div class="col-sm-6">
+                        <textarea class="form-control" id="notes_{{incident.id}}" ng-model="incident.notes"></textarea>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="action_{{incident.id}}" class="col-sm-2 control-label">Action Taken:</label>
+                    <div class="col-sm-6">
+                        <textarea class="form-control" id="action_{{incident.id}}" ng-model="incident.action_taken"></textarea>
+                    </div>
+                </div>
+                <div class="row">
+                    <p class="col-sm-2 col-sm-offset-1">
+                        Key Location
+                    </p>
+                </div>
+                <div class="form-group">
+                    <label for="world_{{incident.id}}" class="col-sm-2 control-label">World:</label>
+                    <div class="col-sm-2 sm-row">
+                        <select id="world_{{incident.id}}" class="form-control" ng-model="incident.world" ng-options="w.value as w.label for w in worlds"></select>
+                    </div>
+                    <label for="coord_x_{{incident.id}}" class="col-xs-1 control-label">X:</label>
+                    <div class="col-xs-3 col-sm-1">
+                        <input type="text" class="form-control" id="coord_x_{{incident.id}}" class="int" ng-model="incident.coord_x"/>
+                    </div>
+                    <label for="coord_y_{{incident.id}}" class="col-xs-1 control-label">Y:</label>
+                    <div class="col-xs-2 col-sm-1">
+                        <input type="text" class="form-control" id="coord_y_{{incident.id}}" class="int" ng-model="incident.coord_y"/>
+                    </div>
+                    <label for="coord_y_{{incident.id}}" class="col-xs-1 control-label">Z:</label>
+                    <div class="col-xs-3 col-sm-1">
+                        <input type="text" class="form-control" id="coord_y_{{incident.id}}" ng-model="incident.coord_z"/>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-xs-3 col-sm-2 col-xs-offset-8 col-sm-offset-7">
+                        <button class="btn btn-default" ng-click="saveIncident(incident)">Save</button>
+                    </div>
+                </div>
             </div>
         </div>
         <div>
             <h3>Ban History</h3>
-            <table>
+            <table class="table table-striped">
                 <thead>
                     <tr><th>Moderator</th><th>Date</th><th>Banned</th><th>Permanent</th></tr>
                 </thead>
@@ -74,6 +136,10 @@
                 </tbody>
             </table>
         </div>
-        <button ng-click="reset()">Cancel</button>
+        <div class="row">
+            <div class="col-xs-3 col-sm-2 col-xs-offset-8 col-sm-offset-7">
+                <button class="btn btn-default" ng-click="reset()">Cancel</button>
+            </div>
+        </div>
     </div>
 </div>
