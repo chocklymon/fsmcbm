@@ -1,17 +1,13 @@
 <alert ng-repeat="alert in alerts" type="{{alert.type}}" close="closeAlert($index)">{{alert.msg}}</alert>
 <form class="row" ng-submit="search()">
-    <div class="col-md-2 text-right">
-        <span ng-show="loadingLocations" class="glyphicon glyphicon-refresh"></span>
-    </div>
-    <div class="col-md-6">
+    <div class="col-md-6 col-md-offset-2">
         <div class="form-group has-feedback">
             <input type="text"
                    ng-model="selected"
                    placeholder="Find user by name..."
                    typeahead="user.label for user in getPossibleUsernames($viewValue)"
-                   typeahead-loading="loadingLocations"
                    typeahead-min-length="2"
-                   typeahead-on-select="loadUser(selected)"
+                   typeahead-on-select="loadUser($item)"
                    class="form-control" />
         </div>
         <div class="input-group sm-row">

@@ -76,7 +76,7 @@ bm.worlds = [{
                         label:"Outworld"
                     }];
 
-angular.module('banManager', ['ngRoute', 'ui.bootstrap'])
+angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadingBar'])
 .factory('CurrentUser', [function() {
     var cachedUser,
         getUsername = function() {
@@ -249,7 +249,6 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap'])
     }
 }])
 .controller('NavigationController', ['$scope', '$location', 'request', 'CurrentUser', 'CurrentSearch', function($scope, $location, request, CurrentUser, CurrentSearch) {
-    
     $scope.tabs = [
         {link : 'user', label: 'Manage'},
         {link : 'bans', label: 'Bans'},
