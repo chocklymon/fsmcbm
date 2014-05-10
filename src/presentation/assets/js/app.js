@@ -235,8 +235,16 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap'])
     if ($routeParams.term) {
         request('search', {search: $routeParams.term})
             .success(function(data){
-                console.log(data);
-                $scope.users = data.users;
+                if (data.users) {
+                    $scope.users = data.users;
+                } else {
+                    $scope.users = [];
+                }
+                if (data.incidents) {
+                    $scope.incidents = data.incidents;
+                } else {
+                    $scope.incidents = [];
+                }
             });
     }
 }])
