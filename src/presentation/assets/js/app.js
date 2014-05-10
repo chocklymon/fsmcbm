@@ -264,6 +264,8 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap'])
                 return $scope.tabs[i];
             }
         }
+        // No currently selected tab, select the first one by default
+        return $scope.tabs[0];
     };
     var search = function() {
         $location.path('search/' + CurrentSearch.get());
