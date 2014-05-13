@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>Final Score MC Ban Manager</title>
         <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" />
-        <link rel="stylesheet" href="presentation/assets/css/loading-bar.min.css"
+        <link rel="stylesheet" href="presentation/assets/css/loading-bar.min.css" />
         <link rel="stylesheet" href="presentation/assets/css/base.css" />
     </head>
     <body>
