@@ -5,7 +5,7 @@
     min-height: 100px;
 }
 
-.sm-row {
+.sm-row, .md-row {
     margin-bottom: 15px;
 }
 
@@ -26,6 +26,13 @@
 /* Medium devices (desktops, 992px and up) */
 @media (min-width: 992px) {
     .sm-row {
+        margin-bottom: 0;
+    }
+}
+
+/* Large devices (large desktops, 1200px and up) */
+@media (min-width: 1200px) {
+    .md-row {
         margin-bottom: 0;
     }
 }
