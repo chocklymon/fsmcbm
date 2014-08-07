@@ -2,6 +2,8 @@
 /* Copyright (c) 2014 Curtis Oakley
  * http://chockly.org/
  *
+ * Copyright 2014 Curtis Oakley.
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -21,25 +23,15 @@
  * THE SOFTWARE.
  */
 
-/**
- * Test the Database Exception class
- * @author Curtis Oakley
- */
-class DatabaseExceptionTest extends PHPUnit_Framework_TestCase
-{
-
-    public function testGetQuery()
-    {
-        $expected = "SELECT * FROM `mars`";
-        $exception = new DatabaseException("test", 0, "msg", $expected);
-        $this->assertEquals($expected, $exception->getQuery());
-    }
-
-    public function testGetErrorMessage()
-    {
-        $expected = "The database is special.";
-        $exception = new DatabaseException("test", 0, $expected);
-        $this->assertEquals($expected, $exception->getErrorMessage());
-    }
-
-}
+// Import the files
+// TODO replace this with an autoloader
+require_once('src/Log.php');
+require_once('src/FilteredInput.php');
+require_once('src/Settings.php');
+require_once('src/Output.php');
+require_once('src/DatabaseException.php');
+require_once('src/Database.php');
+require_once('src/Authentication.php');
+require_once('src/Controller.php');
+require_once('tests/MockDatabase.php');
+require_once('tests/MockSettings.php');

@@ -26,6 +26,7 @@
  * =============================
  */
 
+require_once('Log.php');
 require_once('FilteredInput.php');
 require_once('Settings.php');
 require_once('Output.php');
@@ -48,30 +49,35 @@ $input = new FilteredInput();
 $settings = new Settings();
 $output = new Output($settings);
 
+// Initialize the logger
+Log::initialize($settings);
+
 try {
     // Make sure that we have an action before continuing
     $endpoint = filter_input(INPUT_GET, 'action');
     if (is_null($endpoint)) {
         $output->error('No endpoint provided');
+        Log::debug('ban-manager: Invalid endpoint', $endpoint);
         exit();
     }
-    
+
     $db = new Database($settings);
     $auth = new Authentication($db, $settings, $input);
 
-    
+
     // If we are using wordpress load it now
     // Some plugins ('bbPress2 shortcode whitelist' and possibly others) cause a fatal
     // error when this is included inside of authentication.
     if ($auth->shouldLoadWordpress()) {
         $wp_load_file = $settings->getWordpressLoadFile();
         if (empty($wp_load_file) || !file_exists($wp_load_file)) {
+            Log::alert("ban-manager: No wordpress configuration file provided, or file doesn't exist");
             $output->error('Configuration error. Unable to authenticate through wordpress!');
             exit();
         }
         require_once($wp_load_file);
     }
-    
+
     if ($endpoint === 'login') {
         // Try to login the user
         if ($auth->loginUser()) {
@@ -83,6 +89,7 @@ try {
         // Authenticate the request
         if ($auth->authenticate() === false) {
             // Authentication failed
+            Log::debug('ban-manager: Authentication failed');
             $output->error("Not logged in.");
         } else {
             // Authentication successful, continue with the request
@@ -96,7 +103,7 @@ try {
 
             // Get an instance of the controller
             $actions = new Controller($db, $output);
-            
+
             switch ($endpoint) {
                 case 'auto_complete':
                     $actions->autoComplete($input);
@@ -135,8 +142,10 @@ try {
         }
     }
 } catch (AuthenticationException $ex) {
+    Log::error("ban-manager: Authentication exception", $ex);
     $output->exception($ex);
 } catch (DatabaseException $ex) {
+    Log::error("ban-manager: Database exception", $ex);
     $output->exception(
         $ex,
         array(
@@ -146,6 +155,7 @@ try {
         )
     );
 } catch (InvalidArgumentException $ex) {
+    Log::error("ban-manager: Invalid argument exception", $ex);
     $output->exception($ex);
 }
 

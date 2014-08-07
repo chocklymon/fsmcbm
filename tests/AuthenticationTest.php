@@ -21,12 +21,6 @@
  * THE SOFTWARE.
  */
 
-require_once('MockDatabase.php');
-require_once('MockSettings.php');
-require_once('src/FilteredInput.php');
-require_once('src/Output.php');
-require_once('src/Authentication.php');
-
 /**
  * Test the Ban Manager Authentication
  * @author Curtis Oakley
@@ -50,7 +44,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
      * @var Authentication
      */
     private $auth;
-    
+
     /**
      * @var FilteredInput
      */
@@ -204,7 +198,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
         $_COOKIE[self::$settings->getCookieName()] = '1|notchy|139656221|8c6e7d97248140d2155f36094d955a8f53339a89';
         self::$settings->setSetting('cookie_secret', 'secret_key');
         self::$settings->setSetting('session_duration', 1);
-        
+
         // Test that the cookie doesn't authenticate
         $this->assertFalse($this->auth->authenticate(), "Cookie user should NOT have been authenticated.");
     }
@@ -333,7 +327,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
         $this->input->password = 'password1';
         $this->assertFalse($this->auth->loginUser());
     }
-    
+
     public function testShouldLoadWordpress()
     {
         self::$settings->setSetting('use_wp_login', false);
@@ -344,7 +338,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
     //
     // Test Helper Functions
     //
-    
+
     /**
      * Gets an array sutable to be set into a MockDatabase that needs to
      * return that the nonce hasn't been used.
@@ -386,7 +380,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
     {
         return $this->getUserMockDB('Admin', $include_nonce);
     }
-    
+
     /**
      * Returns a MockDatabase that will return a user with the provided rank.
      * @param string $rank The user's rank.
@@ -428,5 +422,4 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
 
         $this->input->hmac = $hmac;
     }
-
 }

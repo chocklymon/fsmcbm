@@ -21,12 +21,6 @@
  * THE SOFTWARE.
  */
 
-require_once('MockDatabase.php');
-require_once('MockSettings.php');
-require_once('src/FilteredInput.php');
-require_once('src/Output.php');
-require_once('src/Controller.php');
-
 /**
  * Test the Ban Manager action controller
  * @author Curtis Oakley

@@ -23,8 +23,6 @@
  * THE SOFTWARE.
  */
 
-require_once('src/FilteredInput.php');
-
 /**
  * Tests the filtered input class.
  * @author Curtis Oakley

@@ -52,8 +52,20 @@ class Settings
             'debug' => false,
             'use_wp_login' => false,
             'session_duration' => 43200,// 12 hours
+            'log_directory' => '.',
+            'log_level' => 4,
         );
         $this->settings = array_merge($defaults, $settings);
+    }
+
+    /**
+     * Get a configuration setting from a configuration key.
+     * @param string $key The settings key name.
+     * @return string
+     */
+    public function get($key)
+    {
+        return $this->settings[$key];
     }
 
     /**

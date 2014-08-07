@@ -1,11 +1,14 @@
 <phpunit stopOnFailure="false"
          colors="true"
          backupGlobals="false"
-         backupStaticAttributes="false">
+         backupStaticAttributes="false"
+         bootstrap="bootstrap.php">
     <filter>
         <blacklist>
-            <!-- ignore the tests for code coverage -->
+            <!-- Ignore the tests for code coverage -->
             <directory>tests</directory>
+            <!-- Ignore the log file for -->
+            <file>src/Log.php</file>
         </blacklist>
     </filter>
     <testsuites>

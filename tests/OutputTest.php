@@ -21,9 +21,6 @@
  * THE SOFTWARE.
  */
 
-require_once('MockSettings.php');
-require_once('src/Output.php');
-
 /**
  * Test the Output class.
  *

@@ -21,10 +21,6 @@
  * THE SOFTWARE.
  */
 
-require_once('MockSettings.php');
-require_once('src/Output.php');
-require_once('src/Database.php');
-
 /**
  * Test the Database class.
  *

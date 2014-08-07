@@ -40,7 +40,7 @@ class Authentication
      * @var Database
      */
     private $db;
-    
+
     /**
      * @var FilteredInput
      */
@@ -115,6 +115,8 @@ class Authentication
             );
             if ($row['rank'] == 'Admin' || $row['rank'] == 'Moderator') {
                 return $row['user_id'];
+            } else {
+                Log::debug('Failed Login Attempt: Bad API user UUID');
             }
         }
         return null;
@@ -177,6 +179,7 @@ class Authentication
             $date_time = $this->db->getDate(time() - 86400);// One day
             $sql = "DELETE FROM `auth_nonce` WHERE `timestamp` < '{$date_time}'";
             $this->db->query($sql);
+            Log::debug('Authentication: Nonce cleared');
         }
     }
 
@@ -264,7 +267,7 @@ EOF;
         }
         return false;
     }
-    
+
     /**
      * Returns if the input indicates that it is an API request.
      * @return boolean true if the input data indicates we have an API request.
@@ -273,7 +276,7 @@ EOF;
     {
         return $this->input->exists('accessor_token') && $this->input->exists('hmac') && $this->input->exists('uuid');
     }
-    
+
     /**
      * Checks if the provided cookie data is valid.
      * @param array $cookie The cookie data as an array.
@@ -302,7 +305,7 @@ EOF;
         }
         return false;
     }
-    
+
     /**
      * Validates that all the post data's HMAC generated with the provided
      * hmac_key matches the HMAC in the post.
@@ -322,9 +325,13 @@ EOF;
             }
         }
 
-        return hash_hmac(self::HASH_ALGO, $msg, $hmac_key) == $hmac;
+        $valid_hmac = hash_hmac(self::HASH_ALGO, $msg, $hmac_key) == $hmac;
+        if (!$valid_hmac) {
+            Log::debug('Failed Login Attempt: Bad API HMAC');
+        }
+        return $valid_hmac;
     }
-    
+
     /**
      * Checks if the nonce inside of the input is valid
      * @return boolean true if the nonce is valid.
@@ -346,9 +353,10 @@ EOF;
                 return true;
             }
         }
+        Log::debug('Failed Login Attempt: Bad Nonce');
         return false;
     }
-    
+
     /**
      * Checks if the timestamp inside of the input is valid.
      * @return boolean true if the timestamp falls within the acceptable range
@@ -362,11 +370,15 @@ EOF;
 
             // The timestamp can be valid for five minutes from the current time.
             // This gives a buffer to compensate for time differences and network latency.
-            return $timestamp > ($current_time - 300) && $timestamp < ($current_time + 300);
+            $valid_timestamp = $timestamp > ($current_time - 300) && $timestamp < ($current_time + 300);
+            if (!$valid_timestamp) {
+                Log::debug('Failed Login Attempt: Bad API timestamp');
+            }
+            return $valid_timestamp;
         }
         return false;
     }
-    
+
     /**
      * Gets the authentication cookie.
      * @return array The cookie's data as an array, or null if the cookie
