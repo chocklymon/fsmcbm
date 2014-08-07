@@ -248,7 +248,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
             });
     }
 }])
-.controller('NavigationController', ['$scope', '$location', 'request', 'CurrentUser', 'CurrentSearch', function($scope, $location, request, CurrentUser, CurrentSearch) {
+.controller('NavigationController', ['$scope', '$location', 'request', 'CurrentUser', 'CurrentSearch', '$modal', function($scope, $location, request, CurrentUser, CurrentSearch, $modal) {
     $scope.tabs = [
         {link : 'user', label: 'Manage'},
         {link : 'bans', label: 'Bans'},
@@ -320,8 +320,24 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
         $location.path('/user/' + username);
     };
 
-    // Performs the search
+    // Add user and add incident buttons
+    $scope.addUser = function() {
+        $modal.open({
+            templateUrl: 'presentation/views/new_user.html',
+            controller: 'AddUserController',
+            size: 'lg',
+            resolve: {
+              items: function () {
+                return $scope.items;
+              }
+            }
+          });
+    };
+    $scope.addIncident = function() {
+        console.log("Add Incident");
+    };
 
+    // Performs the search
     $scope.search = function() {
         CurrentSearch.set($scope.search.text);
         search();
@@ -341,4 +357,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
     $scope.$on('$routeChangeSuccess', function() {
         $scope.selectedTab = getSelectedTab();
     });
+}])
+.controller('AddUserController', [function(){
+    console.log("Yay");
 }]);
