@@ -369,9 +369,9 @@ EOF;
             $timestamp = strtotime($this->input->timestamp);
             $current_time = time();
 
-            // The timestamp can be valid for five minutes from the current time.
+            // The timestamp can be valid for ten minutes from the current time.
             // This gives a buffer to compensate for time differences and network latency.
-            $valid_timestamp = $timestamp > ($current_time - 300) && $timestamp < ($current_time + 300);
+            $valid_timestamp = $timestamp > ($current_time - 600) && $timestamp < ($current_time + 600);
             if (!$valid_timestamp) {
                 Log::debug('Failed Login Attempt: Bad API timestamp');
             }
