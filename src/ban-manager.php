@@ -26,6 +26,7 @@
  * =============================
  */
 
+require_once('Log.php');
 require_once('FilteredInput.php');
 require_once('Settings.php');
 require_once('Output.php');
@@ -48,6 +49,9 @@ $input = new FilteredInput();
 $settings = new Settings();
 $output = new Output($settings);
 
+// Initialize the logger
+Log::initialize($settings);
+
 try {
     // Make sure that we have an action before continuing
     $endpoint = filter_input(INPUT_GET, 'action');
@@ -55,11 +59,11 @@ try {
         $output->error('No endpoint provided');
         exit();
     }
-    
+
     $db = new Database($settings);
     $auth = new Authentication($db, $settings, $input);
 
-    
+
     // If we are using wordpress load it now
     // Some plugins ('bbPress2 shortcode whitelist' and possibly others) cause a fatal
     // error when this is included inside of authentication.
@@ -71,7 +75,7 @@ try {
         }
         require_once($wp_load_file);
     }
-    
+
     if ($endpoint === 'login') {
         // Try to login the user
         if ($auth->loginUser()) {
@@ -96,7 +100,7 @@ try {
 
             // Get an instance of the controller
             $actions = new Controller($db, $output);
-            
+
             switch ($endpoint) {
                 case 'auto_complete':
                     $actions->autoComplete($input);

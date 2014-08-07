@@ -4,8 +4,10 @@
          backupStaticAttributes="false">
     <filter>
         <blacklist>
-            <!-- ignore the tests for code coverage -->
+            <!-- Ignore the tests for code coverage -->
             <directory>tests</directory>
+            <!-- Ignore the log file for -->
+            <file>src/Log.php</file>
         </blacklist>
     </filter>
     <testsuites>
