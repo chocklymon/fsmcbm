@@ -116,6 +116,8 @@ class Authentication
             );
             if ($row['rank'] == 'Admin' || $row['rank'] == 'Moderator') {
                 return $row['user_id'];
+            } else {
+                Log::debug('Failed Login Attempt: Bad API user UUID');
             }
         }
         return null;
@@ -178,6 +180,7 @@ class Authentication
             $date_time = $this->db->getDate(time() - 86400);// One day
             $sql = "DELETE FROM `auth_nonce` WHERE `timestamp` < '{$date_time}'";
             $this->db->query($sql);
+            Log::debug('Authentication: Nonce cleared');
         }
     }
 
@@ -323,7 +326,11 @@ EOF;
             }
         }
 
-        return hash_hmac(self::HASH_ALGO, $msg, $hmac_key) == $hmac;
+        $valid_hmac = hash_hmac(self::HASH_ALGO, $msg, $hmac_key) == $hmac;
+        if (!$valid_hmac) {
+            Log::debug('Failed Login Attempt: Bad API HMAC');
+        }
+        return $valid_hmac;
     }
 
     /**
@@ -347,6 +354,7 @@ EOF;
                 return true;
             }
         }
+        Log::debug('Failed Login Attempt: Bad Nonce');
         return false;
     }
 
@@ -363,7 +371,11 @@ EOF;
 
             // The timestamp can be valid for five minutes from the current time.
             // This gives a buffer to compensate for time differences and network latency.
-            return $timestamp > ($current_time - 300) && $timestamp < ($current_time + 300);
+            $valid_timestamp = $timestamp > ($current_time - 300) && $timestamp < ($current_time + 300);
+            if (!$valid_timestamp) {
+                Log::debug('Failed Login Attempt: Bad API timestamp');
+            }
+            return $valid_timestamp;
         }
         return false;
     }

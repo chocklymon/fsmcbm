@@ -57,6 +57,7 @@ try {
     $endpoint = filter_input(INPUT_GET, 'action');
     if (is_null($endpoint)) {
         $output->error('No endpoint provided');
+        Log::debug('ban-manager: Invalid endpoint', $endpoint);
         exit();
     }
 
@@ -70,6 +71,7 @@ try {
     if ($auth->shouldLoadWordpress()) {
         $wp_load_file = $settings->getWordpressLoadFile();
         if (empty($wp_load_file) || !file_exists($wp_load_file)) {
+            Log::alert("ban-manager: No wordpress configuration file provided, or file doesn't exist");
             $output->error('Configuration error. Unable to authenticate through wordpress!');
             exit();
         }
@@ -87,6 +89,7 @@ try {
         // Authenticate the request
         if ($auth->authenticate() === false) {
             // Authentication failed
+            Log::debug('ban-manager: Authentication failed');
             $output->error("Not logged in.");
         } else {
             // Authentication successful, continue with the request
@@ -139,8 +142,10 @@ try {
         }
     }
 } catch (AuthenticationException $ex) {
+    Log::error("ban-manager: Authentication exception", $ex);
     $output->exception($ex);
 } catch (DatabaseException $ex) {
+    Log::error("ban-manager: Database exception", $ex);
     $output->exception(
         $ex,
         array(
@@ -150,6 +155,7 @@ try {
         )
     );
 } catch (InvalidArgumentException $ex) {
+    Log::error("ban-manager: Invalid argument exception", $ex);
     $output->exception($ex);
 }
 
