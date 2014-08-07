@@ -1,7 +1,8 @@
 <phpunit stopOnFailure="false"
          colors="true"
          backupGlobals="false"
-         backupStaticAttributes="false">
+         backupStaticAttributes="false"
+         bootstrap="bootstrap.php">
     <filter>
         <blacklist>
             <!-- Ignore the tests for code coverage -->

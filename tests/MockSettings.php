@@ -21,8 +21,6 @@
  * THE SOFTWARE.
  */
 
-require_once('src/Settings.php');
-
 /**
  * Fake setting class so that Unit Tests can modify settings
  * @author Curtis Oakley
@@ -47,6 +45,7 @@ class MockSettings extends Settings
             'debug' => false,
             'wp_load_file' => 'tests/wp-load.php',
             'use_wp_login' => false,
+            'log_level' => 8,// OFF
         );
 
         // Allow the settings to be overriden by a test.ini file

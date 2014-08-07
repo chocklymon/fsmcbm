@@ -21,8 +21,6 @@
  * THE SOFTWARE.
  */
 
-require_once('src/Settings.php');
-
 /**
  * Test the Settings class
  *
@@ -34,29 +32,29 @@ class SettingsTest extends PHPUnit_Framework_TestCase
      * @var Settings
      */
     private static $settings;
-    
+
     public static function setUpBeforeClass()
     {
         self::$settings = new Settings();// TODO be able to specify a settings file, this will remove the need for a mock settings
     }
-    
+
     public function testConstructor()
     {
         $settings = new Settings();
         $this->assertInstanceOf('Settings', $settings);
     }
-    
+
     public function testGetCookieName()
     {
         $this->assertEquals('bm', self::$settings->getCookieName());
     }
-    
+
     public function testGetAccessorKey()
     {
         $key = self::$settings->getAccessorKey('missing');
         $this->assertFalse($key);
     }
-    
+
     /**
      * @expectedException PHPUnit_Framework_Error
      */
@@ -64,7 +62,7 @@ class SettingsTest extends PHPUnit_Framework_TestCase
     {
         self::$settings->getDatabaseHost();
     }
-    
+
     /**
      * @expectedException PHPUnit_Framework_Error
      */
@@ -72,7 +70,7 @@ class SettingsTest extends PHPUnit_Framework_TestCase
     {
         self::$settings->getDatabaseName();
     }
-    
+
     /**
      * @expectedException PHPUnit_Framework_Error
      */
@@ -80,7 +78,7 @@ class SettingsTest extends PHPUnit_Framework_TestCase
     {
         self::$settings->getDatabasePassword();
     }
-    
+
     /**
      * @expectedException PHPUnit_Framework_Error
      */
@@ -88,10 +86,10 @@ class SettingsTest extends PHPUnit_Framework_TestCase
     {
         self::$settings->getDatabaseUsername();
     }
-    
+
     public function testDebugMode()
     {
         $this->assertFalse(self::$settings->debugMode());
     }
-    
+
 }

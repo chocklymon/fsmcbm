@@ -21,8 +21,6 @@
  * THE SOFTWARE.
  */
 
-require_once 'src/Database.php';
-
 /**
  * Acts as a mock for the database class.
  * @author Curtis Oakley

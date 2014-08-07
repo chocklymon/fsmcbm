@@ -339,7 +339,10 @@ class Log
     public static function log($line, $severity, $args = self::NO_ARGUMENTS)
     {
         $logger = self::getInstance();
-        $logger->appendLog($line, $severity, $args);
+        // Make sure we have a logger instance, otherwise just don't log anything
+        if ($logger) {
+            $logger->appendLog($line, $severity, $args);
+        }
     }
 
     public function appendLog($line, $severity, $args = self::NO_ARGUMENTS)
