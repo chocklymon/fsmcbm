@@ -1,4 +1,4 @@
-/* 
+/*
  * The MIT License
  *
  * Copyright 2014 Curtis Oakley.
@@ -181,11 +181,11 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
             $scope.history = data.history;
         }
     };
-    
+
     // TODO
     $scope.worlds = bm.worlds;
     $scope.ranks = bm.ranks;
-    
+
     // Button functions
     $scope.reset = function() {
         // Reload from the server
@@ -202,7 +202,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
             console.log(data);
         });
     };
-    
+
     // If we have a username, load it up
     if ($routeParams.username) {
         // See if this user is cached
@@ -231,7 +231,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
     $scope.lookupUser = function(username) {
         $location.path('/user/'+username);
     };
-        
+
     if ($routeParams.term) {
         request('search', {search: $routeParams.term})
             .success(function(data){
@@ -254,8 +254,8 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
         {link : 'bans', label: 'Bans'},
         {link : 'watchlist', label: 'Watchlist'},
         {link : 'search', label: 'Search'}
-    ]; 
-    
+    ];
+
     // Try to find the currently selected tab
     var getSelectedTab = function() {
         for (var i=0; i<$scope.tabs.length; i++) {
@@ -269,9 +269,9 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
     var search = function() {
         $location.path('search/' + CurrentSearch.get());
     };
-    
+
     $scope.selectedTab = getSelectedTab();
-    
+
     // Change what tab is selected
     $scope.selectTab = function(tab) {
         if (tab === $scope.tabs[0] && CurrentUser.getUsername()) {
@@ -301,7 +301,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
             return "";
         }
     };
-    
+
     // Loads autocomplete terms via AJAX
     $scope.getPossibleUsernames = function(val) {
         return request('auto_complete', {
@@ -310,20 +310,24 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
             return res.data;
         });
     };
-    
+
     // Loads a selected user
     $scope.loadUser = function(username) {
+        // We are loaded from the typeahead we need to extract the username
+        if (typeof username === 'object' && username.label) {
+            username = username.label;
+        }
         $location.path('/user/' + username);
     };
-    
+
     // Performs the search
-    
+
     $scope.search = function() {
         CurrentSearch.set($scope.search.text);
         search();
     };
     $scope.search.text = "";
-    
+
     // Alerts
     $scope.alerts = [];
     $scope.closeAlert = function(index) {
@@ -332,7 +336,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
     $scope.addAlert = function() {
         $scope.alerts.push({type: 'danger', msg: 'Another alert!'});
     };
-    
+
     // Watch for changes on the route
     $scope.$on('$routeChangeSuccess', function() {
         $scope.selectedTab = getSelectedTab();
