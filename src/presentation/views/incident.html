@@ -1,0 +1,68 @@
+<div class="form-horizontal">
+    <div class="form-group">
+        <label class="col-sm-2 control-label">Moderator:</label>
+        <div class="col-sm-2">
+            <input type="text" readonly="readonly" class="form-control" ng-model="incident.moderator"/>
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="col-sm-2 control-label">Created Date:</label>
+        <div class="col-sm-2">
+            <input type="text" readonly="readonly" class="form-control" ng-model="incident.created_date"/>
+        </div>
+        <label class="col-sm-2 control-label">Last Modified:</label>
+        <div class="col-sm-2">
+            <input type="text" readonly="readonly" class="form-control" ng-model="incident.modified_date"/>
+        </div>
+    </div>
+    <div class="form-group">
+        <label for="type_{{incident.id}}" class="col-sm-2 control-label">Incident type:</label>
+        <div class="col-sm-2">
+            <input type="text" class="form-control" id="type_{{incident.id}}" ng-model="incident.incident_type"/>
+        </div>
+        <label for="date_{{incident.id}}" class="col-sm-2 control-label">Incident Date:</label>
+        <div class="col-sm-2">
+            <input type="text" class="form-control" id="date_{{incident.id}}" ng-model="incident.incident_date"/>
+        </div>
+    </div>
+    <div class="form-group">
+        <label for="notes_{{incident.id}}" class="col-sm-2 control-label">Notes:</label>
+        <div class="col-sm-6">
+            <textarea class="form-control" id="notes_{{incident.id}}" ng-model="incident.notes"></textarea>
+        </div>
+    </div>
+    <div class="form-group">
+        <label for="action_{{incident.id}}" class="col-sm-2 control-label">Action Taken:</label>
+        <div class="col-sm-6">
+            <textarea class="form-control" id="action_{{incident.id}}" ng-model="incident.action_taken"></textarea>
+        </div>
+    </div>
+    <div class="row">
+        <p class="col-sm-2 col-sm-offset-1">
+            Key Location
+        </p>
+    </div>
+    <div class="form-group">
+        <label for="world_{{incident.id}}" class="col-sm-2 control-label">World:</label>
+        <div class="col-sm-9 col-lg-3 md-row">
+            <select id="world_{{incident.id}}" class="form-control" ng-model="incident.world" ng-options="w.value as w.label for w in worlds"></select>
+        </div>
+        <label for="coord_x_{{incident.id}}" class="col-sm-2 col-lg-1 control-label">X:</label>
+        <div class="col-sm-2 col-lg-1">
+            <input type="text" class="form-control" id="coord_x_{{incident.id}}" class="int" ng-model="incident.coord_x"/>
+        </div>
+        <label for="coord_y_{{incident.id}}" class="col-sm-1 control-label">Y:</label>
+        <div class="col-sm-2 col-lg-1">
+            <input type="text" class="form-control" id="coord_y_{{incident.id}}" class="int" ng-model="incident.coord_y"/>
+        </div>
+        <label for="coord_y_{{incident.id}}" class="col-sm-1 control-label">Z:</label>
+        <div class="col-sm-2 col-lg-1">
+            <input type="text" class="form-control" id="coord_y_{{incident.id}}" ng-model="incident.coord_z"/>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-xs-3 col-sm-2 col-xs-offset-8 col-sm-offset-7">
+            <button class="btn btn-default" ng-click="saveIncident(incident)">Save</button>
+        </div>
+    </div>
+</div>

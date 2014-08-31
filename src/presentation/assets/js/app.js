@@ -125,11 +125,11 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
     $routeProvider
         .when('/', {
             controller:  'user',
-            templateUrl: 'presentation/views/user.html'
+            templateUrl: 'presentation/views/manage-user.html'
         })
         .when('/user/:username', {
             controller:  'user',
-            templateUrl: 'presentation/views/user.html'
+            templateUrl: 'presentation/views/manage-user.html'
         })
         .when('/bans', {
             controller:  'userList',
@@ -323,18 +323,17 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
     // Add user and add incident buttons
     $scope.addUser = function() {
         $modal.open({
-            templateUrl: 'presentation/views/new_user.html',
+            templateUrl: 'presentation/views/user.html',
             controller: 'AddUserController',
-            size: 'lg',
-            resolve: {
-              items: function () {
-                return $scope.items;
-              }
-            }
-          });
+            size: 'lg'
+        });
     };
     $scope.addIncident = function() {
-        console.log("Add Incident");
+        $modal.open({
+            templateUrl: 'presentation/views/incident.html',
+            controller: 'AddIncidentController',
+            size: 'lg'
+        });
     };
 
     // Performs the search
@@ -359,5 +358,8 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
     });
 }])
 .controller('AddUserController', [function(){
-    console.log("Yay");
-}]);
+    console.log("AddUserController");
+}])
+.controller('AddIncidentController', function(){
+    console.log("AddIncidentController");
+});

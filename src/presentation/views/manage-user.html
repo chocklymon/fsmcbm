@@ -1,0 +1,32 @@
+<div ng-switch="!user">
+    <p ng-switch-when="true">Select a user to manage.</p>
+    <div ng-switch-default="">
+        <div>
+            <div ng-include="'presentation/views/user.html'"></div>
+        </div>
+        <div>
+            <div ng-repeat="incident in incidents" ng-include="'presentation/views/incident.html'"></div>
+        </div>
+        <div>
+            <h3>Ban History</h3>
+            <table class="table table-striped">
+                <thead>
+                    <tr><th>Moderator</th><th>Date</th><th>Banned</th><th>Permanent</th></tr>
+                </thead>
+                <tbody>
+                    <tr ng-repeat="ban in history">
+                        <td>{{ban.moderator}}</td>
+                        <td>{{ban.date}}</td>
+                        <td>{{ban.banned|checkmark}}</td>
+                        <td>{{ban.permanent|checkmark}}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="row">
+            <div class="col-xs-3 col-sm-2 col-xs-offset-8 col-sm-offset-7">
+                <button class="btn btn-default" ng-click="reset()">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
