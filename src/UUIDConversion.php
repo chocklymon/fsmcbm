@@ -63,13 +63,13 @@ $profiles_processed = 0;
 $bad_response_count = 0;
 $max_iterations = 100;
 for ($i=0; $i < $max_iterations && $bad_response_count < 5; $i++) {
-    
     $query_result = $db->query($select_without_uuid_sql);
     
     $profiles = array();
     while ($row = $query_result->fetch_assoc()) {
         $profiles[] = $row['username'];
     }
+    $query_result->free();
     if (empty($profiles)) {
         break;
     }
@@ -77,6 +77,7 @@ for ($i=0; $i < $max_iterations && $bad_response_count < 5; $i++) {
     $profile_json = json_encode($profiles);
     $curl_result = doJSONPost($profile_url, $profile_json);
     if ($settings->debugMode()) {
+        print_r($profiles);
         echo "$curl_result\n";
     }
     $result = json_decode($curl_result, true);
@@ -96,8 +97,16 @@ for ($i=0; $i < $max_iterations && $bad_response_count < 5; $i++) {
 
 echo "Updated the UUID of {$profiles_processed} users\n";
 
-if (count($profiles) > 0) {
-    echo "There may be more users that need to be updated. Please re-run.\n";
+// Check if we still have work to do
+$sql = <<<SQL
+SELECT COUNT(*) AS count
+FROM `users`
+WHERE `uuid` IS NULL
+SQL;
+
+$count = $db->querySingleRow($sql);
+if ($count['count'] > 0) {
+    echo "There are usernames that still need a UUID. Please re-run.\n";
 }
 
 echo "</pre></body></html>";
