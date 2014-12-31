@@ -357,8 +357,14 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
         $scope.selectedTab = getSelectedTab();
     });
 }])
-.controller('AddUserController', [function(){
-    console.log("AddUserController");
+.controller('AddUserController', ['$scope', 'request', '$modalInstance', function($scope, request, $modalInstance){
+    $scope.saveUser = function(user) {
+        request('add_user', user).success(function(data) {
+            // TODO output a message
+            console.log(data);
+            $modalInstance.close(data);
+        });
+    };
 }])
 .controller('AddIncidentController', function(){
     console.log("AddIncidentController");
