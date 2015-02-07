@@ -2,54 +2,56 @@
     <div class="form-group">
         <label for="username" class="col-sm-2 control-label">Username:</label>
         <div class="col-sm-2">
-            <input type="text" class="form-control" id="username" ng-model="user.username"/>
+            <input type="text" class="form-control" id="username" ng-model="player.username"/>
         </div>
-        <label for="user_mod_date" class="col-sm-2 control-label">Modified Date:</label>
-        <div class="col-sm-2">
-            <input type="text" class="col-sm-2 form-control" id="user_mod_date" ng-model="user.modified_date"/>
+        <div ng-show="!adding">
+            <label for="user_mod_date" class="col-sm-2 control-label">Modified Date:</label>
+            <div class="col-sm-2">
+                <input type="text" class="col-sm-2 form-control" id="user_mod_date" ng-model="player.modified_date" readonly="readonly" />
+            </div>
         </div>
     </div>
     <div class="form-group">
         <label for="user_uuid" class="col-sm-2 control-label">UUID:</label>
         <div class="col-sm-6">
-            <input type="text" class="form-control" id="user_uuid" ng-model="user.user_uuid" ng-readonly="!editUUID()" />
+            <input type="text" class="form-control" id="user_uuid" ng-model="player.user_uuid" ng-readonly="!adding" />
         </div>
     </div>
     <div class="form-group">
         <label for="user_banned" class="col-xs-4 col-sm-2 control-label">Banned:</label>
         <div class="col-xs-2">
             <div class="checkbox">
-                <input type="checkbox" id="user_banned" ng-model="user.banned" ng-true-value="1" ng-false-value="0"/>
+                <input type="checkbox" id="user_banned" ng-model="player.banned" ng-true-value="1" ng-false-value="0"/>
             </div>
         </div>
         <label for="user_permanent" class="col-xs-4 col-sm-2 control-label">Permanent:</label>
         <div class="col-xs-2">
             <div class="checkbox">
-                <input type="checkbox" id="user_permanent" ng-model="user.permanent" ng-true-value="1" ng-false-value="0"/>
+                <input type="checkbox" id="user_permanent" ng-model="player.permanent" ng-true-value="1" ng-false-value="0"/>
             </div>
         </div>
     </div>
     <div class="form-group">
         <label for="rank" class="col-sm-2 control-label">Rank:</label>
         <div class="col-sm-3">
-            <select id="rank" class="form-control" ng-model="user.rank" ng-options="r.value as r.label for r in ranks"></select>
+            <select id="rank" class="form-control" ng-model="player.rank" ng-options="r.value as r.label for r in ranks"></select>
         </div>
     </div>
     <div class="form-group">
         <label for="user_relations" class="col-sm-2 control-label">Relations:</label>
         <div class="col-sm-6">
-            <textarea id="user_relations" class="form-control" ng-model="user.relations"></textarea>
+            <textarea id="user_relations" class="form-control" ng-model="player.relations"></textarea>
         </div>
     </div>
     <div class="form-group">
         <label for="user_notes" class="col-sm-2 control-label">Notes:</label>
         <div class="col-sm-6">
-            <textarea id="user_notes" class="form-control" ng-model="user.notes"></textarea>
+            <textarea id="user_notes" class="form-control" ng-model="player.notes"></textarea>
         </div>
     </div>
-    <div class="row">
+    <div class="row" ng-show="!adding">
         <div class="col-xs-3 col-sm-2 col-xs-offset-8 col-sm-offset-7">
-            <button class="btn btn-default" ng-click="saveUser(user)">Save</button>
+            <button class="btn btn-default" ng-click="save(player)">Save</button>
         </div>
     </div>
 </div>

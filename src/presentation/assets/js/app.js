@@ -184,11 +184,15 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
         return target.slice(0, index) + insert + target.slice(index);
     };
     return function(input) {
-        var uuid = splice(input, 8, '-');
-        uuid = splice(uuid, 13, '-');
-        uuid = splice(uuid, 18, '-');
-        uuid = splice(uuid, 23, '-');
-        return uuid;
+        if (input && input.length == 32) {
+            var uuid = splice(input, 8, '-');
+            uuid = splice(uuid, 13, '-');
+            uuid = splice(uuid, 18, '-');
+            uuid = splice(uuid, 23, '-');
+            return uuid;
+        } else {
+            return input;
+        }
     }
 })
 
@@ -209,13 +213,39 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
         } else if (typeof input === 'number') {
             value = input == 1;
         } else if (typeof input === 'string') {
-            value = input == 'true';
+            value = input == 'true' || input == '1';
         } else if (!value) {
             value = false;
         }
         return value ? '\u2713' : '\u2718';
     };
 })
+
+
+/* ======================
+ * Directives
+ * ======================
+ */
+.directive('player', ['request', function(request) {
+    return {
+        scope: {
+            player: '=',
+            adding: '='
+        },
+        restrict: 'E',
+        templateUrl: 'presentation/views/user.html',
+        link: function(scope, elem, attrs) {
+            // TODO ranks
+            scope.ranks = bm.ranks;
+            scope.save = function() {
+                request('update_user', scope.player).success(function(data) {
+                    // TODO messaging
+                    console.log(data);
+                });
+            };
+        }
+    };
+}])
 
 
 /* ======================
@@ -284,16 +314,17 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
             CurrentUser.set(data);
 
             // Set the data into the scope
-            $scope.user = data.user;
-            $scope.user.user_uuid = uuidFormat($scope.user.uuid);
-            $scope.incidents = data.incident;
-            $scope.history = data.history;
+            $scope.user = {
+                player: data.user,
+                incidents: data.incident,
+                history: data.history
+            };
+            $scope.user.player.user_uuid = uuidFormat(data.user.uuid);
         }
     };
 
     // TODO
     $scope.worlds = bm.worlds;
-    $scope.ranks = bm.ranks;
 
     // Button functions
     $scope.reset = function() {
@@ -305,14 +336,6 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
         request('update_incident', incident).success(function(data){
             console.log(data);
         });
-    };
-    $scope.saveUser = function(user) {
-        request('update_user', user).success(function(data){
-            console.log(data);
-        });
-    };
-    $scope.editUUID = function() {
-        return false;
     };
 
     // If we have a username, load it up
@@ -435,7 +458,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
     // Add user and add incident buttons
     $scope.addUser = function() {
         $modal.open({
-            templateUrl: 'presentation/views/user.html',
+            templateUrl: 'presentation/views/add-player.html',
             controller: 'AddUserController',
             size: 'lg'
         });
@@ -471,15 +494,18 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
 }])
 .controller('AddUserController', ['$scope', 'request', '$modalInstance', function($scope, request, $modalInstance){
     // TODO This and the user controller will be very similar, find a way to combine them?
-    $scope.saveUser = function(user) {
-        request('add_user', user).success(function(data) {
+    $scope.player = {
+        info: {}
+    };
+    $scope.save = function() {
+        request('add_user', $scope.player.info).success(function(data) {
             // TODO output a message
             console.log(data);
             $modalInstance.close(data);
         });
     };
-    $scope.editUUID = function() {
-        return true;
+    $scope.cancel = function() {
+        $modalInstance.dismiss('cancel');
     };
 }])
 .controller('AddIncidentController', function(){

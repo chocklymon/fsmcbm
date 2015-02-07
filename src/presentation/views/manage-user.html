@@ -2,10 +2,10 @@
     <p ng-switch-when="true">Select a user to manage.</p>
     <div ng-switch-default="">
         <div>
-            <div ng-include="'presentation/views/user.html'"></div>
+            <player player="user.player" adding="false"></player>
         </div>
         <div>
-            <div ng-repeat="incident in incidents" ng-include="'presentation/views/incident.html'"></div>
+            <div ng-repeat="incident in user.incidents" ng-include="'presentation/views/incident.html'"></div>
         </div>
         <div>
             <h3>Ban History</h3>
@@ -14,7 +14,7 @@
                     <tr><th>Moderator</th><th>Date</th><th>Banned</th><th>Permanent</th></tr>
                 </thead>
                 <tbody>
-                    <tr ng-repeat="ban in history">
+                    <tr ng-repeat="ban in user.history">
                         <td>{{ban.moderator}}</td>
                         <td>{{ban.date}}</td>
                         <td>{{ban.banned|checkmark}}</td>
