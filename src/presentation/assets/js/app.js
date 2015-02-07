@@ -21,6 +21,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+"use strict";
+
 var bm = {};
 bm.ranks = [{"value":"1","label":"Everyone"},{"value":"2","label":"Regular"},{"value":"3","label":"Donor"},{"value":"4","label":"Builder"},{"value":"5","label":"Engineer"},{"value":"6","label":"Moderator"},{"value":"7","label":"Admin"},{"value":"8","label":"Default"}];
 bm.worlds = [{
@@ -76,9 +78,26 @@ bm.worlds = [{
                         label:"Outworld"
                     }];
 
+
+/* ======================
+ * Ban Manager Module
+ * ======================
+ */
 angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadingBar'])
+
+
+/* ======================
+ * Factories & Services
+ * ======================
+ */
+
+/**
+ * Current user factory.
+ *
+ * Provides a cache for the currently managed user.
+ */
 .factory('CurrentUser', [function() {
-    var cachedUser,
+    var cachedUser = null,
         getUsername = function() {
             if (cachedUser) {
                 return cachedUser.user.username;
@@ -86,49 +105,85 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
                 return null;
             }
         };
+
     return {
+        /**
+         * Set the current user.
+         * @param user The user object.
+         */
         set: function(user) {
             cachedUser = user;
         },
+
+        /**
+         * Get the currently cached user.
+         * @returns {object} The cached user, or null.
+         */
         get: function() {
             return cachedUser;
         },
+
+        /**
+         * Get the current user's username.
+         * @returns {object} The current user's username, or null.
+         */
         getUsername: getUsername,
+
+        /**
+         * Get if the provided username matches the cached user.
+         * @param username The username to check against.
+         * @returns {boolean} True if the username matches.
+         */
         matches: function(username) {
             return username === getUsername();
         }
     };
 }])
+
+/**
+ * Current search terms factory.
+ *
+ * Caches the current search term.
+ */
 .factory('CurrentSearch', [function() {
     var term = "";
     return {
+        /**
+         * Set the current search term.
+         * @param searchTerm The search term to store.
+         */
         set: function(searchTerm) {
             term = searchTerm;
         },
+
+        /**
+         * Get the current search term.
+         * @returns {string} The current search term, or an empty string if there is no current search.
+         */
         get: function() {
             return term;
         }
     };
 }])
-.factory('request', ['$http', function($http){
+
+/**
+ * Perform a request to the ban-manager API.
+ */
+.factory('request', ['$http', function($http) {
     return function(endpoint, payload) {
         return $http.post('ban-manager.php?action='+endpoint, payload);
     };
 }])
-.filter('checkmark', function() {
-    return function(input) {
-        return input == 1 ? '\u2713' : '\u2718';
-    };
-})
+
 /**
  * Converts an un-formatted UUID to a formatted one.
  * E.g., 51f05c21503c4e309a3f9c7a6dbdb2ea becomes 51f05c21-503c-4e30-9a3f-9c7a6dbdb2ea
  */
 .factory('uuidFormat', function() {
+    var splice = function(target, index, insert) {
+        return target.slice(0, index) + insert + target.slice(index);
+    };
     return function(input) {
-        var splice = function(target, index, insert) {
-            return target.slice(0, index) + insert + target.slice(index);
-        };
         var uuid = splice(input, 8, '-');
         uuid = splice(uuid, 13, '-');
         uuid = splice(uuid, 18, '-');
@@ -136,6 +191,37 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
         return uuid;
     }
 })
+
+
+/* ======================
+ * Filters
+ * ======================
+ */
+
+/**
+ * Takes a boolean input and returns ✓ when true and ✘ when false.
+ */
+.filter('checkmark', function() {
+    return function(input) {
+        var value = true;
+        if (typeof input === 'boolean') {
+            value = input;
+        } else if (typeof input === 'number') {
+            value = input == 1;
+        } else if (typeof input === 'string') {
+            value = input == 'true';
+        } else if (!value) {
+            value = false;
+        }
+        return value ? '\u2713' : '\u2718';
+    };
+})
+
+
+/* ======================
+ * Configuration
+ * ======================
+ */
 .config(['$routeProvider', '$httpProvider', function($routeProvider, $httpProvider) {
     // Set up the routes
     $routeProvider
@@ -183,6 +269,12 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
         };
     });
 }])
+
+
+/* ======================
+ * Controllers
+ * ======================
+ */
 .controller('user', ['$scope', '$routeParams', 'CurrentUser', 'request', 'uuidFormat', function($scope, $routeParams, CurrentUser, request, uuidFormat) {
     // Create a function to set the data in the scope
     var setUser = function(data) {
