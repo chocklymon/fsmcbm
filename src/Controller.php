@@ -22,7 +22,7 @@
  */
 
 /**
- * Controlls interactions with the database and output to the user.
+ * Controls interactions with the database and output to the user.
  * @author Curtis Oakley
  */
 class Controller
@@ -35,7 +35,7 @@ class Controller
     private $db;
 
     /**
-     * The ouptut handler
+     * The output handler
      * @var Output
      */
     private $output;
@@ -55,7 +55,7 @@ class Controller
 
     /**
      * Construct a new controller.
-     * @param Database $database The databse instance to use.
+     * @param Database $database The database instance to use.
      * @param Output $output The output instance to use.
      */
     public function __construct(Database $database, Output $output)
@@ -310,13 +310,12 @@ SQL;
 
 
         // Get the user
-        $this->output->append(
-            $this->db->querySingleRow(
-                "SELECT * FROM users WHERE user_id = '$user_id'",
-                'User not found.'
-            ),
-            'user'
+        $user_info = $this->db->querySingleRow(
+            "SELECT * FROM users WHERE user_id = '$user_id'",
+            'User not found.'
         );
+        $user_info['uuid'] = bin2hex($user_info['uuid']);
+        $this->output->append($user_info, 'user');
 
 
         // Get the incidents
@@ -413,6 +412,11 @@ SQL;
         if ($input->exists('username')) {
             $username = $this->db->sanitize($input->username);
         }
+        $uuid = null;
+        if ($input->exists('user_uuid')) {
+            $uuid_binary = pack("H*", mb_ereg_replace('-', '', $input->user_uuid));
+            $uuid = $this->db->sanitize($uuid_binary);
+        }
         $rank = $this->db->sanitize($input->rank, true);
         $banned = $input->getBoolean('banned');
         $permanent = $input->getBoolean('permanent');
@@ -438,6 +442,9 @@ SQL;
 
         if ($username != null && mb_strlen($username) > 0) {
             $query .= "`username` = '$username', ";
+        }
+        if ($uuid != null && strlen($uuid) == 17) {
+            $query .= "`uuid` = '$uuid', ";
         }
 
         $query .=   "`modified_date` = '$today',

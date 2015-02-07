@@ -120,6 +120,22 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
         return input == 1 ? '\u2713' : '\u2718';
     };
 })
+/**
+ * Converts an un-formatted UUID to a formatted one.
+ * E.g., 51f05c21503c4e309a3f9c7a6dbdb2ea becomes 51f05c21-503c-4e30-9a3f-9c7a6dbdb2ea
+ */
+.factory('uuidFormat', function() {
+    return function(input) {
+        var splice = function(target, index, insert) {
+            return target.slice(0, index) + insert + target.slice(index);
+        };
+        var uuid = splice(input, 8, '-');
+        uuid = splice(uuid, 13, '-');
+        uuid = splice(uuid, 18, '-');
+        uuid = splice(uuid, 23, '-');
+        return uuid;
+    }
+})
 .config(['$routeProvider', '$httpProvider', function($routeProvider, $httpProvider) {
     // Set up the routes
     $routeProvider
@@ -167,7 +183,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
         };
     });
 }])
-.controller('user', ['$scope', '$routeParams', 'CurrentUser', 'request', function($scope, $routeParams, CurrentUser, request) {
+.controller('user', ['$scope', '$routeParams', 'CurrentUser', 'request', 'uuidFormat', function($scope, $routeParams, CurrentUser, request, uuidFormat) {
     // Create a function to set the data in the scope
     var setUser = function(data) {
         // Make sure we have the data
@@ -177,6 +193,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
 
             // Set the data into the scope
             $scope.user = data.user;
+            $scope.user.user_uuid = uuidFormat($scope.user.uuid);
             $scope.incidents = data.incident;
             $scope.history = data.history;
         }
@@ -201,6 +218,9 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
         request('update_user', user).success(function(data){
             console.log(data);
         });
+    };
+    $scope.editUUID = function() {
+        return false;
     };
 
     // If we have a username, load it up
@@ -358,12 +378,16 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
     });
 }])
 .controller('AddUserController', ['$scope', 'request', '$modalInstance', function($scope, request, $modalInstance){
+    // TODO This and the user controller will be very similar, find a way to combine them?
     $scope.saveUser = function(user) {
         request('add_user', user).success(function(data) {
             // TODO output a message
             console.log(data);
             $modalInstance.close(data);
         });
+    };
+    $scope.editUUID = function() {
+        return true;
     };
 }])
 .controller('AddIncidentController', function(){
