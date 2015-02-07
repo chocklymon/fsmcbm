@@ -275,12 +275,12 @@ class ControllerTest extends PHPUnit_Framework_TestCase
         $user_id = 69;
         $input = new FilteredInput(false, array('lookup'=>$user_id));
 
-        $expectedOutput = '{"user":"'.self::USERNAME.'"}';
+        $expectedOutput = '{"user":{"username":"'. self::USERNAME .'","uuid":"61"}}';
         $this->expectOutputString($expectedOutput);
 
         // Construct the database
         $db = new MockDatabase(array(
-            self::USERNAME,
+            array('username' => self::USERNAME, 'uuid' => 'a'),
             new FakeQueryResult(),
             new FakeQueryResult()
         ));
