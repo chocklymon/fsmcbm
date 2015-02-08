@@ -237,12 +237,6 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
         link: function(scope, elem, attrs) {
             // TODO ranks
             scope.ranks = bm.ranks;
-            scope.save = function() {
-                request('update_user', scope.player).success(function(data) {
-                    // TODO messaging
-                    console.log(data);
-                });
-            };
         }
     };
 }])
@@ -334,6 +328,12 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
     };
     $scope.saveIncident = function(incident) {
         request('update_incident', incident).success(function(data){
+            console.log(data);
+        });
+    };;
+    $scope.saveUser = function() {
+        request('update_user', $scope.user.player).success(function(data) {
+            // TODO messaging
             console.log(data);
         });
     };

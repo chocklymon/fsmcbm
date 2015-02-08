@@ -1,11 +1,16 @@
 <div ng-switch="!user">
     <p ng-switch-when="true">Select a user to manage.</p>
     <div ng-switch-default="">
-        <div>
+        <div class="form-section">
             <player player="user.player" adding="false"></player>
+            <div class="row">
+                <div class="col-xs-3 col-sm-2 col-xs-offset-8 col-sm-offset-7">
+                    <button class="btn btn-default" ng-click="saveUser()">Save</button>
+                </div>
+            </div>
         </div>
         <div>
-            <div ng-repeat="incident in user.incidents" ng-include="'presentation/views/incident.html'"></div>
+            <div ng-repeat="incident in user.incidents" ng-include="'presentation/views/incident.html'" class="form-section"></div>
         </div>
         <div>
             <h3>Ban History</h3>
