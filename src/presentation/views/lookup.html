@@ -1,0 +1,7 @@
+<input type="text"
+       ng-model="selected"
+       placeholder="Find user by name..."
+       typeahead="user.label for user in getPossibleUsernames($viewValue)"
+       typeahead-min-length="2"
+       typeahead-on-select="selectUser($item)"
+       class="form-control" />

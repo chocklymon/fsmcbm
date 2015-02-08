@@ -226,7 +226,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
  * Directives
  * ======================
  */
-.directive('player', ['request', function(request) {
+.directive('player', [function() {
     return {
         scope: {
             player: '=',
@@ -237,6 +237,47 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
         link: function(scope, elem, attrs) {
             // TODO ranks
             scope.ranks = bm.ranks;
+        }
+    };
+}])
+.directive('incident', [function() {
+    return {
+        scope: {
+            incident: '=',
+            adding: '='
+        },
+        restrict: 'E',
+        templateUrl: 'presentation/views/incident.html',
+        link: function(scope, elem, attrs) {
+            // TODO worlds
+            scope.worlds = bm.worlds;
+            scope.selectUser = function($item) {
+                scope.incident.user_id = $item.value;
+            };
+        }
+    };
+}])
+.directive('lookup', ['request', function(request) {
+    return {
+        scope: {
+            onSelect: '&'
+        },
+        restrict: 'EA',
+        templateUrl: 'presentation/views/lookup.html',
+        link: function(scope, elem, attrs) {
+            // Calls the on select function with the currently selected item
+            scope.selectUser = function($item) {
+                scope.onSelect({'$item': $item});
+            };
+
+            // Loads the type-ahead terms via AJAX
+            scope.getPossibleUsernames = function(val) {
+                return request('auto_complete', {
+                    term: val
+                }).then(function(res){
+                    return res.data;
+                });
+            };
         }
     };
 }])
@@ -316,9 +357,6 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
             $scope.user.player.user_uuid = uuidFormat(data.user.uuid);
         }
     };
-
-    // TODO
-    $scope.worlds = bm.worlds;
 
     // Button functions
     $scope.reset = function() {
@@ -437,15 +475,6 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
         }
     };
 
-    // Loads autocomplete terms via AJAX
-    $scope.getPossibleUsernames = function(val) {
-        return request('auto_complete', {
-              term: val
-        }).then(function(res){
-            return res.data;
-        });
-    };
-
     // Loads a selected user
     $scope.loadUser = function(username) {
         // We are loaded from the typeahead we need to extract the username
@@ -465,7 +494,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
     };
     $scope.addIncident = function() {
         $modal.open({
-            templateUrl: 'presentation/views/incident.html',
+            templateUrl: 'presentation/views/add-incident.html',
             controller: 'AddIncidentController',
             size: 'lg'
         });
@@ -508,6 +537,17 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
         $modalInstance.dismiss('cancel');
     };
 }])
-.controller('AddIncidentController', function(){
-    console.log("AddIncidentController");
-});
+.controller('AddIncidentController', ['$scope', 'request', '$modalInstance', function($scope, request, $modalInstance) {
+    $scope.incident = {};
+
+    $scope.save = function() {
+        request('add_incident', $scope.incident).success(function(data) {
+            // TODO output a message
+            console.log(data);
+            $modalInstance.close(data);
+        });
+    };
+    $scope.cancel = function() {
+        $modalInstance.dismiss('cancel');
+    };
+}]);

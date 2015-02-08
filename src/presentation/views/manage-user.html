@@ -10,7 +10,14 @@
             </div>
         </div>
         <div>
-            <div ng-repeat="incident in user.incidents" ng-include="'presentation/views/incident.html'" class="form-section"></div>
+            <div ng-repeat="incident in user.incidents" class="form-section">
+                <incident incident="incident" adding="false"></incident>
+                <div class="row">
+                    <div class="col-xs-3 col-sm-2 col-xs-offset-8 col-sm-offset-7">
+                        <button class="btn btn-default" ng-click="saveIncident(incident)">Save</button>
+                    </div>
+                </div>
+            </div>
         </div>
         <div>
             <h3>Ban History</h3>
