@@ -23,6 +23,7 @@
  */
 "use strict";
 
+// TODO these should be requested from the ban-manager
 var bm = {};
 bm.ranks = [{"value":"1","label":"Everyone"},{"value":"2","label":"Regular"},{"value":"3","label":"Donor"},{"value":"4","label":"Builder"},{"value":"5","label":"Engineer"},{"value":"6","label":"Moderator"},{"value":"7","label":"Admin"},{"value":"8","label":"Default"}];
 bm.worlds = [{
@@ -168,7 +169,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
      * Converts an un-formatted UUID to a formatted one.
      * E.g., 51f05c21503c4e309a3f9c7a6dbdb2ea becomes 51f05c21-503c-4e30-9a3f-9c7a6dbdb2ea
      */
-    .factory('uuidFormat', function() {
+    .factory('formatUUID', function() {
         var splice = function(target, index, insert) {
             return target.slice(0, index) + insert + target.slice(index);
         };
@@ -222,7 +223,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
                 adding: '='
             },
             restrict: 'E',
-            templateUrl: 'presentation/views/user.html',
+            templateUrl: 'presentation/templates/user.html',
             link: function(scope, elem, attrs) {
                 // TODO ranks
                 scope.ranks = bm.ranks;
@@ -236,7 +237,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
                 adding: '='
             },
             restrict: 'E',
-            templateUrl: 'presentation/views/incident.html',
+            templateUrl: 'presentation/templates/incident.html',
             link: function(scope, elem, attrs) {
                 // TODO worlds
                 scope.worlds = bm.worlds;
@@ -252,7 +253,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
                 onSelect: '&'
             },
             restrict: 'EA',
-            templateUrl: 'presentation/views/lookup.html',
+            templateUrl: 'presentation/templates/lookup.html',
             link: function(scope, elem, attrs) {
                 // Calls the on select function with the currently selected item
                 scope.selectUser = function($item) {
@@ -280,23 +281,23 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
         // Set up the routes
         $routeProvider
             .when('/', {
-                controller:  'user',
+                controller:  'UserController',
                 templateUrl: 'presentation/views/manage-user.html'
             })
             .when('/user/:username', {
-                controller:  'user',
+                controller:  'UserController',
                 templateUrl: 'presentation/views/manage-user.html'
             })
             .when('/bans', {
-                controller:  'userList',
+                controller:  'UserListController',
                 templateUrl: 'presentation/views/userlist.html'
             })
             .when('/watchlist', {
-                controller:  'userList',
+                controller:  'UserListController',
                 templateUrl: 'presentation/views/userlist.html'
             })
             .when('/search/:term?', {
-                controller:  'search',
+                controller:  'SearchController',
                 templateUrl: 'presentation/views/search.html'
             })
             .otherwise({ redirectTo: '/' });
@@ -329,7 +330,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
      * Controllers
      * ======================
      */
-    .controller('user', ['$scope', '$routeParams', 'CurrentUser', 'request', 'uuidFormat', function($scope, $routeParams, CurrentUser, request, uuidFormat) {
+    .controller('UserController', ['$scope', '$routeParams', 'CurrentUser', 'request', 'formatUUID', function($scope, $routeParams, CurrentUser, request, formatUUID) {
         // Create a function to set the data in the scope
         var setUser = function(data) {
             // Make sure we have the data
@@ -343,7 +344,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
                     incidents: data.incident,
                     history: data.history
                 };
-                $scope.user.player.user_uuid = uuidFormat(data.user.uuid);
+                $scope.user.player.user_uuid = formatUUID(data.user.uuid);
             }
         };
 
@@ -377,7 +378,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
             }
         }
     }])
-    .controller('userList', ['$scope', '$location', '$http', function($scope, $location, $http) {
+    .controller('UserListController', ['$scope', '$location', '$http', function($scope, $location, $http) {
         var endpoint = $location.path() === '/bans' ? 'get_bans' : 'get_watchlist';
         $scope.lookupUser = function(username) {
             $location.path('/user/'+username);
@@ -388,7 +389,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
                 $scope.users = data;
             });
     }])
-    .controller('search', ['$scope', '$routeParams', '$location', 'request', function($scope, $routeParams, $location, request) {
+    .controller('SearchController', ['$scope', '$routeParams', '$location', 'request', function($scope, $routeParams, $location, request) {
         // TODO remove this duplication of lookup user from the userlist
         $scope.lookupUser = function(username) {
             $location.path('/user/'+username);
@@ -477,14 +478,14 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
         // Add user and add incident buttons
         $scope.addUser = function() {
             $modal.open({
-                templateUrl: 'presentation/views/add-player.html',
+                templateUrl: 'presentation/templates/add-player.html',
                 controller: 'AddUserController',
                 size: 'lg'
             });
         };
         $scope.addIncident = function() {
             $modal.open({
-                templateUrl: 'presentation/views/add-incident.html',
+                templateUrl: 'presentation/templates/add-incident.html',
                 controller: 'AddIncidentController',
                 size: 'lg'
             });
