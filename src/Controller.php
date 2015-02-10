@@ -56,8 +56,14 @@ SQL;
 
     public function getUserIdByUUID($uuid)
     {
-        // TODO
-        return 0;
+        $uuid = $this->prepareUUID($uuid);
+        $sql = <<<SQL
+SELECT u.user_id
+  FROM users u
+  WHERE u.uuid = '{$uuid}'
+SQL;
+        $user_row = $this->db->querySingleRow($sql);
+        return $user_row['user_id'];
     }
 
     /**
@@ -120,8 +126,8 @@ SQL;
     public function addUser($user_id, FilteredInput $input)
     {
         // Get the UUID and make sure it isn't empty
-        if ($input->exists('user_uuid') && !empty($input->user_uuid)) {
-            $uuid = $this->prepareUUID($input->user_uuid);
+        if ($input->exists('uuid') && !empty($input->uuid)) {
+            $uuid = $this->prepareUUID($input->uuid);
         } else {
             throw new InvalidArgumentException("UUID required");
         }
@@ -178,7 +184,7 @@ SQL;
 
         // Add a known username
         if ($input->existsAndNotEmpty('username')) {
-            $this->addUserAlias($player_id, $input->username);
+            $this->addUserAlias($player_id, $input->username, true);
         }
 
         // Return the new users ID
@@ -273,17 +279,21 @@ SQL;
      */
     public function getBans()
     {
-        $query = "SELECT u.user_id, ua.username, i.incident_date, i.incident_type, i.action_taken
-                FROM users AS u
-                LEFT JOIN (
-                    SELECT *
-                    FROM incident AS q
-                    ORDER BY q.incident_date DESC
-                ) AS i ON u.user_id = i.user_id
-                LEFT JOIN user_aliases ua ON (ua.user_id = u.user_id)
-                WHERE u.banned = TRUE
-                GROUP BY u.user_id
-                ORDER BY i.incident_date DESC";
+        $query = <<<SQL
+SELECT u.user_id, u.uuid, ua.username, i.incident_date, i.incident_type, i.action_taken
+ FROM users AS u
+ LEFT JOIN (
+    SELECT *
+    FROM incident AS q
+    ORDER BY q.incident_date DESC
+ ) AS i ON u.user_id = i.user_id
+ LEFT JOIN
+    user_aliases AS ua ON (ua.user_id = u.user_id)
+ WHERE u.banned = TRUE
+   AND ua.active = TRUE
+ GROUP BY u.user_id
+ ORDER BY i.incident_date DESC
+SQL;
 
         $this->db->queryRowsIntoOutput($query, $this->output);
         $this->output->reply();
@@ -307,15 +317,17 @@ SQL;
     public function getWatchlist()
     {
         $query = <<<SQL
-SELECT u.user_id, ua.username, i.incident_date, i.incident_type, i.action_taken
+SELECT u.user_id, u.uuid, ua.username, i.incident_date, i.incident_type, i.action_taken
 FROM incident AS i
 LEFT OUTER JOIN
  incident AS i2 ON (i2.user_id = i.user_id AND i.incident_date < i2.incident_date)
 LEFT JOIN
  users AS u ON (i.user_id = u.user_id)
-LEFT JOIN user_aliases ua ON (ua.user_id = u.user_id)
+LEFT JOIN
+ user_aliases AS ua ON (ua.user_id = u.user_id)
 WHERE i2.user_id IS NULL
   AND u.banned = FALSE
+  AND ua.active = TRUE
 ORDER BY i.incident_date DESC
 SQL;
 
@@ -331,30 +343,31 @@ SQL;
      */
     public function retrieveUserData(FilteredInput $input)
     {
-        if ($input->exists('lookup')) {
-            $user_id = $this->db->sanitize($input->lookup, true);
-        } else if($input->exists('username')) {
-            $user_id = $this->getUserIdByUsername($input->username);
-        } else if($input->exists('user_uuid')) {
+        $user_id = 0;
+        if($input->existsAndNotEmpty('uuid')) {
             $user_id = $this->getUserIdByUUID($input->user_uuid);
+        } elseif ($input->existsAndNotEmpty('user_id')) {
+            $user_id = $this->db->sanitize($input->lookup, true);
+        } else if($input->existsAndNotEmpty('username')) {
+            $user_id = $this->getUserIdByUsername($input->username);
         }
 
         if($user_id <= 0) {
             // Invalid lookup
-            throw new InvalidArgumentException("Invalid user ID.");
+            throw new InvalidArgumentException("Invalid user ID");
         }
 
 
         // Get the user
         $user_info = $this->db->querySingleRow(
-            "SELECT * FROM users WHERE user_id = '$user_id'",
+            "SELECT * FROM users WHERE user_id = '{$user_id}'",
             'User not found.'
         );
 
         // Get the known usernames
-        $aliases = $this->db->queryRows("SELECT username FROM user_aliases WHERE user_id = '{$user_id}'");
+        $aliases = $this->db->queryRows("SELECT username, active FROM user_aliases WHERE user_id = '{$user_id}'");
         foreach($aliases as $alias) {
-            $user_info['usernames'][] = $alias['username'];
+            $user_info['usernames'][] = array('username' => $alias['username'], 'active' => $alias['active']);
         }
 
         $this->output->append($user_info, 'user');
@@ -364,8 +377,10 @@ SQL;
         $sql = <<<SQL
 SELECT i.*, ua.username AS moderator
 FROM `incident` AS i
-LEFT JOIN `user_aliases` AS ua ON (i.moderator_id = ua.user_id)
-WHERE i.user_id = '$user_id'
+LEFT JOIN
+  `user_aliases` AS ua ON (i.moderator_id = ua.user_id)
+WHERE i.user_id = '{$user_id}'
+  AND ua.active = TRUE
 ORDER BY i.incident_date
 SQL;
 
@@ -376,8 +391,10 @@ SQL;
         $sql = <<<SQL
 SELECT ua.username AS moderator, bh.date, bh.banned, bh.permanent
 FROM `ban_history` AS bh
-LEFT JOIN `user_aliases` AS ua ON (bh.moderator_id = ua.user_id)
-WHERE bh.`user_id` = '$user_id'
+LEFT JOIN
+  `user_aliases` AS ua ON (bh.moderator_id = ua.user_id)
+WHERE bh.`user_id` = '{$user_id}'
+  AND ua.active = TRUE
 ORDER BY bh.`date`
 SQL;
 
@@ -405,12 +422,14 @@ SQL;
 
         // Get users matching the search
         $query = <<<SQL
-SELECT u.user_id, u.username, u.banned, r.name AS rank, u.relations, u.notes
+SELECT u.user_id, u.uuid, ua.username, u.banned, r.name AS rank, u.relations, u.notes
 FROM `users` AS u
 LEFT JOIN
   `rank` AS r ON (u.rank = r.rank_id)
+LEFT JOIN
+  `user_aliases` AS ua ON (u.user_id = ua.user_id)
 WHERE
-      u.username LIKE '%$search%'
+      ua.username LIKE '%$search%'
    OR u.relations LIKE '%$search%'
    OR u.notes LIKE '%$search%'
 SQL;
@@ -419,10 +438,12 @@ SQL;
         
         // Get incidents matching the search
         $query = <<<SQL
-SELECT  u.user_id, u.username, i.incident_date, i.incident_type, i.action_taken
+SELECT  u.user_id, u.uuid, ua.username, i.incident_date, i.incident_type, i.action_taken
 FROM `incident` AS i
 LEFT JOIN
   `users` AS u ON (i.user_id = u.user_id)
+LEFT JOIN
+  `user_aliases` AS ua ON (u.user_id = ua.user_id)
 WHERE
       i.notes LIKE '%$search%'
    OR i.incident_type LIKE '%$search%'
@@ -442,23 +463,16 @@ SQL;
      */
     public function updateUser($user_id, FilteredInput $input)
     {
+        // TODO make an add username function and endpoint
+
         // Sanitize the inputs
         $player_id = $this->db->sanitize($input->user_id, true);
 
         // Verify that we have a valid user id
         if($player_id <= 0) {
-            throw new InvalidArgumentException("Invalid user ID.");
+            throw new InvalidArgumentException("Invalid user ID");
         }
 
-        $username = null;
-        if ($input->exists('username')) {
-            $username = $this->db->sanitize($input->username);
-        }
-        $uuid = null;
-        if ($input->exists('user_uuid')) {
-            $uuid_binary = pack("H*", mb_ereg_replace('-', '', $input->user_uuid));
-            $uuid = $this->db->sanitize($uuid_binary);
-        }
         $rank = $this->db->sanitize($input->rank, true);
         $banned = $input->getBoolean('banned');
         $permanent = $input->getBoolean('permanent');
@@ -472,30 +486,24 @@ SQL;
         }
 
         // See if we need to update the ban history
-        $query = "SELECT * FROM `users` WHERE `users`.`user_id` = $player_id";
-        $row = $this->db->querySingleRow($query, "Failed to retrieve incident.");
+        $query = "SELECT `banned`, `permanent` FROM `users` WHERE `users`.`user_id` = {$player_id}";
+        $row = $this->db->querySingleRow($query, 'Failed to retrieve incident');
 
         if($row['banned'] != $banned || $row['permanent'] != $permanent) {
             $this->updateBanHistory($player_id, $user_id, $banned, $permanent);
         }
 
-        // Perform the udpate
-        $query = "UPDATE  `users` SET ";
-
-        if ($username != null && mb_strlen($username) > 0) {
-            $query .= "`username` = '$username', ";
-        }
-        if ($uuid != null && strlen($uuid) == 17) {
-            $query .= "`uuid` = '$uuid', ";
-        }
-
-        $query .=   "`modified_date` = '$today',
-                    `rank` =  '$rank',
-                    `relations` =  '$relations',
-                    `notes` =  '$notes',
-                    `banned` =  '$banned',
-                    `permanent` =  '$permanent'
-                    WHERE  `users`.`user_id` = $player_id";
+        // Perform the update
+        $query = <<<SQL
+UPDATE `users` SET
+    `modified_date` = '{$today}',
+    `rank` = '{$rank}',
+    `relations` = '{$relations}',
+    `notes` = '{$notes}',
+    `banned` = '{$banned}',
+    `permanent` = '{$permanent}'
+ WHERE  `users`.`user_id` = {$player_id}
+SQL;
 
         $this->db->query($query);
 
@@ -521,7 +529,7 @@ SQL;
         $today = $this->getNow();
 
         $this->db->query("INSERT INTO `ban_history` (`user_id`, `moderator_id`, `date`, `banned`, `permanent`)
-                VALUES ('$player_id', '$user_id', '$today', '$banned', '$permanent')");
+                VALUES ('{$player_id}', '{$user_id}', '{$today}', '{$banned}', '{$permanent}')");
     }
 
 
@@ -536,7 +544,7 @@ SQL;
 
         // Verify that we have an incident id
         if($id <= 0) {
-            throw new InvalidArgumentException("Invalid incident ID.");
+            throw new InvalidArgumentException("Invalid incident ID");
         }
 
         $now = $this->getNow();
@@ -549,19 +557,21 @@ SQL;
         $coord_y       = $this->db->sanitize($input->coord_y, true);
         $coord_z       = $this->db->sanitize($input->coord_z, true);
 
-        $query = "UPDATE `incident` SET
-            `modified_date` = '$now',
-            `incident_date` = '$incident_date',
-            `incident_type` = '$incident_type',
-            `notes` = '$notes',
-            `action_taken` = '$action_taken',
-            `world` = '$world',
-            `coord_x` = '$coord_x',
-            `coord_y` = '$coord_y',
-            `coord_z` = '$coord_z'
-            WHERE  `incident`.`incident_id` = $id";
+        $query = <<<SQL
+UPDATE `incident` SET
+    `modified_date` = '{$now}',
+    `incident_date` = '{$incident_date}',
+    `incident_type` = '{$incident_type}',
+    `notes` = '{$notes}',
+    `action_taken` = '$action_taken}',
+    `world` = '{$world}',
+    `coord_x` = '{$coord_x}',
+    `coord_y` = '{$coord_y}',
+    `coord_z` = '{$coord_z}'
+  WHERE `incident`.`incident_id` = {$id}
+SQL;
 
-        $this->db->query($query, 'Failed to update incident.');
+        $this->db->query($query, 'Failed to update incident');
 
         $this->output->success();
     }
@@ -574,6 +584,7 @@ SQL;
      */
     public function upsertUserUUID(FilteredInput $input)
     {
+        // TODO this should become an upsert user function, where if the UUID excits, it updates the known usernames
         // Get the user ID
         $username = $this->db->sanitize($input->username);
         $result = $this->db->query("SELECT user_id FROM `users` WHERE `users`.`username` = '{$username}'");
@@ -626,11 +637,13 @@ SQL;
      * Adds a username to the alias list for the user.
      * @param $player_id The user's ID.
      * @param $username The username to add an alias for.
+     * @param $active bool If the username we are adding is the active one.
      */
-    private function addUserAlias($player_id, $username)
+    private function addUserAlias($player_id, $username, $active)
     {
         $username = $this->db->sanitize($username);
-        $sql = "INSERT IGNORE INTO `user_aliases` (`user_id`, `username`) VALUES {$player_id}, '{$username}'";
+        $active = (bool) $active;
+        $sql = "INSERT IGNORE INTO `user_aliases` (`user_id`, `username`, `active`) VALUES ({$player_id}, '{$username}', {$active})";
         $this->db->query($sql);
     }
 

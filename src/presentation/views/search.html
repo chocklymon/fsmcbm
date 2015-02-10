@@ -7,7 +7,7 @@
                 <tr><th>Name</th><th>Last Incident Date</th><th>Last Incident Type</th><th>Last Action Taken</th></tr>
             </thead>
             <tbody>
-                <tr ng-repeat="user in users" ng-click="lookupUser(user.username)">
+                <tr ng-repeat="user in users" ng-click="lookupUser(user.uuid)">
                     <td>{{user.username}}</td>
                     <td>{{user.incident_date}}</td>
                     <td>{{user.incident_type}}</td>
@@ -26,7 +26,7 @@
                 <tr><th>Name</th><th>Last Incident Date</th><th>Last Incident Type</th><th>Last Action Taken</th></tr>
             </thead>
             <tbody>
-                <tr ng-repeat="incident in incidents" ng-click="lookupUser(incident.username)">
+                <tr ng-repeat="incident in incidents" ng-click="lookupUser(incident.user_uuid)">
                     <td>{{incident.username}}</td>
                     <td>{{incident.incident_date}}</td>
                     <td>{{incident.incident_type}}</td>

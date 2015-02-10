@@ -322,6 +322,7 @@ if (!$db->tableExists('user_aliases')) {
 CREATE TABLE `user_aliases` (
   `user_id` INT(10) unsigned NOT NULL,
   `username` varchar(20) COLLATE utf8_unicode_ci NOT NULL,
+  `active` BOOLEAN DEFAULT TRUE,
   PRIMARY KEY (`user_id`, `username`)
 ) ENGINE=InnoDb DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci
 SQL;

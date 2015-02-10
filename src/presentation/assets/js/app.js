@@ -88,9 +88,9 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
      */
     .factory('CurrentUser', [function() {
         var cachedUser = null,
-            getUsername = function() {
+            getUUID = function() {
                 if (cachedUser) {
-                    return cachedUser.user.username;
+                    return cachedUser.user.uuid;
                 } else {
                     return null;
                 }
@@ -114,18 +114,18 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
             },
 
             /**
-             * Get the current user's username.
-             * @returns {object} The current user's username, or null.
+             * Get the current user's universally unique identifier.
+             * @returns {object} The current user's UUID, or null.
              */
-            getUsername: getUsername,
+            getUUID: getUUID,
 
             /**
-             * Get if the provided username matches the cached user.
-             * @param username The username to check against.
-             * @returns {boolean} True if the username matches.
+             * Get if the provided UUID matches the cached user.
+             * @param uuid The UUID to check against.
+             * @returns {boolean} True if the UUID matches.
              */
-            matches: function(username) {
-                return username === getUsername();
+            matches: function(uuid) {
+                return uuid === getUUID();
             }
         };
     }])
@@ -262,7 +262,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
                 };
 
                 // Loads the type-ahead terms via AJAX
-                scope.getPossibleUsernames = function(val) {
+                scope.getPossibleUsers = function(val) {
                     return request('auto_complete', {
                         term: val
                     }).then(function(res){
@@ -285,7 +285,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
                 controller:  'UserController',
                 templateUrl: 'presentation/views/manage-user.html'
             })
-            .when('/user/:username', {
+            .when('/user/:uuid', {
                 controller:  'UserController',
                 templateUrl: 'presentation/views/manage-user.html'
             })
@@ -345,14 +345,14 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
                     incidents: data.incident,
                     history: data.history
                 };
-                $scope.user.player.user_uuid = formatUUID(data.user.uuid);
+                $scope.user.player.uuid = formatUUID(data.user.uuid);
             }
         };
 
         // Button functions
         $scope.reset = function() {
             // Reload from the server
-            request('lookup', {username: $routeParams.username})
+            request('lookup', {'user_uuid': $routeParams.uuid})
                         .success(setUser);
         };
         $scope.saveIncident = function(incident) {
@@ -367,22 +367,22 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
             });
         };
 
-        // If we have a username, load it up
-        if ($routeParams.username) {
+        // If we have a UUID in the rout parameters, load up the user
+        if ($routeParams.uuid) {
             // See if this user is cached
-            if (CurrentUser.matches($routeParams.username)) {
+            if (CurrentUser.matches($routeParams.uuid)) {
                 setUser(CurrentUser.get());
             } else {
                 // Not cached, request the user from the server
-                request('lookup', {username: $routeParams.username})
+                request('lookup', {'user_uuid': $routeParams.uuid})
                         .success(setUser);
             }
         }
     }])
     .controller('UserListController', ['$scope', '$location', '$http', function($scope, $location, $http) {
         var endpoint = $location.path() === '/bans' ? 'get_bans' : 'get_watchlist';
-        $scope.lookupUser = function(username) {
-            $location.path('/user/'+username);
+        $scope.lookupUser = function(uuid) {
+            $location.path('/user/'+uuid);
         };
         // TODO use request
         $http.get("ban-manager.php?action=" + endpoint)
@@ -392,8 +392,8 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
     }])
     .controller('SearchController', ['$scope', '$routeParams', '$location', 'request', function($scope, $routeParams, $location, request) {
         // TODO remove this duplication of lookup user from the userlist
-        $scope.lookupUser = function(username) {
-            $location.path('/user/'+username);
+        $scope.lookupUser = function(uuid) {
+            $location.path('/user/'+uuid);
         };
 
         if ($routeParams.term) {
@@ -439,9 +439,9 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
 
         // Change what tab is selected
         $scope.selectTab = function(tab) {
-            if (tab === $scope.tabs[0] && CurrentUser.getUsername()) {
+            if (tab === $scope.tabs[0] && CurrentUser.getUUID()) {
                 // User tab, load the current user
-                $scope.loadUser(CurrentUser.getUsername());
+                $scope.loadUser(CurrentUser.getUUID());
             } else if (tab === $scope.tabs[3]) {
                 // Search tab, load the current search term
                 if (CurrentSearch.get()) {
@@ -469,7 +469,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
 
         // Loads a selected user
         $scope.loadUser = function(uuid) {
-            // We are loaded from the typeahead we need to extract the username
+            // If we are passed a user or lookup object, extract the UUID from it
             if (typeof uuid === 'object' && uuid.uuid) {
                 uuid = uuid.uuid;
             }
