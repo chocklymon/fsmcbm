@@ -175,7 +175,8 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
         };
         return function(input) {
             if (input && input.length == 32) {
-                var uuid = splice(input, 8, '-');
+                var uuid = input.toLowerCase();
+                uuid = splice(uuid, 8, '-');
                 uuid = splice(uuid, 13, '-');
                 uuid = splice(uuid, 18, '-');
                 uuid = splice(uuid, 23, '-');
@@ -411,7 +412,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
                 });
         }
     }])
-    .controller('NavigationController', ['$scope', '$location', 'request', 'CurrentUser', 'CurrentSearch', '$modal', function($scope, $location, request, CurrentUser, CurrentSearch, $modal) {
+    .controller('NavigationController', ['$scope', '$location', 'request', 'CurrentUser', 'CurrentSearch', '$modal', 'formatUUID', function($scope, $location, request, CurrentUser, CurrentSearch, $modal, formatUUID) {
         $scope.tabs = [
             {link : 'user', label: 'Manage'},
             {link : 'bans', label: 'Bans'},
@@ -467,12 +468,12 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
         };
 
         // Loads a selected user
-        $scope.loadUser = function(username) {
+        $scope.loadUser = function(uuid) {
             // We are loaded from the typeahead we need to extract the username
-            if (typeof username === 'object' && username.label) {
-                username = username.label;
+            if (typeof uuid === 'object' && uuid.uuid) {
+                uuid = uuid.uuid;
             }
-            $location.path('/user/' + username);
+            $location.path('/user/' + formatUUID(uuid));
         };
 
         // Add user and add incident buttons

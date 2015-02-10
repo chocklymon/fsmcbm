@@ -78,13 +78,23 @@ class FilteredInput implements Iterator
     }
     
     /**
-     * Retruns true if the requested key exists in the input variables.
+     * Returns true if the requested key exists in the input variables.
      * @param type $key
      * @return boolean
      */
     public function exists($key)
     {
         return isset($this->variables[$key]);
+    }
+
+    /**
+     * Returns true if the requested key exists and contains a non-empty value.
+     * @param $key String The key to check.
+     * @return bool
+     */
+    public function existsAndNotEmpty($key)
+    {
+        return !empty($this->variables[$key]);
     }
     
     /**

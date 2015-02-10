@@ -42,7 +42,10 @@ require_once 'Output.php';
 $settings = new Settings();
 $db = new Database($settings);
 
-// Begin database update code
+
+// Begin database update code //
+
+
 
 /* ************************************************
  *
@@ -131,7 +134,7 @@ SQL;
 // End issue #15
 
 
-// Move the appeals into a seperate appeal table
+// Move the appeals into a separate appeal table
 if (!$db->tableExists('appeal')) {
     // Create the appeal table
     $sql = <<<SQL
@@ -248,6 +251,7 @@ SQL;
 // End ranks table
 
 
+
 /* ************************************************
  *
  * v2 -> v3 updates
@@ -303,6 +307,88 @@ SQL;
 // END users table
 
 
+
+/* ************************************************
+ *
+ * v3 -> v4 updates
+ *
+ * ************************************************
+ */
+
+// Create the user aliases table
+if (!$db->tableExists('user_aliases')) {
+    // Create the table
+    $sql = <<<SQL
+CREATE TABLE `user_aliases` (
+  `user_id` INT(10) unsigned NOT NULL,
+  `username` varchar(20) COLLATE utf8_unicode_ci NOT NULL,
+  PRIMARY KEY (`user_id`, `username`)
+) ENGINE=InnoDb DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci
+SQL;
+    $db->query($sql);
+
+    // Copy over the existing usernames
+    $sql = <<<SQL
+INSERT INTO `user_aliases` (`user_id`, `username`)
+   SELECT `user_id`, `username` FROM `users`
+SQL;
+    $db->query($sql);
+}
+// END user aliases table
+
+// Change UUID column from binary to char
+$column_info = $db->querySingleRow("SHOW COLUMNS FROM `users` LIKE 'uuid'");
+if ($column_info['Type'] == 'binary(16)') {
+    // Convert the UUID column from BINARY to CHAR
+    // Copy the current UUID's into a temp table
+    $sql = <<<SQL
+CREATE TABLE `uuid_temp` (
+  `user_id` int(10) unsigned NOT NULL,
+  `uuid` CHAR(32) NOT NULL COLLATE utf8_unicode_ci,
+  PRIMARY KEY (`user_id`)
+)
+SQL;
+    $db->query($sql);
+
+    $sql = <<<SQL
+INSERT INTO `uuid_temp` (`user_id`, `uuid`)
+   SELECT `user_id`, HEX(`uuid`) FROM `users`
+SQL;
+    $db->query($sql);
+
+    // Drop the username column and UUID columns
+    $sql = <<<SQL
+ALTER TABLE `users`
+  DROP `username`,
+  DROP `uuid`
+SQL;
+    $db->query($sql);
+
+    // Add the new UUID column
+    $sql = <<<SQL
+ALTER TABLE `users`
+  ADD `uuid` CHAR(32) NOT NULL COLLATE utf8_unicode_ci COMMENT 'Store the users universally unique identifier'
+  AFTER `user_id`
+SQL;
+    $db->query($sql);
+
+    // Copy the UUIDs back over
+    $sql = <<<SQL
+UPDATE `users`
+  SET `users`.`uuid` = (SELECT `uuid_temp`.`uuid` FROM `uuid_temp` WHERE `users`.`user_id` = `uuid_temp`.`user_id`)
+SQL;
+    $db->query($sql);
+
+    // Drop the temp table
+    $db->query("DROP TABLE `uuid_temp`");
+
+}
+// END change UUID column
+
+
+// END Database updates //
+
+// Preform cleanup
 $db->close();
 
 echo "Database Updated";

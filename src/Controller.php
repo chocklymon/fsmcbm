@@ -43,7 +43,14 @@ class Controller
     public function getUserIdByUsername($username)
     {
         $username = $this->db->sanitize($username);
-        $user_row = $this->db->querySingleRow("SELECT user_id FROM users WHERE username = '{$username}'");
+        $sql = <<<SQL
+SELECT u.user_id
+  FROM users u
+  LEFT JOIN user_aliases ua ON (u.user_id = ua.user_id)
+  WHERE ua.username = '{$username}'
+SQL;
+
+        $user_row = $this->db->querySingleRow($sql);
         return $user_row['user_id'];
     }
 
@@ -112,70 +119,66 @@ class Controller
      */
     public function addUser($user_id, FilteredInput $input)
     {
-        // Get the username and make sure it isn't empty
-        $username = $this->db->sanitize($input->username);
-        if (empty($username)) {
-            throw new InvalidArgumentException("Username required.");
+        // Get the UUID and make sure it isn't empty
+        if ($input->exists('user_uuid') && !empty($input->user_uuid)) {
+            $uuid = $this->prepareUUID($input->user_uuid);
+        } else {
+            throw new InvalidArgumentException("UUID required");
         }
 
         // See if this user is a duplicate
-        $res = $this->db->query("SELECT `user_id` FROM `users` WHERE `username` = '$username'");
+        $res = $this->db->query("SELECT `user_id` FROM `users` WHERE `uuid` = '$uuid'");
         if ($res->num_rows == 1) {
-            // Username already in the database
-            throw new InvalidArgumentException("User already exits.");
+            // UUID already in the database
+            throw new InvalidArgumentException("User already exits");
         }
         $res->free();
 
-        // Get the user's data from the post
-        $insert = "INSERT INTO `users` (username,modified_date,";
-        $values = "VALUES ('{$username}','{$this->getNow()}',";
+        // Use the user info from the post to build the insert statement
+        $insert = 'INSERT INTO `users` (`uuid`';
+        $values = "VALUES ('{$uuid}'";
 
-        if ($input->exists('user_uuid')) {
-            $insert .= 'uuid,';
-            $uuid = pack("H*", mb_ereg_replace('-', '', $input->user_uuid));
-            if (strlen($uuid) != 16) {
-                throw new InvalidArgumentException("Invalid UUID");
-            }
-            $values .= "'{$this->db->sanitize($uuid)}',";
-        }
         if ($input->exists('rank')) {
-            $insert .= 'rank,';
-            $values .= $this->db->sanitize($input->rank, true) . ',';
+            $insert .= ',`rank`';
+            $values .= ',' . $this->db->sanitize($input->rank, true);
         }// TODO have a way to specify a default rank
         if ($input->exists('relations')) {
-            $insert .= 'relations,';
-            $values .= "'{$this->db->sanitize($input->relations)}',";
+            $insert .= ',`relations`';
+            $values .= ",'{$this->db->sanitize($input->relations)}'";
         }
         if ($input->exists('notes')) {
-            $insert .= 'notes,';
-            $values .= "'{$this->db->sanitize($input->notes)}',";
+            $insert .= ',`notes`';
+            $values .= ",'{$this->db->sanitize($input->notes)}'";
         }
         if ($input->exists('banned')) {
-            $insert .= 'banned,';
+            $insert .= ',`banned`';
             $banned = $input->getBoolean('banned');
-            $values .= "{$banned},";
+            $values .= ",{$banned}";
         } else {
             // Banned isn't set, assume that new users are not banned
             $banned = false;
         }
         if ($input->exists('permanent')) {
-            $insert .= 'permanent,';
+            $insert .= ',`permanent`';
             $permanent = $input->getBoolean('permanent');
-            $values .= "{$permanent},";
+            $values .= ",{$permanent}";
         } else {
             $permanent = false;
         }
 
-        // Remove the trailing ','
-        $insert = substr($insert, 0, -1);
-        $values = substr($values, 0, -1);
-
         // Insert the user
-        $player_id = $this->db->insert($insert . ') ' . $values . ')');
+        $sql = $insert . ') ' . $values . ')';
+        Log::debug($sql);
+        $player_id = $this->db->insert($sql);
 
         // See if we need to add to the ban history
         if ($banned) {
             $this->updateBanHistory($player_id, $user_id, $banned, $permanent);
+        }
+
+        // Add a known username
+        if ($input->existsAndNotEmpty('username')) {
+            $this->addUserAlias($player_id, $input->username);
         }
 
         // Return the new users ID
@@ -193,24 +196,55 @@ class Controller
     {
         // Make sure that the term is at least two characters long
         $term = $input->term;
-        if(empty($term) || mb_strlen($term) < 2) {
-            throw new InvalidArgumentException("AutoComplete term must be longer than one.");
+        if (empty($term) || mb_strlen($term) < 2) {
+            throw new InvalidArgumentException("AutoComplete term must be longer than one character");
         }
 
+
+        $uuid_term = $this->prepareUUID($term, false);
         $term = $this->db->sanitize($term);
 
-        $res = $this->db->query(
-            "SELECT user_id, username FROM users WHERE username LIKE '$term%'",
-            'Invalid autocomplete term.'
-        );
+        // Search by usernames
+        $sql = <<<SQL
+SELECT `users`.`user_id`, `users`.`uuid`, `user_aliases`.`username`
+ FROM `users`
+ LEFT JOIN `user_aliases` ON (`users`.`user_id` = `user_aliases`.`user_id`)
+ WHERE `user_aliases`.`username` LIKE '{$term}%'
+SQL;
 
-        while($row = $res->fetch_assoc()){
+        $res = $this->db->query($sql, 'Invalid auto-complete term');
+        while ($row = $res->fetch_assoc()) {
             $this->output->append(
-                array('label'=>$row['username'], 'value'=>$row['user_id'])
+                array(
+                    'username' => $row['username'],
+                    'user_id' => $row['user_id'],
+                    'uuid' => $row['uuid']
+                )
             );
         }
-
         $res->free();
+
+        // Search by UUID
+        if (strlen($uuid_term) >= 2) {
+            $sql = <<<SQL
+    SELECT `users`.`user_id`, `users`.`uuid`, `user_aliases`.`username`
+     FROM `users`
+     LEFT JOIN `user_aliases` ON (`users`.`user_id` = `user_aliases`.`user_id`)
+     WHERE `users`.`uuid` LIKE '{$uuid_term}%'
+SQL;
+
+            $res = $this->db->query($sql, 'Invalid auto-complete term');
+            while ($row = $res->fetch_assoc()) {
+                $this->output->append(
+                    array(
+                        'username' => $row['username'],
+                        'user_id' => $row['user_id'],
+                        'uuid' => $row['uuid']
+                    )
+                );
+            }
+            $res->free();
+        }
 
         $this->output->reply();
     }
@@ -239,13 +273,14 @@ class Controller
      */
     public function getBans()
     {
-        $query = "SELECT u.user_id, u.username, i.incident_date, i.incident_type, i.action_taken
+        $query = "SELECT u.user_id, ua.username, i.incident_date, i.incident_type, i.action_taken
                 FROM users AS u
                 LEFT JOIN (
                     SELECT *
                     FROM incident AS q
                     ORDER BY q.incident_date DESC
                 ) AS i ON u.user_id = i.user_id
+                LEFT JOIN user_aliases ua ON (ua.user_id = u.user_id)
                 WHERE u.banned = TRUE
                 GROUP BY u.user_id
                 ORDER BY i.incident_date DESC";
@@ -272,12 +307,13 @@ class Controller
     public function getWatchlist()
     {
         $query = <<<SQL
-SELECT u.user_id, u.username, i.incident_date, i.incident_type, i.action_taken
+SELECT u.user_id, ua.username, i.incident_date, i.incident_type, i.action_taken
 FROM incident AS i
 LEFT OUTER JOIN
  incident AS i2 ON (i2.user_id = i.user_id AND i.incident_date < i2.incident_date)
 LEFT JOIN
  users AS u ON (i.user_id = u.user_id)
+LEFT JOIN user_aliases ua ON (ua.user_id = u.user_id)
 WHERE i2.user_id IS NULL
   AND u.banned = FALSE
 ORDER BY i.incident_date DESC
@@ -314,15 +350,21 @@ SQL;
             "SELECT * FROM users WHERE user_id = '$user_id'",
             'User not found.'
         );
-        $user_info['uuid'] = bin2hex($user_info['uuid']);
+
+        // Get the known usernames
+        $aliases = $this->db->queryRows("SELECT username FROM user_aliases WHERE user_id = '{$user_id}'");
+        foreach($aliases as $alias) {
+            $user_info['usernames'][] = $alias['username'];
+        }
+
         $this->output->append($user_info, 'user');
 
 
         // Get the incidents
         $sql = <<<SQL
-SELECT i.*, u.username AS moderator
+SELECT i.*, ua.username AS moderator
 FROM `incident` AS i
-LEFT JOIN `users` AS u ON (i.moderator_id = u.user_id)
+LEFT JOIN `user_aliases` AS ua ON (i.moderator_id = ua.user_id)
 WHERE i.user_id = '$user_id'
 ORDER BY i.incident_date
 SQL;
@@ -332,9 +374,9 @@ SQL;
 
         // Get the ban history
         $sql = <<<SQL
-SELECT u.username AS moderator, bh.date, bh.banned, bh.permanent
+SELECT ua.username AS moderator, bh.date, bh.banned, bh.permanent
 FROM `ban_history` AS bh
-LEFT JOIN `users` AS u ON (bh.moderator_id = u.user_id)
+LEFT JOIN `user_aliases` AS ua ON (bh.moderator_id = ua.user_id)
 WHERE bh.`user_id` = '$user_id'
 ORDER BY bh.`date`
 SQL;
@@ -561,6 +603,35 @@ SQL;
             // No UUID provided
             throw new InvalidArgumentException("No UUID provided");
         }
+    }
+
+    /**
+     * Takes a UUID and returns the database ready version.
+     * @param $uuid String a Minecraft player UUID.
+     * @param bool $check_length If the UUID should be check to make sure it is the proper length, if it fails this
+     * check an InvalidArgumentException is thrown.
+     * @return String The database ready UUID.
+     */
+    private function prepareUUID($uuid, $check_length = true)
+    {
+        $uuid = mb_ereg_replace('[^a-fA-F0-9]', '', $uuid);
+        if ($check_length && strlen($uuid) != 32) {
+            throw new InvalidArgumentException("Invalid UUID");
+        }
+        $uuid = strtolower($uuid);
+        return $this->db->sanitize($uuid);
+    }
+
+    /**
+     * Adds a username to the alias list for the user.
+     * @param $player_id The user's ID.
+     * @param $username The username to add an alias for.
+     */
+    private function addUserAlias($player_id, $username)
+    {
+        $username = $this->db->sanitize($username);
+        $sql = "INSERT IGNORE INTO `user_aliases` (`user_id`, `username`) VALUES {$player_id}, '{$username}'";
+        $this->db->query($sql);
     }
 
 }
