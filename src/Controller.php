@@ -126,7 +126,7 @@ SQL;
     public function addUser($user_id, FilteredInput $input)
     {
         // Get the UUID and make sure it isn't empty
-        if ($input->exists('uuid') && !empty($input->uuid)) {
+        if ($input->existsAndNotEmpty('uuid')) {
             $uuid = $this->prepareUUID($input->uuid);
         } else {
             throw new InvalidArgumentException("UUID required");
@@ -141,8 +141,8 @@ SQL;
         $res->free();
 
         // Use the user info from the post to build the insert statement
-        $insert = 'INSERT INTO `users` (`uuid`';
-        $values = "VALUES ('{$uuid}'";
+        $insert = 'INSERT INTO `users` (`uuid`,`modified_date`';
+        $values = "VALUES ('{$uuid}','{$this->getNow()}'";
 
         if ($input->exists('rank')) {
             $insert .= ',`rank`';
@@ -345,10 +345,10 @@ SQL;
     {
         $user_id = 0;
         if($input->existsAndNotEmpty('uuid')) {
-            $user_id = $this->getUserIdByUUID($input->user_uuid);
+            $user_id = $this->getUserIdByUUID($input->uuid);
         } elseif ($input->existsAndNotEmpty('user_id')) {
             $user_id = $this->db->sanitize($input->lookup, true);
-        } else if($input->existsAndNotEmpty('username')) {
+        } elseif ($input->existsAndNotEmpty('username')) {
             $user_id = $this->getUserIdByUsername($input->username);
         }
 
@@ -502,7 +502,7 @@ UPDATE `users` SET
     `notes` = '{$notes}',
     `banned` = '{$banned}',
     `permanent` = '{$permanent}'
- WHERE  `users`.`user_id` = {$player_id}
+ WHERE `users`.`user_id` = {$player_id}
 SQL;
 
         $this->db->query($query);
@@ -584,7 +584,7 @@ SQL;
      */
     public function upsertUserUUID(FilteredInput $input)
     {
-        // TODO this should become an upsert user function, where if the UUID excits, it updates the known usernames
+        // TODO this should become an upsert user function, where if the UUID exists, it updates the known usernames
         // Get the user ID
         $username = $this->db->sanitize($input->username);
         $result = $this->db->query("SELECT user_id FROM `users` WHERE `users`.`username` = '{$username}'");
@@ -592,18 +592,14 @@ SQL;
         if ($result->num_rows == 0) {
             // Insert a new user
             $this->addUser(1, $input);
-        } else if ($input->exists('user_uuid')) {
+        } else if ($input->exists('uuid')) {
             // Store the UUID
-            $uuid = pack("H*", mb_ereg_replace('-', '', $input->user_uuid));
-            if (strlen($uuid) != 16) {
-                throw new InvalidArgumentException("Invalid UUID");
-            }
+            $uuid = $this->prepareUUID($input->uuid);
 
             $row = $result->fetch_assoc();
             $result->free();
 
             // Perform the udpate
-            $uuid = $this->db->sanitize($uuid);
             $query = "UPDATE `users` SET uuid = '{$uuid}'
                        WHERE  `users`.`user_id` = {$row['user_id']}";
 

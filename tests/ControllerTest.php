@@ -71,7 +71,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
             'relations'     => 'Friends with Jane12',
             'banned'        => 'on',
             'permanent'     => 'off',
-            'user_uuid'     => 'a1634f374-80a4bb9a0b2200-266597ac0',
+            'uuid'          => 'a1634f37-480a-4bb9-a0b2-200266597ac0',
 
             // Shared
             'notes'         => "Don't worry, just have some cheese.",
@@ -144,8 +144,8 @@ class ControllerTest extends PHPUnit_Framework_TestCase
 
 
         // Test that the query was constructed correctly //
-        $uuid = pack("H*", mb_ereg_replace('-', '', $this->input->user_uuid));
-        $expected_user = "INSERT INTO `users` (username,modified_date,uuid,rank,relations,notes,banned,permanent) VALUES ('" . self::USERNAME . "','{$now}','{$uuid}',2,'Friends with Jane12','Don\'t worry, just have some cheese.',1,0)";
+        $uuid = mb_ereg_replace('-', '', $this->input->uuid);
+        $expected_user = "INSERT INTO `users` (`uuid`,`modified_date`,`rank`,`relations`,`notes`,`banned`,`permanent`) VALUES ('{$uuid}','{$now}',2,'Friends with Jane12','Don\'t worry, just have some cheese.',1,0)";
         $expected_ban_history = "INSERT INTO `ban_history` (`user_id`, `moderator_id`, `date`, `banned`, `permanent`)
                 VALUES ('{$new_user_id}', '{$moderator_id}', '{$now}', '1', '')";
 
@@ -157,11 +157,11 @@ class ControllerTest extends PHPUnit_Framework_TestCase
     /**
      * @expectedException InvalidArgumentException
      */
-    public function testAddUser_noUsername()
+    public function testAddUser_noUUID()
     {
         // Set Up //
         // The user id needs to not be empty
-        $this->input->username = null;
+        $this->input->uuid = null;
         $controller = new Controller(new MockDatabase(), self::$output);
 
         // Run the test //
@@ -186,11 +186,11 @@ class ControllerTest extends PHPUnit_Framework_TestCase
         // Set Up //
         $input = new FilteredInput(false, array('term'=>self::USERNAME));
 
-        $expected = '[{"label":"' . self::USERNAME . '","value":5}]';
+        $expected = '[{"username":"' . self::USERNAME . '","user_id":5,"uuid":"a"}]';
         $this->expectOutputString($expected);
 
         $db = new MockDatabase(
-            array(new FakeQueryResult(array(array('username'=>self::USERNAME, 'user_id'=>5))))
+            array(new FakeQueryResult(array(array('username'=>self::USERNAME, 'user_id'=>5, 'uuid' => 'a'))))
         );
         $controller = new Controller($db, self::$output);
 
@@ -198,7 +198,12 @@ class ControllerTest extends PHPUnit_Framework_TestCase
         $controller->autoComplete($input);
 
         // Validate the query
-        $expected_query = "SELECT user_id, username FROM users WHERE username LIKE '" . self::USERNAME . "%'";
+        $expected_query = <<<SQL
+    SELECT `users`.`user_id`, `users`.`uuid`, `user_aliases`.`username`
+     FROM `users`
+     LEFT JOIN `user_aliases` ON (`users`.`user_id` = `user_aliases`.`user_id`)
+     WHERE `users`.`uuid` LIKE 'e12%'
+SQL;
         $this->assertEquals($expected_query, $db->getLastQuery());
     }
 
@@ -280,6 +285,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
 
         // Construct the database
         $db = new MockDatabase(array(
+            array('user_id'=>$user_id),
             array('username' => self::USERNAME, 'uuid' => 'a'),
             new FakeQueryResult(),
             new FakeQueryResult()
@@ -393,14 +399,17 @@ class ControllerTest extends PHPUnit_Framework_TestCase
         // Run the test //
         $controller->updateUser(1, $this->input);
 
-        $expected_select = "SELECT * FROM `users` WHERE `users`.`user_id` = 5";
-        $expected_update = "UPDATE  `users` SET `username` = '" . self::USERNAME . "', `modified_date` = '$now',
-                    `rank` =  '2',
-                    `relations` =  'Friends with Jane12',
-                    `notes` =  'Don\'t worry, just have some cheese.',
-                    `banned` =  '0',
-                    `permanent` =  ''
-                    WHERE  `users`.`user_id` = 5";
+        $expected_select = "SELECT `banned`, `permanent` FROM `users` WHERE `users`.`user_id` = 5";
+        $expected_update = <<<SQL
+UPDATE `users` SET
+    `modified_date` = '$now',
+    `rank` = '2',
+    `relations` = 'Friends with Jane12',
+    `notes` = 'Don\'t worry, just have some cheese.',
+    `banned` = '0',
+    `permanent` = ''
+ WHERE `users`.`user_id` = 5
+SQL;
         $queries = $db->getQueries();
         $this->assertEquals($expected_select, $queries[0]);
         $this->assertEquals($expected_update, $queries[2]);
@@ -486,7 +495,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
     public function testUpsertUserUUID_badUUID()
     {
         // Set up the controller and input
-        $this->input->user_uuid = '';
+        $this->input->uuid = '';
         $db = new MockDatabase(array(new FakeQueryResult(array('user_id'=>29)), new FakeQueryResult()));
         $controller = new Controller($db, self::$output);
 
