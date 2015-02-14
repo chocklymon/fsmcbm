@@ -352,7 +352,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
         // Button functions
         $scope.reset = function() {
             // Reload from the server
-            request('lookup', {'user_uuid': $routeParams.uuid})
+            request('lookup', {'uuid': $routeParams.uuid})
                         .success(setUser);
         };
         $scope.saveIncident = function(incident) {
@@ -374,15 +374,15 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
                 setUser(CurrentUser.get());
             } else {
                 // Not cached, request the user from the server
-                request('lookup', {'user_uuid': $routeParams.uuid})
+                request('lookup', {'uuid': $routeParams.uuid})
                         .success(setUser);
             }
         }
     }])
-    .controller('UserListController', ['$scope', '$location', '$http', function($scope, $location, $http) {
+    .controller('UserListController', ['$scope', '$location', '$http', 'formatUUID', function($scope, $location, $http, formatUUID) {
         var endpoint = $location.path() === '/bans' ? 'get_bans' : 'get_watchlist';
         $scope.lookupUser = function(uuid) {
-            $location.path('/user/'+uuid);
+            $location.path('/user/' + formatUUID(uuid));
         };
         // TODO use request
         $http.get("ban-manager.php?action=" + endpoint)
@@ -390,10 +390,10 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
                 $scope.users = data;
             });
     }])
-    .controller('SearchController', ['$scope', '$routeParams', '$location', 'request', function($scope, $routeParams, $location, request) {
+    .controller('SearchController', ['$scope', '$routeParams', '$location', 'request', 'formatUUID', function($scope, $routeParams, $location, request, formatUUID) {
         // TODO remove this duplication of lookup user from the userlist
         $scope.lookupUser = function(uuid) {
-            $location.path('/user/'+uuid);
+            $location.path('/user/' + formatUUID(uuid));
         };
 
         if ($routeParams.term) {
@@ -531,6 +531,10 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
     }])
     .controller('AddIncidentController', ['$scope', 'request', '$modalInstance', function($scope, request, $modalInstance) {
         $scope.incident = {};
+
+        $scope.incident.selectUser = function($item) {
+            $scope.incident.user_id = $item.user_id;
+        };
 
         $scope.save = function() {
             request('add_incident', $scope.incident).success(function(data) {

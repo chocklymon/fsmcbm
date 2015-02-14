@@ -411,6 +411,7 @@ SQL;
      */
     public function search(FilteredInput $input)
     {
+        // TODO also search by UUID? (Maybe only if it appears to be a UUID?, or always?)
         $search = $input->search;
         if (empty($search) || mb_strlen($search) < 2) {
             // Searches must contain at least two characters
