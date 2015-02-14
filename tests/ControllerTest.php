@@ -28,6 +28,7 @@
 class ControllerTest extends PHPUnit_Framework_TestCase
 {
     const USERNAME = 'Joe12';
+    const UUID = 'a1634f37-480a-4bb9-a0b2-200266597ac0';
 
     /**
      * @var MockSettings
@@ -71,7 +72,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
             'relations'     => 'Friends with Jane12',
             'banned'        => 'on',
             'permanent'     => 'off',
-            'uuid'          => 'a1634f37-480a-4bb9-a0b2-200266597ac0',
+            'uuid'          => self::UUID,
 
             // Shared
             'notes'         => "Don't worry, just have some cheese.",
@@ -154,10 +155,40 @@ class ControllerTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($expected_ban_history, $queries[2]);
     }
 
+    public function testAddUserMinumum()
+    {
+        // Set Up //
+        $input = new FilteredInput(false, array('uuid' => self::UUID));
+        $moderator_id = 4;
+        $new_user_id = 29;
+        $expectedOutput = "{\"user_id\":{$new_user_id}}";
+        $this->expectOutputString($expectedOutput);
+
+        // Construct the database
+        $db = new MockDatabase(array(new FakeQueryResult(), $new_user_id));
+
+        // Create the controller
+        $controller = new Controller($db, self::$output);
+        $now = $db->getDate();
+
+
+        // Run the test //
+        $controller->addUser($moderator_id, $input);
+
+
+        // Test that the query was constructed correctly //
+        $uuid = mb_ereg_replace('-', '', self::UUID);
+        $expected_user = "INSERT INTO `users` (`uuid`,`modified_date`) VALUES ('{$uuid}','{$now}')";
+
+        $queries = $db->getQueries();
+        $this->assertEquals(2, count($queries));
+        $this->assertEquals($expected_user, $queries[1]);
+    }
+
     /**
      * @expectedException InvalidArgumentException
      */
-    public function testAddUser_noUUID()
+    public function testAddUserNoUUID()
     {
         // Set Up //
         // The user id needs to not be empty
@@ -171,7 +202,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
     /**
      * @expectedException InvalidArgumentException
      */
-    public function testAddUser_userExists()
+    public function testAddUserUserExists()
     {
         // Set Up //
         $db = new MockDatabase(array(new FakeQueryResult(array(1))));
@@ -207,10 +238,28 @@ SQL;
         $this->assertEquals($expected_query, $db->getLastQuery());
     }
 
+    public function testAutoCompleteUUID()
+    {
+        // Set Up //
+        $input = new FilteredInput(false, array('term' => self::UUID));
+
+        $expected = '[{"username":"' . self::USERNAME . '","user_id":5,"uuid":"a"}]';
+        $this->expectOutputString($expected);
+
+        $db = new MockDatabase(array(
+            new FakeQueryResult(),
+            new FakeQueryResult(array(array('username'=>self::USERNAME, 'user_id'=>5, 'uuid' => 'a')))
+        ));
+        $controller = new Controller($db, self::$output);
+
+        // Run the test //
+        $controller->autoComplete($input);
+    }
+
     /**
      * @expectedException InvalidArgumentException
      */
-    public function testAutoComplete_invalidTerm()
+    public function testAutoCompleteInvalidTerm()
     {
         // Set Up //
         $input = new FilteredInput(false, array('term'=>'a'));
@@ -274,44 +323,31 @@ SQL;
         $controller->getWatchlist();
     }
 
-    public function testRetrieveUserData()
+    public function testRetrieveUserDataByUserId()
     {
-        // Set Up //
         $user_id = 69;
-        $input = new FilteredInput(false, array('lookup'=>$user_id));
+        $this->runRetrieveUserData(array('user_id'=>$user_id), null, $user_id);
+    }
 
-        $expectedOutput = '{"user":{"username":"'. self::USERNAME .'","uuid":"61"}}';
-        $this->expectOutputString($expectedOutput);
+    public function testRetrieveUserDataByUUID()
+    {
+        $user_id = 69;
+        $this->runRetrieveUserData(array('uuid'=>self::UUID), array('user_id' => $user_id), $user_id);
+    }
 
-        // Construct the database
-        $db = new MockDatabase(array(
-            array('user_id'=>$user_id),
-            array('username' => self::USERNAME, 'uuid' => 'a'),
-            new FakeQueryResult(),
-            new FakeQueryResult()
-        ));
-
-        // Create the controller
-        $controller = new Controller($db, self::$output);
-
-        // Run the test //
-        $controller->retrieveUserData($input);
-
-
-        // Test that the query was constructed correctly //
-        $expected_user = "SELECT * FROM users WHERE user_id = '$user_id'";
-
-        $queries = $db->getQueries();
-        $this->assertEquals($expected_user, $queries[0]);
+    public function testRetrieveUserDataByUsername()
+    {
+        $user_id = 69;
+        $this->runRetrieveUserData(array('username'=>self::USERNAME), array('user_id' => $user_id), $user_id);
     }
 
     /**
      * @expectedException InvalidArgumentException
      */
-    public function testRetrieveUserData_invalidId()
+    public function testRetrieveUserDataInvalidId()
     {
         // Set Up //
-        $input = new FilteredInput(false, array('lookup'=>'INVALID'));
+        $input = new FilteredInput(false, array('user_id'=>'INVALID'));
 
         // Construct the database
         $db = new MockDatabase();
@@ -513,6 +549,41 @@ SQL;
         $controller = new Controller($db, self::$output);
 
         $controller->upsertUserUUID($input);
+    }
+
+    private function runRetrieveUserData(array $input, $dbMockExtra = null, $user_id = 69)
+    {
+        // Set Up //
+        $queryIndex = 0;
+        $input = new FilteredInput(false, $input);
+        $expectedOutput = '{"user":{"uuid":"a","usernames":[{"username":"' . self::USERNAME . '","active":true}]}}';
+        $this->expectOutputString($expectedOutput);
+
+        // Construct the database
+        $mockQueryResults = array(
+            array('uuid' => 'a'),// Get user info
+            array(array('username' => self::USERNAME, 'active'=>true)),// Get user aliases
+            new FakeQueryResult(),// Get incidents
+            new FakeQueryResult()// Get ban history
+        );
+        if ($dbMockExtra) {
+            $queryIndex++;
+            array_unshift($mockQueryResults, $dbMockExtra);
+        }
+        $db = new MockDatabase($mockQueryResults);
+
+        // Create the controller
+        $controller = new Controller($db, self::$output);
+
+        // Run the test //
+        $controller->retrieveUserData($input);
+
+
+        // Test that the query was constructed correctly //
+        $expected_user = "SELECT * FROM users WHERE user_id = '{$user_id}'";
+
+        $queries = $db->getQueries();
+        $this->assertEquals($expected_user, $queries[$queryIndex]);
     }
 
 }

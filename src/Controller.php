@@ -347,7 +347,7 @@ SQL;
         if($input->existsAndNotEmpty('uuid')) {
             $user_id = $this->getUserIdByUUID($input->uuid);
         } elseif ($input->existsAndNotEmpty('user_id')) {
-            $user_id = $this->db->sanitize($input->lookup, true);
+            $user_id = $this->db->sanitize($input->user_id, true);
         } elseif ($input->existsAndNotEmpty('username')) {
             $user_id = $this->getUserIdByUsername($input->username);
         }

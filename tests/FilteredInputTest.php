@@ -68,6 +68,18 @@ class FilteredInputTest extends PHPUnit_Framework_TestCase
         $this->assertTrue($this->input->exists('test'));
     }
 
+    public function testExistsAndNotEmptyFalse()
+    {
+        $this->input->test = '';
+        $this->assertFalse($this->input->existsAndNotEmpty('test'));
+    }
+
+    public function testExistsAndNotEmptyTrue()
+    {
+        $this->input->test = 'Not Empty';
+        $this->assertTrue($this->input->existsAndNotEmpty('test'));
+    }
+
     public function testGetBooleanOn()
     {
         $this->input->test = 'on';
