@@ -19,6 +19,10 @@
     border-bottom: 1px solid #ddd;
 }
 
+.player-head {
+    padding: 1px 10px 10px;
+}
+
 /* Small devices (tablets, 768px and up) */
 @media (min-width: 768px) {
     .tabarea {
