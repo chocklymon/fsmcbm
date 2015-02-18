@@ -21,50 +21,50 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-"use strict";
+'use strict';
 
 // TODO these should be requested from the ban-manager
 var bm = {};
-bm.ranks = [{"value":"1","label":"Everyone"},{"value":"2","label":"Regular"},{"value":"3","label":"Donor"},{"value":"4","label":"Builder"},{"value":"5","label":"Engineer"},{"value":"6","label":"Moderator"},{"value":"7","label":"Admin"},{"value":"8","label":"Default"}];
+bm.ranks = [{'value': '1', 'label': 'Everyone'}, {'value': '2', 'label': 'Regular'}, {'value': '3', 'label': 'Donor'}, {'value': '4', 'label': 'Builder'}, {'value': '5', 'label': 'Engineer'}, {'value': '6', 'label': 'Moderator'}, {'value': '7', 'label': 'Admin'}, {'value': '8', 'label': 'Default'}];
 bm.worlds = [{
-        value:"",
-        label:""
+        value: '',
+        label: ''
     }, {
-        value:"world",
-        label:"Alpha"
+        value: 'world',
+        label: 'Alpha'
     }, {
-        value:"world3",
-        label:"Delta"
+        value: 'world3',
+        label: 'Delta'
     }, {
-        value:"world4",
-        label:"Gamma"
+        value: 'world4',
+        label: 'Gamma'
     }, {
-        value:"omega",
-        label:"Omega"
+        value: 'omega',
+        label: 'Omega'
     }, {
-        value:"world_nether",
-        label:"Alpha Nether"
+        value: 'world_nether',
+        label: 'Alpha Nether'
     }, {
-        value:"world3_nether",
-        label:"Delta Nether"
+        value: 'world3_nether',
+        label: 'Delta Nether'
     }, {
-        value:"world4_nether",
-        label:"Gamma Nether"
+        value: 'world4_nether',
+        label: 'Gamma Nether'
     }, {
-        value:"omega_nether",
-        label:"Omega Nether"
+        value: 'omega_nether',
+        label: 'Omega Nether'
     }, {
-        value:"world_the_end",
-        label:"The End"
+        value: 'world_the_end',
+        label: 'The End'
     }, {
-        value:"custom",
-        label:"Custom"
+        value: 'custom',
+        label: 'Custom'
     }, {
-        value:"dev",
-        label:"Dev"
+        value: 'dev',
+        label: 'Dev'
     }, {
-        value:"outworld",
-        label:"Outworld"
+        value: 'outworld',
+        label: 'Outworld'
     }
 ];
 
@@ -136,7 +136,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
      * Caches the current search term.
      */
     .factory('CurrentSearch', [function() {
-        var term = "";
+        var term = '';
         return {
             /**
              * Set the current search term.
@@ -161,7 +161,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
      */
     .factory('request', ['$http', function($http) {
         return function(endpoint, payload) {
-            return $http.post('ban-manager.php?action='+endpoint, payload);
+            return $http.post('ban-manager.php?action=' + endpoint, payload);
         };
     }])
 
@@ -174,7 +174,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
             return target.slice(0, index) + insert + target.slice(index);
         };
         return function(input) {
-            if (input && input.length == 32) {
+            if (input && input.length === 32) {
                 var uuid = input.toLowerCase();
                 uuid = splice(uuid, 8, '-');
                 uuid = splice(uuid, 13, '-');
@@ -184,7 +184,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
             } else {
                 return input;
             }
-        }
+        };
     })
 
 
@@ -202,9 +202,9 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
             if (typeof input === 'boolean') {
                 value = input;
             } else if (typeof input === 'number') {
-                value = input == 1;
+                value = input === 1;
             } else if (typeof input === 'string') {
-                value = input == 'true' || input == '1';
+                value = input === 'true' || input === '1';
             } else if (!value) {
                 value = false;
             }
@@ -225,7 +225,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
             },
             restrict: 'E',
             templateUrl: 'presentation/templates/user.html',
-            link: function(scope, elem, attrs) {
+            link: function(scope) {
                 // TODO ranks
                 scope.ranks = bm.ranks;
             }
@@ -239,7 +239,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
             },
             restrict: 'E',
             templateUrl: 'presentation/templates/incident.html',
-            link: function(scope, elem, attrs) {
+            link: function(scope) {
                 // TODO worlds
                 scope.worlds = bm.worlds;
                 scope.selectUser = function($item) {
@@ -255,7 +255,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
             },
             restrict: 'EA',
             templateUrl: 'presentation/templates/lookup.html',
-            link: function(scope, elem, attrs) {
+            link: function(scope) {
                 // Calls the on select function with the currently selected item
                 scope.selectUser = function($item) {
                     scope.onSelect({'$item': $item});
@@ -282,23 +282,23 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
         // Set up the routes
         $routeProvider
             .when('/', {
-                controller:  'UserController',
+                controller: 'UserController',
                 templateUrl: 'presentation/views/manage-user.html'
             })
             .when('/user/:uuid', {
-                controller:  'UserController',
+                controller: 'UserController',
                 templateUrl: 'presentation/views/manage-user.html'
             })
             .when('/bans', {
-                controller:  'UserListController',
+                controller: 'UserListController',
                 templateUrl: 'presentation/views/userlist.html'
             })
             .when('/watchlist', {
-                controller:  'UserListController',
+                controller: 'UserListController',
                 templateUrl: 'presentation/views/userlist.html'
             })
             .when('/search/:term?', {
-                controller:  'SearchController',
+                controller: 'SearchController',
                 templateUrl: 'presentation/views/search.html'
             })
             .otherwise({ redirectTo: '/' });
@@ -306,18 +306,18 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
         // Set up the http request handler
         $httpProvider.interceptors.push(function(){
             return {
-                'requestError' : function(rejection) {
+                'requestError': function(rejection) {
                     // TODO handle the error
                     return rejection;
                 },
-                'response' : function(response) {
+                'response': function(response) {
                     if (response.data && response.data.error) {
                         // TODO handle errors
                         console.warn(response.data);
                     }
                     return response;
                 },
-                'responseError' : function(rejection) {
+                'responseError': function(rejection) {
                     // TODO handle errors
                     console.warn(rejection);
                     return rejection;
@@ -359,7 +359,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
             request('update_incident', incident).success(function(data){
                 console.log(data);
             });
-        };;
+        };
         $scope.saveUser = function() {
             request('update_user', $scope.user.player).success(function(data) {
                 // TODO messaging
@@ -385,7 +385,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
             $location.path('/user/' + formatUUID(uuid));
         };
         // TODO use request
-        $http.get("ban-manager.php?action=" + endpoint)
+        $http.get('ban-manager.php?action=' + endpoint)
             .success(function(data) {
                 $scope.users = data;
             });
@@ -414,15 +414,15 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
     }])
     .controller('NavigationController', ['$scope', '$location', 'request', 'CurrentUser', 'CurrentSearch', '$modal', 'formatUUID', function($scope, $location, request, CurrentUser, CurrentSearch, $modal, formatUUID) {
         $scope.tabs = [
-            {link : 'user', label: 'Manage'},
-            {link : 'bans', label: 'Bans'},
-            {link : 'watchlist', label: 'Watchlist'},
-            {link : 'search', label: 'Search'}
+            {link: 'user', label: 'Manage'},
+            {link: 'bans', label: 'Bans'},
+            {link: 'watchlist', label: 'Watchlist'},
+            {link: 'search', label: 'Search'}
         ];
 
         // Try to find the currently selected tab
         var getSelectedTab = function() {
-            for (var i=0; i<$scope.tabs.length; i++) {
+            for (var i = 0; i < $scope.tabs.length; i++) {
                 if ($location.path().indexOf($scope.tabs[i].link) !== -1) {
                     return $scope.tabs[i];
                 }
@@ -459,11 +459,11 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
         // Set the class for each tab
         $scope.tabClass = function(tab) {
             if ($scope.selectedTab === tab) {
-                return "active";
+                return 'active';
             } else if (tab === $scope.tabs[3] && !CurrentSearch.get()) {
-                return "disabled";
+                return 'disabled';
             } else {
-                return "";
+                return '';
             }
         };
 
@@ -497,7 +497,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
             CurrentSearch.set($scope.search.text);
             search();
         };
-        $scope.search.text = "";
+        $scope.search.text = '';
 
         // Alerts
         $scope.alerts = [];
