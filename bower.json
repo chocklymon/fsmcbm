@@ -1,0 +1,31 @@
+{
+  "name": "fsmcbm",
+  "version": "1.2.0",
+  "homepage": "https://github.com/chocklymon/fsmcbm",
+  "authors": [
+    "Curtis Oakley <coakley@chocklydigital.com>"
+  ],
+  "description": "Final Score MC Ban Manager",
+  "keywords": [
+    "minecraft",
+    "ban",
+    "manager"
+  ],
+  "license": "MIT",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "src/presentation/assets/vendor",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "angular": "~1.2.28",
+    "angular-route": "~1.2.28",
+    "angular-loading-bar": "~0.7.1",
+    "angular-bootstrap": "~0.12.1",
+    "bootstrap": "~3.1.1"
+  }
+}
