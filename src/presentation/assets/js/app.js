@@ -82,11 +82,20 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
      */
 
     /**
+     * Perform a request to the ban-manager API.
+     */
+    .factory('request', ['$http', function($http) {
+        return function(endpoint, payload) {
+            return $http.post('ban-manager.php?action=' + endpoint, payload);
+        };
+    }])
+
+    /**
      * Current user factory.
      *
      * Provides a cache for the currently managed user.
      */
-    .factory('CurrentUser', [function() {
+    .factory('Player', ['request', '$q', function(request, $q) {
         var cachedUser = null,
             getUUID = function() {
                 if (cachedUser) {
@@ -94,39 +103,49 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
                 } else {
                     return null;
                 }
-            };
-
-        return {
-            /**
-             * Set the current user.
-             * @param user The user object.
-             */
-            set: function(user) {
-                cachedUser = user;
             },
-
-            /**
-             * Get the currently cached user.
-             * @returns {object} The cached user, or null.
-             */
-            get: function() {
-                return cachedUser;
-            },
-
-            /**
-             * Get the current user's universally unique identifier.
-             * @returns {object} The current user's UUID, or null.
-             */
-            getUUID: getUUID,
 
             /**
              * Get if the provided UUID matches the cached user.
              * @param uuid The UUID to check against.
              * @returns {boolean} True if the UUID matches.
              */
-            matches: function(uuid) {
+            matches = function(uuid) {
                 return uuid === getUUID();
-            }
+            };
+
+        return {
+
+            /**
+             * Return a promise that returns the requested user.
+             * @param {string} The user's UUID
+             * @returns {object} The cached user, or null.
+             */
+            get: function(uuid) {
+                if (matches(uuid)) {
+                    var deferred = $q.defer();
+                    deferred.resolve(cachedUser);
+                    return deferred.promise;
+                } else {
+                    // Not cached, request the user from the server
+                    var deferred = request('lookup', {'uuid': uuid})
+                        .then(function(response) {
+                            if (response && response.data) {
+                                cachedUser = response.data;
+                                return cachedUser;
+                            } else {
+                                return $q.reject('Invalid user data');
+                            }
+                        });
+                    return deferred;
+                }
+            },
+
+            /**
+             * Get the current user's universally unique identifier.
+             * @returns {object} The current user's UUID, or null.
+             */
+            getUUID: getUUID
         };
     }])
 
@@ -153,15 +172,6 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
             get: function() {
                 return term;
             }
-        };
-    }])
-
-    /**
-     * Perform a request to the ban-manager API.
-     */
-    .factory('request', ['$http', function($http) {
-        return function(endpoint, payload) {
-            return $http.post('ban-manager.php?action=' + endpoint, payload);
         };
     }])
 
@@ -217,7 +227,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
      * Directives
      * ======================
      */
-    .directive('player', [function() {
+    .directive('bmPlayer', [function() {
         return {
             scope: {
                 player: '=',
@@ -331,7 +341,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
      * Controllers
      * ======================
      */
-    .controller('UserController', ['$scope', '$routeParams', 'CurrentUser', 'request', 'formatUUID', function($scope, $routeParams, CurrentUser, request, formatUUID) {
+    .controller('UserController', ['$scope', '$routeParams', 'Player', 'request', 'formatUUID', function($scope, $routeParams, Player, request, formatUUID) {
         // Create a function to set the data in the scope
         var setUser = function(data) {
             // Make sure we have the data
@@ -367,16 +377,18 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
             });
         };
 
-        // If we have a UUID in the rout parameters, load up the user
+        // If we have a UUID in the router parameters, load up the user
         if ($routeParams.uuid) {
             // See if this user is cached
-            if (CurrentUser.matches($routeParams.uuid)) {
-                setUser(CurrentUser.get());
-            } else {
-                // Not cached, request the user from the server
-                request('lookup', {'uuid': $routeParams.uuid})
-                        .success(setUser);
-            }
+            Player.get($routeParams.uuid).then(function(player) {
+                // Set the player data into the scope
+                $scope.user = {
+                    player: player.user,
+                    incidents: player.incident,
+                    history: player.history
+                };
+                $scope.user.player.uuid = formatUUID(player.user.uuid);
+            });
         }
     }])
     .controller('UserListController', ['$scope', '$location', '$http', 'formatUUID', function($scope, $location, $http, formatUUID) {
@@ -412,7 +424,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
                 });
         }
     }])
-    .controller('NavigationController', ['$scope', '$location', 'request', 'CurrentUser', 'CurrentSearch', '$modal', 'formatUUID', function($scope, $location, request, CurrentUser, CurrentSearch, $modal, formatUUID) {
+    .controller('NavigationController', ['$scope', '$location', 'request', 'Player', 'CurrentSearch', '$modal', 'formatUUID', function($scope, $location, request, Player, CurrentSearch, $modal, formatUUID) {
         $scope.tabs = [
             {link: 'user', label: 'Manage'},
             {link: 'bans', label: 'Bans'},
@@ -439,9 +451,9 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
 
         // Change what tab is selected
         $scope.selectTab = function(tab) {
-            if (tab === $scope.tabs[0] && CurrentUser.getUUID()) {
+            if (tab === $scope.tabs[0] && Player.getUUID()) {
                 // User tab, load the current user
-                $scope.loadUser(CurrentUser.getUUID());
+                $scope.loadUser(Player.getUUID());
             } else if (tab === $scope.tabs[3]) {
                 // Search tab, load the current search term
                 if (CurrentSearch.get()) {
