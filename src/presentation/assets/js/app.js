@@ -96,10 +96,10 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
      * Provides a cache for the currently managed user.
      */
     .factory('Player', ['request', '$q', function(request, $q) {
-        var cachedUser = null,
+        var cachedPlayer = null,
             getUUID = function() {
-                if (cachedUser) {
-                    return cachedUser.user.uuid;
+                if (cachedPlayer) {
+                    return cachedPlayer.user.uuid;
                 } else {
                     return null;
                 }
@@ -117,27 +117,41 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
         return {
 
             /**
-             * Return a promise that returns the requested user.
-             * @param {string} The user's UUID
-             * @returns {object} The cached user, or null.
+             * Returns a promise the resolves when the player is added.
+             * @param player
+             * @returns {Promise}
              */
-            get: function(uuid) {
-                if (matches(uuid)) {
+            add: function(player) {
+                return request('add_user', player).then(function(response) {
+                    // Response is the user_id on success
+                    // TODO ?
+                    return response;
+                });
+            },
+
+            /**
+             * Return a promise that returns the requested user.
+             * @param uuid The player UUID
+             * @param force If the player should be force loaded from the server.
+             * @returns {Promise}
+             */
+            get: function(uuid, force) {
+                if (!force && matches(uuid)) {
                     var deferred = $q.defer();
-                    deferred.resolve(cachedUser);
+                    deferred.resolve(cachedPlayer);
                     return deferred.promise;
                 } else {
                     // Not cached, request the user from the server
-                    var deferred = request('lookup', {'uuid': uuid})
+                    var promise = request('lookup', {'uuid': uuid})
                         .then(function(response) {
                             if (response && response.data) {
-                                cachedUser = response.data;
-                                return cachedUser;
+                                cachedPlayer = response.data;
+                                return cachedPlayer;
                             } else {
                                 return $q.reject('Invalid user data');
                             }
                         });
-                    return deferred;
+                    return promise;
                 }
             },
 
@@ -145,7 +159,18 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
              * Get the current user's universally unique identifier.
              * @returns {object} The current user's UUID, or null.
              */
-            getUUID: getUUID
+            getUUID: getUUID,
+
+            /**
+             * Saves the user to the database.
+             * @returns {Promise}
+             */
+            save: function() {
+                return request('update_user', cachedPlayer.user).then(function(data) {
+                    // TODO messaging?
+                    return data;
+                });
+            }
         };
     }])
 
@@ -343,27 +368,20 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
      */
     .controller('UserController', ['$scope', '$routeParams', 'Player', 'request', 'formatUUID', function($scope, $routeParams, Player, request, formatUUID) {
         // Create a function to set the data in the scope
-        var setUser = function(data) {
-            // Make sure we have the data
-            if (data && data.user) {
-                // Store a copy of the original data
-                CurrentUser.set(data);
-
-                // Set the data into the scope
-                $scope.user = {
-                    player: data.user,
-                    incidents: data.incident,
-                    history: data.history
-                };
-                $scope.user.player.uuid = formatUUID(data.user.uuid);
-            }
+        var setPlayer = function(player) {
+            // Set the player data into the scope
+            $scope.user = {
+                player: player.user,
+                incidents: player.incident,
+                history: player.history
+            };
+            $scope.user.player.uuid = formatUUID(player.user.uuid);
         };
 
         // Button functions
         $scope.reset = function() {
             // Reload from the server
-            request('lookup', {'uuid': $routeParams.uuid})
-                        .success(setUser);
+            Player.get($routeParams.uuid, true).then(setPlayer);
         };
         $scope.saveIncident = function(incident) {
             request('update_incident', incident).success(function(data){
@@ -371,24 +389,13 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
             });
         };
         $scope.saveUser = function() {
-            request('update_user', $scope.user.player).success(function(data) {
-                // TODO messaging
-                console.log(data);
-            });
+            Player.save();
         };
 
         // If we have a UUID in the router parameters, load up the user
         if ($routeParams.uuid) {
             // See if this user is cached
-            Player.get($routeParams.uuid).then(function(player) {
-                // Set the player data into the scope
-                $scope.user = {
-                    player: player.user,
-                    incidents: player.incident,
-                    history: player.history
-                };
-                $scope.user.player.uuid = formatUUID(player.user.uuid);
-            });
+            Player.get($routeParams.uuid).then(setPlayer);
         }
     }])
     .controller('UserListController', ['$scope', '$location', '$http', 'formatUUID', function($scope, $location, $http, formatUUID) {
@@ -525,16 +532,15 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
             $scope.selectedTab = getSelectedTab();
         });
     }])
-    .controller('AddUserController', ['$scope', 'request', '$modalInstance', function($scope, request, $modalInstance){
+    .controller('AddUserController', ['$scope', 'Player', '$modalInstance', function($scope, Player, $modalInstance){
         // TODO This and the user controller will be very similar, find a way to combine them?
         $scope.player = {
             info: {}
         };
         $scope.save = function() {
-            request('add_user', $scope.player.info).success(function(data) {
+            Player.add($scope.player.info).then(function(response) {
                 // TODO output a message
-                console.log(data);
-                $modalInstance.close(data);
+                $modalInstance.close(response);
             });
         };
         $scope.cancel = function() {
