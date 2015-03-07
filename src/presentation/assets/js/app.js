@@ -263,6 +263,11 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
             link: function(scope) {
                 // TODO ranks
                 scope.ranks = bm.ranks;
+                var playerImage = '';
+                if (scope.player.uuid) {
+                    playerImage = "https://crafatar.com/avatars/" + scope.player.uuid + "?helm=1&size=64";
+                }
+                scope.playerImage = playerImage;
             }
         };
     }])
