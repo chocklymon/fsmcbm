@@ -15,8 +15,8 @@
                 Loading...
             </div>
         </div>
-        <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.28/angular.min.js"></script>
-        <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.28/angular-route.min.js"></script>
+        <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/angularjs/1.3.18/angular.min.js"></script>
+        <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/angularjs/1.3.18/angular-route.min.js"></script>
         <script type="text/javascript" src="presentation/assets/vendor/angular-bootstrap/ui-bootstrap-tpls.min.js"></script>
         <script type="text/javascript" src="presentation/assets/vendor/angular-loading-bar/build/loading-bar.min.js"></script>
         <script type="text/javascript" src="presentation/assets/js/app.js"></script>
