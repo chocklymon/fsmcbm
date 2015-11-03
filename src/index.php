@@ -10,6 +10,9 @@
     </head>
     <body>
         <div class="container" data-ng-app="banManager">
+            <div class="bm-alert-box" data-ng-controller="MessageController">
+                <alert ng-repeat="alert in alerts" type="{{alert.type}}" close="closeAlert($index)" dismiss-on-timeout="{{alert.timeout}}">{{alert.msg}}</alert>
+            </div>
             <div data-ng-include="src='presentation/views/navigation.html'" data-ng-controller="NavigationController"></div>
             <div data-ng-view class="tabarea">
                 Loading...

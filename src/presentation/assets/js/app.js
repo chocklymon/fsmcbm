@@ -222,6 +222,39 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
         };
     })
 
+    /**
+     * Contains messages and notifications.
+     */
+    .factory('message', [function() {
+        var messages = [];
+        return {
+            SUCCESS: 'success',
+            INFO: 'info',
+            WARNING: 'warning',
+            DANGER: 'danger',
+
+            getMessages: function() {
+                return messages;
+            },
+            addMessage: function(type, msg, timeout) {
+                if (!timeout) {
+                    // Default the timeout to 1 minute
+                    timeout = 60000;
+                }
+                return messages.push({type: type, msg: msg, timeout: timeout});
+            },
+            successMsg: function(msg, timeout) {
+                this.addMessage(this.SUCCESS, msg, timeout);
+            },
+            errorMsg: function(msg, timeout) {
+                this.addMessage(this.DANGER, msg, timeout);
+            },
+            removeMessage: function(index) {
+                return messages.splice(index, 1);
+            }
+        };
+    }])
+
 
     /* ======================
      * Filters
@@ -568,5 +601,12 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
         };
         $scope.cancel = function() {
             $modalInstance.dismiss('cancel');
+        };
+    }])
+
+    .controller('MessageController', ['$scope', 'message', function($scope, message) {
+        $scope.alerts = message.getMessages();
+        $scope.closeAlert = function(index) {
+            message.removeMessage(index);
         };
     }]);

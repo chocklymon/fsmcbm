@@ -23,6 +23,14 @@
     padding: 1px 10px 10px;
 }
 
+.bm-alert-box {
+    position: absolute;
+    top: 10px;
+    left: 5%;
+    right: 5%;
+    z-index: 5000;
+}
+
 /* Small devices (tablets, 768px and up) */
 @media (min-width: 768px) {
     .tabarea {
