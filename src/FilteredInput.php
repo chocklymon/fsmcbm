@@ -79,7 +79,7 @@ class FilteredInput implements Iterator
     
     /**
      * Returns true if the requested key exists in the input variables.
-     * @param type $key
+     * @param string $key
      * @return boolean
      */
     public function exists($key)

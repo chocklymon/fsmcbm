@@ -7,7 +7,8 @@
         <li ng-repeat="username in player.usernames">{{username.username}} <span ng-show="username.active" class="text-primary glyphicon glyphicon-ok-sign" title="Active Username"></span></li>
     </ul>
 </div>
-<div class="form-horizontal col-lg-pull-3" ng-class='{"col-lg-9": !adding}'>
+<form name="userForm" class="form-horizontal col-lg-pull-3" novalidate="novalidate"
+      ng-class="{'col-lg-9': !adding}" ng-submit="submitForm(userForm)">
     <div class="form-group" ng-switch="adding">
         <div ng-switch-when="true">
             <label for="username" class="col-sm-2 control-label">Username:</label>
@@ -22,10 +23,10 @@
             </div>
         </div>
     </div>
-    <div class="form-group">
+    <div class="form-group" ng-class="{'has-error': userForm.$invalid && userForm.attempted}">
         <label for="uuid" class="col-sm-2 control-label">UUID:</label>
         <div class="col-sm-6">
-            <input type="text" class="form-control" id="uuid" ng-model="player.uuid" ng-readonly="!adding" />
+            <input type="text" class="form-control" id="uuid" ng-model="player.uuid" ng-readonly="!adding" required="required"/>
         </div>
     </div>
     <div class="form-group">
@@ -62,4 +63,4 @@
             <textarea id="user_notes" class="form-control" ng-model="player.notes"></textarea>
         </div>
     </div>
-</div>
+</form>

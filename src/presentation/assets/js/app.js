@@ -289,11 +289,15 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
         return {
             scope: {
                 player: '=',
-                adding: '='
+                adding: '=',
+                form: '=?'
             },
             restrict: 'E',
             templateUrl: 'presentation/templates/user.html',
             link: function(scope) {
+                if (scope.form) {
+                    scope.form = scope.userForm;
+                }
                 // TODO ranks
                 scope.ranks = bm.ranks;
                 var playerImage = '';
@@ -387,6 +391,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
                     if (response.data && response.data.error) {
                         // TODO handle errors
                         console.warn(response.data);
+                        throw response;
                     }
                     return response;
                 },
@@ -570,16 +575,29 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
             $scope.selectedTab = getSelectedTab();
         });
     }])
-    .controller('AddUserController', ['$scope', 'Player', '$modalInstance', function($scope, Player, $modalInstance){
+    .controller('AddUserController', ['$scope', 'Player', '$modalInstance', 'message', function($scope, Player, $modalInstance, message){
         // TODO This and the user controller will be very similar, find a way to combine them?
         $scope.player = {
             info: {}
         };
+        $scope.playerForm = {};
         $scope.save = function() {
-            Player.add($scope.player.info).then(function(response) {
-                // TODO output a message
-                $modalInstance.close(response);
-            });
+            $scope.playerForm.attempted = true;
+            if ($scope.playerForm.$invalid) {
+                message.addMessage(message.WARNING, 'Please fill out all required fields!', 10000);
+            } else {
+                $scope.submitting = true;
+                Player.add($scope.player.info).then(
+                    function(response) {
+                        message.successMsg('User added.', 6000);
+                        $modalInstance.close(response);
+                    },
+                    function(err) {
+                        message.errorMsg("Problem adding user. " + err.data.error);
+                        $scope.submitting = false;
+                    }
+                );
+            }
         };
         $scope.cancel = function() {
             $modalInstance.dismiss('cancel');
