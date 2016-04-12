@@ -593,7 +593,11 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
                         $modalInstance.close(response);
                     },
                     function(err) {
-                        message.errorMsg("Problem adding user. " + err.data.error);
+                        var errorMsg = 'Problem Adding user. ';
+                        if (err.data && err.data.error) {
+                            errorMsg += err.data.error;
+                        }
+                        message.errorMsg(errorMsg);
                         $scope.submitting = false;
                     }
                 );
