@@ -127,6 +127,15 @@ class Settings
         return $this->settings['debug'];
     }
 
+    public function getAuthenticationMode()
+    {
+        if (isset($this->settings['auth_mode'])) {
+            return $this->settings['auth_mode'];
+        } else {
+            return null;
+        }
+    }
+
     public function useWPLogin()
     {
         return $this->settings['use_wp_login'];

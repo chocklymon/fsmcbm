@@ -81,6 +81,8 @@ class Authentication
         } else if ($this->settings->useWPLogin()) {
             // Authenticate using WordPress
             $user_id = $this->authenticateUsingWP();
+        } else if ($this->settings->getAuthenticationMode() === 'none') {
+            $user_id = 1;
         } else {
             // Authenticate using our authentication
             $user_id = $this->authenticateUser();
