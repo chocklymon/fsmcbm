@@ -4,7 +4,7 @@
         <div class="form-section">
             <bm-player player="user.player" adding="false"></bm-player>
             <div class="row">
-                <div class="col-xs-3 col-sm-2 col-xs-offset-8 col-sm-offset-7">
+                <div class="col-xs-12 text-right">
                     <button class="btn btn-default" ng-click="saveUser()">Save</button>
                 </div>
             </div>
@@ -13,7 +13,7 @@
             <div ng-repeat="incident in user.incidents" class="form-section">
                 <incident incident="incident" adding="false"></incident>
                 <div class="row">
-                    <div class="col-xs-3 col-sm-2 col-xs-offset-8 col-sm-offset-7">
+                    <div class="col-xs-12 text-right">
                         <button class="btn btn-default" ng-click="saveIncident(incident)">Save</button>
                     </div>
                 </div>
@@ -36,7 +36,7 @@
             </table>
         </div>
         <div class="row">
-            <div class="col-xs-3 col-sm-2 col-xs-offset-8 col-sm-offset-7">
+            <div class="col-xs-12 text-right">
                 <button class="btn btn-default" ng-click="reset()">Cancel</button>
             </div>
         </div>

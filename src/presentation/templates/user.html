@@ -12,20 +12,20 @@
     <div class="form-group" ng-switch="adding">
         <div ng-switch-when="true">
             <label for="username" class="col-sm-2 control-label">Username:</label>
-            <div class="col-sm-3">
+            <div class="col-sm-10">
                 <input type="text" class="form-control" id="username" ng-model="player.username"/>
             </div>
         </div>
         <div ng-switch-when="false">
             <label for="user_mod_date" class="col-sm-2 control-label">Modified Date:</label>
-            <div class="col-sm-3">
+            <div class="col-sm-4">
                 <input type="text" class="col-sm-2 form-control" id="user_mod_date" ng-model="player.modified_date" readonly="readonly" />
             </div>
         </div>
     </div>
     <div class="form-group" ng-class="{'has-error': userForm.$invalid && userForm.attempted}">
         <label for="uuid" class="col-sm-2 control-label">UUID:</label>
-        <div class="col-sm-6">
+        <div class="col-sm-10">
             <input type="text" class="form-control" id="uuid" ng-model="player.uuid" ng-readonly="!adding" required="required"/>
         </div>
     </div>
@@ -47,19 +47,19 @@
     </div>
     <div class="form-group">
         <label for="rank" class="col-sm-2 control-label">Rank:</label>
-        <div class="col-sm-3">
+        <div class="col-sm-4">
             <select id="rank" class="form-control" ng-model="player.rank" ng-options="r.value as r.label for r in ranks"></select>
         </div>
     </div>
     <div class="form-group">
         <label for="user_relations" class="col-sm-2 control-label">Relations:</label>
-        <div class="col-sm-6">
+        <div class="col-sm-10">
             <textarea id="user_relations" class="form-control" ng-model="player.relations"></textarea>
         </div>
     </div>
     <div class="form-group">
         <label for="user_notes" class="col-sm-2 control-label">Notes:</label>
-        <div class="col-sm-6">
+        <div class="col-sm-10">
             <textarea id="user_notes" class="form-control" ng-model="player.notes"></textarea>
         </div>
     </div>
