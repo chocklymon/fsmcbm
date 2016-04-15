@@ -647,8 +647,26 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
             $scope.selectedTab = getSelectedTab();
         });
     }])
-    .controller('AddUserController', ['$scope', 'Player', '$modalInstance', 'message', function($scope, Player, $modalInstance, message){
+    .controller('AddUserController', ['$scope', 'Player', '$modalInstance', 'message', 'Confirm', function($scope, Player, $modalInstance, message, Confirm){
         // TODO This and the user controller will be very similar, find a way to combine them?
+        var addUser = function() {
+            $scope.submitting = true;
+            Player.add($scope.player.info).then(
+                function(response) {
+                    message.successMsg('User added.', 6000);
+                    $modalInstance.close(response);
+                },
+                function(err) {
+                    var errorMsg = 'Problem adding user. ';
+                    if (err.data && err.data.error) {
+                        errorMsg += err.data.error;
+                    }
+                    message.errorMsg(errorMsg);
+                    $scope.submitting = false;
+                }
+            );
+        };
+
         $scope.player = {
             info: {}
         };
@@ -657,22 +675,12 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
             $scope.playerForm.attempted = true;
             if ($scope.playerForm.$invalid) {
                 message.addMessage(message.WARNING, 'Please fill out all required fields!', 10000);
+            } else if (!$scope.player.username) {
+                Confirm(
+                    'Are you sure that you wish to add a user without a username?<br><br>Press Ok to add the user.<br>Press Cancel to close this dialog and add a username.'
+                ).then(addUser);
             } else {
-                $scope.submitting = true;
-                Player.add($scope.player.info).then(
-                    function(response) {
-                        message.successMsg('User added.', 6000);
-                        $modalInstance.close(response);
-                    },
-                    function(err) {
-                        var errorMsg = 'Problem adding user. ';
-                        if (err.data && err.data.error) {
-                            errorMsg += err.data.error;
-                        }
-                        message.errorMsg(errorMsg);
-                        $scope.submitting = false;
-                    }
-                );
+                addUser();
             }
         };
         $scope.cancel = function() {
