@@ -379,11 +379,15 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
         return {
             scope: {
                 incident: '=',
-                adding: '='
+                adding: '=',
+                form: '=?'
             },
             restrict: 'E',
             templateUrl: 'presentation/templates/incident.html',
             link: function(scope) {
+                if (scope.form) {
+                    scope.form = scope.incidentForm;
+                }
                 // TODO worlds
                 scope.worlds = bm.worlds;
                 scope.selectUser = function($item) {
@@ -395,7 +399,8 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
     .directive('lookup', ['request', function(request) {
         return {
             scope: {
-                onSelect: '&'
+                onSelect: '&',
+                required: '=?'
             },
             restrict: 'EA',
             templateUrl: 'presentation/templates/lookup.html',
@@ -660,7 +665,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
                         $modalInstance.close(response);
                     },
                     function(err) {
-                        var errorMsg = 'Problem Adding user. ';
+                        var errorMsg = 'Problem adding user. ';
                         if (err.data && err.data.error) {
                             errorMsg += err.data.error;
                         }
@@ -674,19 +679,49 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
             $modalInstance.dismiss('cancel');
         };
     }])
-    .controller('AddIncidentController', ['$scope', 'request', '$modalInstance', function($scope, request, $modalInstance) {
+    .controller('AddIncidentController', ['$scope', 'request', '$modalInstance', 'message', 'Confirm', function($scope, request, $modalInstance, message, Confirm) {
         $scope.incident = {};
+        $scope.incidentForm = {};
 
         $scope.incident.selectUser = function($item) {
             $scope.incident.user_id = $item.user_id;
         };
 
+        var addIncident = function() {
+            $scope.submitting = true;
+            request('add_incident', $scope.incident).then(
+                function(response) {
+                    message.successMsg('Incident added.', 6000);
+                    $modalInstance.close(response);
+                },
+                function(err) {
+                    var errorMsg = 'Problem adding incident. ';
+                    if (err.data && err.data.error) {
+                        errorMsg += err.data.error;
+                    }
+                    message.errorMsg(errorMsg);
+                    $scope.submitting = false;
+                }
+            );
+        };
+
         $scope.save = function() {
-            request('add_incident', $scope.incident).success(function(data) {
-                // TODO output a message
-                console.log(data);
-                $modalInstance.close(data);
-            });
+
+            // Validate that the incident is correctly set up
+            if ($scope.incidentForm.$invalid) {
+                if (!$scope.incidentForm.$dirty) {
+                    $scope.incidentForm.$setDirty(true);
+                }
+                message.addMessage(message.WARNING, 'Please fill out all required fields!', 10000);
+            } else if (!$scope.incident.user_id) {
+                message.addMessage(message.WARNING, 'Please select a user!', 10000);
+            } else if (!$scope.incident.notes) {
+                Confirm(
+                    'Are you sure that you wish to add an incident without any notes?<br><br>Press Ok to add the incident.<br>Press Cancel to close this dialog and add notes.'
+                ).then(addIncident);
+            } else {
+                addIncident();
+            }
         };
         $scope.cancel = function() {
             $modalInstance.dismiss('cancel');
