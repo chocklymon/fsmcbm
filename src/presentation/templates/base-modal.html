@@ -1,0 +1,16 @@
+<div class="modal-header">
+    <h3 class="modal-title">{{title}}</h3>
+</div>
+<div class="modal-body">
+    <div ng-if="!isTemplate">
+        <p ng-bind-html="body"></p>
+    </div>
+    <div ng-if="isTemplate">
+        <div ng-include="body"></div>
+    </div>
+</div>
+<div class="modal-footer">
+    <button class="btn" ng-repeat="button in buttons" ng-click="callButtonFunction($index)" ng-disabled="button.disabled" ng-class="button.class">
+        {{button.txt}}
+    </button>
+</div>

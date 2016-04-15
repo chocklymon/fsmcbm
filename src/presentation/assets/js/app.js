@@ -255,6 +255,73 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
         };
     }])
 
+    .factory('Confirm', ['$rootScope', '$sce', '$modal', function($rootScope, $sce, $modal) {
+        var $modalInstance,
+            modalScope = $rootScope.$new();
+        var closeModal = function() {
+                $modalInstance.close();
+            },
+            dismissModal = function() {
+                $modalInstance.dismiss();
+            };
+        var defaultButtons = [
+            {
+                action: closeModal,
+                disabled: false,
+                class: 'btn-primary',
+                txt: 'Ok'
+            },
+            {
+                action: dismissModal,
+                disabled: false,
+                class: 'btn-warning',
+                txt: 'Cancel'
+            }
+        ];
+
+        modalScope.callButtonFunction = function($index) {
+            modalScope.buttons[$index].action.call(modalScope.buttons[$index].action, $modalInstance);
+        };
+
+        return function(msg) {
+            if (!angular.isObject(msg)) {
+                msg = {body: msg};
+            }
+            modalScope.title = msg.title || 'Confirm';
+            if (msg.templateUrl) {
+                modalScope.isTemplate = true;
+                modalScope.body = msg.templateUrl;
+            } else {
+                modalScope.isTemplate = false;
+                modalScope.body = $sce.trustAsHtml(msg.body);
+            }
+            if (msg.buttons) {
+                modalScope.buttons = [];
+                angular.forEach(msg.buttons, function(btn) {
+                    var button = {};
+                    button.action = btn.action || closeModal;
+                    button.class = btn.class || 'btn-default';
+                    button.txt = btn.txt || '';
+                    if ('disabled' in btn) {
+                        button.disabled = btn.disabled;
+                    } else {
+                        button.disabled = false;
+                    }
+                    modalScope.buttons.push(button);
+                });
+            } else {
+                modalScope.buttons = defaultButtons;
+            }
+            $modalInstance = $modal.open({
+                scope: modalScope,
+                templateUrl: 'presentation/templates/base-modal.html',
+                backdrop: 'static'
+            });
+
+            return $modalInstance.result;
+        }
+    }])
+
 
     /* ======================
      * Filters
