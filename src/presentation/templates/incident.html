@@ -27,15 +27,13 @@
             <input type="text" class="form-control" id="type_{{incident.id}}" ng-model="incident.incident_type"/>
         </div>
         <label for="date_{{incident.id}}" class="col-sm-2 control-label">Incident Date:</label>
-        <!-- DatePicker Example: <div class="input-group">
-                <input type="text" class="form-control" id="user_mod_date" ng-model="player.modified_date"
-                       datepicker-popup="{{format}}" is-open="opened" datepicker-options="dateOptions" max-date="{{today}}" />
-                <span class="input-group-btn">
-                    <button type="button" class="btn btn-default" ng-click="open($event)"><i class="glyphicon glyphicon-calendar"></i></button>
-                </span>
-            </div> -->
         <div class="col-sm-4">
-            <input type="text" class="form-control" id="date_{{incident.id}}" ng-model="incident.incident_date"/>
+            <input type="text" class="form-control" id="date_{{incident.id}}"
+                   ng-model="incident.incident_date"
+                   datepicker-popup="yyyy-MM-dd"
+                   is-open="datepicker.open"
+                   on-open-focus="false"
+                   ng-focus="datepicker.open = true" />
         </div>
     </div>
     <div class="form-group">

@@ -116,6 +116,21 @@ class FilteredInput implements Iterator
     }
 
     /**
+     * Gets the input as a timestamp.
+     * @param string $name The variable name.
+     * @return int|null The unix timestamp. Null if the value doesn't exist
+     * in the input.
+     */
+    public function getTimestamp($name)
+    {
+        $value = $this->__get($name);
+        if ($value) {
+            $value = strtotime($value);
+        }
+        return $value;
+    }
+
+    /**
      * Re-sorts the variables by their key name.
      */
     public function keySort()

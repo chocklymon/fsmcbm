@@ -146,6 +146,10 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
                         .then(function(response) {
                             if (response && response.data) {
                                 cachedPlayer = response.data;
+                                //angular.forEach(cachedPlayer.incident, function(incident) {
+                                //    //incident.incident_date = Date.parse(incident.incident_date);
+                                //    incident.incident_date = new Date();
+                                //});
                                 return cachedPlayer;
                             } else {
                                 return $q.reject('Invalid user data');
@@ -427,7 +431,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
      * Configuration
      * ======================
      */
-    .config(['$routeProvider', '$httpProvider', function($routeProvider, $httpProvider) {
+    .config(['$routeProvider', '$httpProvider', 'datepickerConfig', function($routeProvider, $httpProvider, datepickerConfig) {
         // Set up the routes
         $routeProvider
             .when('/', {
@@ -474,6 +478,9 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
                 }
             };
         });
+
+        // Set the defaults for the date picker component
+        datepickerConfig.showWeeks = false;
     }])
 
 

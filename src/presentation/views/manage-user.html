@@ -28,7 +28,7 @@
                 <tbody>
                     <tr ng-repeat="ban in user.history">
                         <td>{{ban.moderator}}</td>
-                        <td>{{ban.date}}</td>
+                        <td>{{ban.date | date:mediumDate}}</td>
                         <td>{{ban.banned|checkmark}}</td>
                         <td>{{ban.permanent|checkmark}}</td>
                     </tr>

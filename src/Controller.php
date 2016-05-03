@@ -87,7 +87,7 @@ SQL;
     {
         $user_id       = $this->db->sanitize($input->user_id, true);
         $today         = $this->getNow();
-        $incident_date = $this->db->sanitize($input->incident_date);
+        $incident_date = $this->db->getDate($input->getTimestamp('incident_date'));
         $incident_type = $this->db->sanitize($input->incident_type);
         $notes         = $this->db->sanitize($input->notes);
         $action_taken  = $this->db->sanitize($input->action_taken);
@@ -97,14 +97,12 @@ SQL;
         $coord_z       = $this->db->sanitize($input->coord_z, true);
 
         // Verify that we have a user id
-        if($user_id === null || $user_id <= 0) {
+        if ($user_id === null || $user_id <= 0) {
             throw new InvalidArgumentException("Please provide a user for this incident.");
         }
 
-        // Check if we have an incident date.
-        if($incident_date === null || mb_strlen($incident_date) < 6) {
-            $incident_date = mb_substr($today, 0, 10);
-        }
+        // Remove the timestamp from the incident date
+        $incident_date = mb_substr($incident_date, 0, 10);
 
         $query = "INSERT INTO `incident` (`user_id`, `moderator_id`, `created_date`, `modified_date`, `incident_date`, `incident_type`, `notes`, `action_taken`, `world`, `coord_x`, `coord_y`, `coord_z`)
             VALUES ('$user_id', '$moderator_id', '$today', '$today', '$incident_date', '$incident_type', '$notes', '$action_taken', '$world', '$coord_x', '$coord_y', '$coord_z')";
@@ -367,8 +365,15 @@ SQL;
         // Get the known usernames
         $aliases = $this->db->queryRows("SELECT username, active FROM user_aliases WHERE user_id = '{$user_id}'");
         foreach($aliases as $alias) {
-            $user_info['usernames'][] = array('username' => $alias['username'], 'active' => $alias['active']);
+            $user_info['usernames'][] = array('username' => $alias['username'], 'active' => (bool) $alias['active']);
         }
+
+        // Convert dates to ISO 8601 formatted
+        $user_info['modified_date'] = date('c', strtotime($user_info['modified_date']));
+
+        // Convert values to booleans that should be booleans
+        $user_info['banned'] = (bool) $user_info['banned'];
+        $user_info['permanent'] = (bool) $user_info['permanent'];
 
         $this->output->append($user_info, 'user');
 
@@ -384,7 +389,13 @@ WHERE i.user_id = '{$user_id}'
 ORDER BY i.incident_date
 SQL;
 
-        $this->db->queryRowsIntoOutput($sql, $this->output, 'incident');
+        $incidents = $this->db->queryRows($sql);
+        foreach ($incidents as &$incident) {
+            $incident['created_date'] = date('c', strtotime($incident['created_date']));
+            $incident['modified_date'] = date('c', strtotime($incident['modified_date']));
+            $incident['incident_date'] = date('c', strtotime($incident['incident_date']));
+        }
+        $this->output->append($incidents, 'incident');
 
 
         // Get the ban history
@@ -398,7 +409,13 @@ WHERE bh.`user_id` = '{$user_id}'
 ORDER BY bh.`date`
 SQL;
 
-        $this->db->queryRowsIntoOutput($sql, $this->output, 'history');
+        $ban_history = $this->db->queryRows($sql);
+        foreach ($ban_history as &$history) {
+            $history['date'] = date('c', strtotime($history['date']));
+            $history['banned'] = (bool) $history['banned'];
+            $history['permanent'] = (bool) $history['permanent'];
+        }
+        $this->output->append($ban_history, 'history');
 
         $this->output->reply();
     }
