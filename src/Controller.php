@@ -499,7 +499,7 @@ SQL;
 
         // If the user is no longer banned, make sure the permanent flag is unchecked
         if (!$banned && $permanent) {
-            $permanent = false;
+            $permanent = 0;
         }
 
         // See if we need to update the ban history
@@ -540,8 +540,8 @@ SQL;
         // Be sure the inputs are what the are supposed to be.
         $player_id = (int) $player_id;
         $user_id = (int) $user_id;
-        $banned = (boolean) $banned;
-        $permanent = (boolean) $permanent;
+        $banned = (int) $banned;
+        $permanent = (int) $permanent;
 
         $today = $this->getNow();
 

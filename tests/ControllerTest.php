@@ -148,7 +148,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
         $uuid = mb_ereg_replace('-', '', $this->input->uuid);
         $expected_user = "INSERT INTO `users` (`uuid`,`modified_date`,`rank`,`relations`,`notes`,`banned`,`permanent`) VALUES ('{$uuid}','{$now}',2,'Friends with Jane12','Don\'t worry, just have some cheese.',1,0)";
         $expected_ban_history = "INSERT INTO `ban_history` (`user_id`, `moderator_id`, `date`, `banned`, `permanent`)
-                VALUES ('{$new_user_id}', '{$moderator_id}', '{$now}', '1', '')";
+                VALUES ('{$new_user_id}', '{$moderator_id}', '{$now}', '1', '0')";
 
         $queries = $db->getQueries();
         $this->assertEquals($expected_user, $queries[1]);
@@ -443,7 +443,7 @@ UPDATE `users` SET
     `relations` = 'Friends with Jane12',
     `notes` = 'Don\'t worry, just have some cheese.',
     `banned` = '0',
-    `permanent` = ''
+    `permanent` = '0'
  WHERE `users`.`user_id` = 5
 SQL;
         $queries = $db->getQueries();

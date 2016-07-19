@@ -35,14 +35,14 @@
         <label for="user_banned" class="col-xs-4 col-sm-2 control-label">Banned:</label>
         <div class="col-xs-2">
             <div class="checkbox">
-                <input type="checkbox" id="user_banned" ng-model="player.banned" ng-true-value="1" ng-false-value="0"/>
+                <input type="checkbox" id="user_banned" ng-model="player.banned"/>
             </div>
         </div>
         <div ng-show="player.banned">
             <label for="user_permanent" class="col-xs-4 col-sm-2 control-label">Permanent:</label>
             <div class="col-xs-2">
                 <div class="checkbox">
-                    <input type="checkbox" id="user_permanent" ng-model="player.permanent" ng-true-value="1" ng-false-value="0"/>
+                    <input type="checkbox" id="user_permanent" ng-model="player.permanent"/>
                 </div>
             </div>
         </div>

@@ -95,7 +95,7 @@ class FilteredInputTest extends PHPUnit_Framework_TestCase
     public function testGetBooleanValue()
     {
         $this->input->test = "I'm truthy";
-        $this->assertTrue($this->input->getBoolean('test'));
+        $this->assertEquals(1, $this->input->getBoolean('test'));
     }
 
     public function testKeySort()

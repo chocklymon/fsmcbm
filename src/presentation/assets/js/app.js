@@ -488,7 +488,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
      * Controllers
      * ======================
      */
-    .controller('UserController', ['$scope', '$routeParams', 'Player', 'request', 'formatUUID', function($scope, $routeParams, Player, request, formatUUID) {
+    .controller('UserController', ['$scope', '$routeParams', 'Player', 'request', 'formatUUID', 'message', function($scope, $routeParams, Player, request, formatUUID, message) {
         // Create a function to set the data in the scope
         var setPlayer = function(player) {
             // Set the player data into the scope
@@ -506,12 +506,14 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
             Player.get($routeParams.uuid, true).then(setPlayer);
         };
         $scope.saveIncident = function(incident) {
-            request('update_incident', incident).success(function(data){
-                console.log(data);
+            request('update_incident', incident).success(function() {
+                message.successMsg('Incident updated.', 6000);
             });
         };
         $scope.saveUser = function() {
-            Player.save();
+            Player.save().then(function() {
+                message.successMsg('User updated.', 6000);
+            });
         };
 
         // If we have a UUID in the router parameters, load up the user

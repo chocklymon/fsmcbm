@@ -111,7 +111,7 @@ class FilteredInput implements Iterator
         } else if ($value == 'false' || $value == 'off'){
             return 0;
         } else {
-            return (boolean) $value;
+            return $value ? 1 : 0;
         }
     }
 
