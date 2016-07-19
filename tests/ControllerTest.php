@@ -556,15 +556,15 @@ SQL;
         // Set Up //
         $queryIndex = 0;
         $input = new FilteredInput(false, $input);
-        $expectedOutput = '{"user":{"uuid":"a","usernames":[{"username":"' . self::USERNAME . '","active":true}]}}';
+        $expectedOutput = '{"user":{"uuid":"a","modified_date":"2016-07-19T14:39:59+00:00","banned":true,"permanent":true,"usernames":[{"username":"' . self::USERNAME . '","active":true}]},"incident":[],"history":[]}';
         $this->expectOutputString($expectedOutput);
 
         // Construct the database
         $mockQueryResults = array(
-            array('uuid' => 'a'),// Get user info
+            array('uuid' => 'a', 'modified_date' => '2016-07-19 14:39:59', 'banned' => 'false', 'permanent' => 'false'),// Get user info
             array(array('username' => self::USERNAME, 'active'=>true)),// Get user aliases
-            new FakeQueryResult(),// Get incidents
-            new FakeQueryResult()// Get ban history
+            array(),// Get incidents
+            array()// Get ban history
         );
         if ($dbMockExtra) {
             $queryIndex++;

@@ -682,7 +682,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
             $scope.playerForm.attempted = true;
             if ($scope.playerForm.$invalid) {
                 message.addMessage(message.WARNING, 'Please fill out all required fields!', 10000);
-            } else if (!$scope.player.username) {
+            } else if (!$scope.player.info.username) {
                 Confirm(
                     'Are you sure that you wish to add a user without a username?<br><br>Press Ok to add the user.<br>Press Cancel to close this dialog and add a username.'
                 ).then(addUser);

@@ -106,14 +106,19 @@ class Database
      * Gets the date and time as a string ready to be inserted into the database.
      * @param int $timestamp The UNIX timestamp, defaults to the current time if
      * not specified.
+     * @param bool $with_time Indicate if the time should be included. If set to false only the date is returned.
      * @return string The date and time.
      */
-    public static function getDate($timestamp = null)
+    public static function getDate($timestamp = null, $with_time = true)
     {
         if (empty($timestamp)) {
             $timestamp = time();
         }
-        return date('Y-m-d H:i:s', $timestamp);
+        $format = 'Y-m-d';
+        if ($with_time) {
+            $format .= ' H:i:s';
+        }
+        return date($format, $timestamp);
     }
 
     /**

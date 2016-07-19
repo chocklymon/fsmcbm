@@ -136,4 +136,11 @@ class FilteredInputTest extends PHPUnit_Framework_TestCase
             $expected_value = 'b';
         }
     }
+
+    public function testGetTimestamp()
+    {
+        $this->input->a = '2016-07-19T14:39:59+00:00';
+
+        $this->assertEquals(1468939199, $this->input->getTimestamp('a'));
+    }
 }

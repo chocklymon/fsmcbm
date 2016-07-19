@@ -87,7 +87,7 @@ SQL;
     {
         $user_id       = $this->db->sanitize($input->user_id, true);
         $today         = $this->getNow();
-        $incident_date = $this->db->getDate($input->getTimestamp('incident_date'));
+        $incident_date = $this->db->getDate($input->getTimestamp('incident_date'), false);
         $incident_type = $this->db->sanitize($input->incident_type);
         $notes         = $this->db->sanitize($input->notes);
         $action_taken  = $this->db->sanitize($input->action_taken);
@@ -100,9 +100,6 @@ SQL;
         if ($user_id === null || $user_id <= 0) {
             throw new InvalidArgumentException("Please provide a user for this incident.");
         }
-
-        // Remove the timestamp from the incident date
-        $incident_date = mb_substr($incident_date, 0, 10);
 
         $query = "INSERT INTO `incident` (`user_id`, `moderator_id`, `created_date`, `modified_date`, `incident_date`, `incident_type`, `notes`, `action_taken`, `world`, `coord_x`, `coord_y`, `coord_z`)
             VALUES ('$user_id', '$moderator_id', '$today', '$today', '$incident_date', '$incident_type', '$notes', '$action_taken', '$world', '$coord_x', '$coord_y', '$coord_z')";
@@ -368,8 +365,8 @@ SQL;
             $user_info['usernames'][] = array('username' => $alias['username'], 'active' => (bool) $alias['active']);
         }
 
-        // Convert dates to ISO 8601 formatted
-        $user_info['modified_date'] = date('c', strtotime($user_info['modified_date']));
+        // Convert dates to the correct format
+        $user_info['modified_date'] = $this->formatDateForResponse($user_info['modified_date']);
 
         // Convert values to booleans that should be booleans
         $user_info['banned'] = (bool) $user_info['banned'];
@@ -391,9 +388,10 @@ SQL;
 
         $incidents = $this->db->queryRows($sql);
         foreach ($incidents as &$incident) {
-            $incident['created_date'] = date('c', strtotime($incident['created_date']));
-            $incident['modified_date'] = date('c', strtotime($incident['modified_date']));
-            $incident['incident_date'] = date('c', strtotime($incident['incident_date']));
+            // Change all the incident dates to the correct date times string format
+            $incident['created_date'] = $this->formatDateForResponse($incident['created_date']);
+            $incident['modified_date'] = $this->formatDateForResponse($incident['modified_date']);
+            $incident['incident_date'] = $this->formatDateForResponse($incident['incident_date']);
         }
         $this->output->append($incidents, 'incident');
 
@@ -411,7 +409,8 @@ SQL;
 
         $ban_history = $this->db->queryRows($sql);
         foreach ($ban_history as &$history) {
-            $history['date'] = date('c', strtotime($history['date']));
+            // Format the data to the expected data types and string formats
+            $history['date'] = $this->formatDateForResponse($history['date']);
             $history['banned'] = (bool) $history['banned'];
             $history['permanent'] = (bool) $history['permanent'];
         }
@@ -566,7 +565,7 @@ SQL;
         }
 
         $now = $this->getNow();
-        $incident_date = $this->db->sanitize($input->incident_date);
+        $incident_date = $this->db->getDate($input->getTimestamp('incident_date'), false);
         $incident_type = $this->db->sanitize($input->incident_type);
         $notes         = $this->db->sanitize($input->notes);
         $action_taken  = $this->db->sanitize($input->action_taken);
@@ -659,6 +658,16 @@ SQL;
         $active = (bool) $active;
         $sql = "INSERT IGNORE INTO `user_aliases` (`user_id`, `username`, `active`) VALUES ({$player_id}, '{$username}', {$active})";
         $this->db->query($sql);
+    }
+
+    /**
+     * Converts a date string to ISO 8601 format for returning as a response.
+     * @param string $date_string The date time string to convert.
+     * @return bool|string
+     */
+    private function formatDateForResponse($date_string)
+    {
+        return date('c', strtotime($date_string));
     }
 
 }
