@@ -580,7 +580,7 @@ UPDATE `incident` SET
     `incident_date` = '{$incident_date}',
     `incident_type` = '{$incident_type}',
     `notes` = '{$notes}',
-    `action_taken` = '$action_taken}',
+    `action_taken` = '{$action_taken}',
     `world` = '{$world}',
     `coord_x` = '{$coord_x}',
     `coord_y` = '{$coord_y}',
