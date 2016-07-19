@@ -507,7 +507,7 @@ SQL;
         // Create the controller
         $controller = new Controller($db, self::$output);
 
-        $controller->upsertUserUUID($this->input);
+        $controller->upsertUsername(1, $this->input);
     }
 
     public function testUpsertUserUUID_updateUser()
@@ -521,7 +521,7 @@ SQL;
         // Create the controller
         $controller = new Controller($db, self::$output);
 
-        $controller->upsertUserUUID($this->input);
+        $controller->upsertUsername(1, $this->input);
     }
 
     /**
@@ -535,7 +535,7 @@ SQL;
         $db = new MockDatabase(array(new FakeQueryResult(array('user_id'=>29)), new FakeQueryResult()));
         $controller = new Controller($db, self::$output);
 
-        $controller->upsertUserUUID($this->input);
+        $controller->upsertUsername(1, $this->input);
     }
 
     /**
@@ -548,7 +548,7 @@ SQL;
         $input = new FilteredInput(false);
         $controller = new Controller($db, self::$output);
 
-        $controller->upsertUserUUID($input);
+        $controller->upsertUsername(1, $input);
     }
 
     private function runRetrieveUserData(array $input, $dbMockExtra = null, $user_id = 69)

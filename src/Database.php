@@ -135,7 +135,7 @@ class Database
     {
         $result = $this->conn->query($sql);
 
-        if($result === false){
+        if ($result === false) {
             throw new DatabaseException(
                 $error_message,
                 $this->conn->errno,
@@ -162,7 +162,7 @@ class Database
 
         $rows = array();
 
-        while($row = $result->fetch_assoc()){
+        while ($row = $result->fetch_assoc()) {
             $rows[] = $row;
         }
         $result->free();
@@ -185,7 +185,7 @@ class Database
     {
         $result = $this->query($sql, $error_message);
 
-        while($row = $result->fetch_assoc()){
+        while ($row = $result->fetch_assoc()) {
             $output->append($row, $key, true);
         }
         $result->free();

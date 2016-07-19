@@ -114,7 +114,7 @@ SQL;
 
     /**
      * Adds a new user to the database.
-     * @param type $user_id The id of the logged in moderator.
+     * @param int $user_id The id of the logged in moderator.
      * @param FilteredInput $input The input to get the user data from.
      * @throws InvalidArgumentException
      */
@@ -594,39 +594,40 @@ SQL;
     }
 
     /**
-     * Updates the user's Universally Unique Identifier, or adds a new user
-     * if the users doesn't exist.
-     * @param FilteredInput $input The input to use to get the user data from.
-     * @throws InvalidArgumentException
+     * Adds a new username for a given uuid, or creates a new user if there isn't a user with the provided UUID.
+     * @param int $user_id The logged in user's ID.
+     * @param FilteredInput $input The input to use to get the user data from. Requires a uuid field and a username
+     * field. Optionally an active flag can be added to indicate if a username is active.
      */
-    public function upsertUserUUID(FilteredInput $input)
+    public function upsertUsername($user_id, FilteredInput $input)
     {
-        // TODO this should become an upsert user function, where if the UUID exists, it updates the known usernames
-        // Get the user ID
-        $username = $this->db->sanitize($input->username);
-        $result = $this->db->query("SELECT user_id FROM `users` WHERE `users`.`username` = '{$username}'");
-
-        if ($result->num_rows == 0) {
-            // Insert a new user
-            $this->addUser(1, $input);
-        } else if ($input->exists('uuid')) {
-            // Store the UUID
+        if ($input->exists('uuid')) {
+            // Try to get the user ID
             $uuid = $this->prepareUUID($input->uuid);
+            $result = $this->db->query("SELECT user_id FROM `users` WHERE `users`.`uuid` = '{$uuid}'");
 
-            $row = $result->fetch_assoc();
-            $result->free();
+            if ($result->num_rows == 0) {
+                // Insert a new user
+                $this->addUser($user_id, $input);
+            } else {
+                // Store the username
+                $row = $result->fetch_assoc();
+                $result->free();
 
-            // Perform the udpate
-            $query = "UPDATE `users` SET uuid = '{$uuid}'
-                       WHERE  `users`.`user_id` = {$row['user_id']}";
+                $active = true;
+                if ($input->exists('active')) {
+                    $active = $input->getBoolean('active');
+                }
 
-            $this->db->query($query);
+                $this->addUserAlias($row['user_id'], $input->username, $active);
 
-            $this->output->success();
+                $this->output->success();
+            }
         } else {
             // No UUID provided
             throw new InvalidArgumentException("No UUID provided");
         }
+
     }
 
     /**
@@ -648,15 +649,34 @@ SQL;
 
     /**
      * Adds a username to the alias list for the user.
-     * @param $player_id The user's ID.
-     * @param $username The username to add an alias for.
-     * @param $active bool If the username we are adding is the active one.
+     * @param int $player_id The user's ID.
+     * @param string $username The username to add an alias for.
+     * @param bool $active If the username we are adding is the active one.
      */
     private function addUserAlias($player_id, $username, $active)
     {
         $username = $this->db->sanitize($username);
         $active = (bool) $active;
-        $sql = "INSERT IGNORE INTO `user_aliases` (`user_id`, `username`, `active`) VALUES ({$player_id}, '{$username}', {$active})";
+
+        // Get any existing usernames
+        $sql = "SELECT `username`, `active` FROM `user_aliases` WHERE `user_id` = {$player_id}";
+        $result = $this->db->queryRows($sql);
+
+        foreach ($result as $row) {
+            if ($row['username'] == $username && $row['active'] == $active) {
+                // Alias already exists in the correct state
+                // TODO handle when the username exists, but in the wrong active state
+                return;
+            }
+        }
+
+        // Deactivate any currently active usernames
+        if ($active && !empty($result)) {
+            $sql = "UPDATE `user_aliases` SET `active` = FALSE WHERE `user_id` = {$player_id}";
+            $this->db->query($sql);
+        }
+
+        $sql = "INSERT INTO `user_aliases` (`user_id`, `username`, `active`) VALUES ({$player_id}, '{$username}', {$active})";
         $this->db->query($sql);
     }
 

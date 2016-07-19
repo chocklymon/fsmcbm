@@ -129,8 +129,8 @@ try {
                 case 'search':
                     $actions->search($input);
                     break;
-                case 'set_user_uuid':
-                    $actions->upsertUserUUID($input);
+                case 'upsert_username':
+                    $actions->upsertUsername($user_id, $input);
                     break;
                 case 'update_user':
                     $actions->updateUser($user_id, $input);
