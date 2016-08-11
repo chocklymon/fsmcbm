@@ -303,7 +303,7 @@ SQL;
         $expected = "[]";
         $this->expectOutputString($expected);
 
-        $db = new MockDatabase(array(new FakeQueryResult()));
+        $db = new MockDatabase(array(new FakeQueryResult(), new FakeQueryResult()));
         $controller = new Controller($db, self::$output);
 
         // Run the test //

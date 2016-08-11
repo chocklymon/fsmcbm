@@ -274,6 +274,8 @@ SQL;
      */
     public function getBans()
     {
+        $this->db->query("SET sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''))");
+
         $query = <<<SQL
 SELECT u.user_id, u.uuid, ua.username, i.incident_date, i.incident_type, i.action_taken
  FROM users AS u
@@ -656,7 +658,7 @@ SQL;
     private function addUserAlias($player_id, $username, $active)
     {
         $username = $this->db->sanitize($username);
-        $active = (bool) $active;
+        $active = $active ? 1 : 0;
 
         // Get any existing usernames
         $sql = "SELECT `username`, `active` FROM `user_aliases` WHERE `user_id` = {$player_id}";
