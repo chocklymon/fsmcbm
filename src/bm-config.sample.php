@@ -51,4 +51,25 @@ $settings = array(
      */
     'auth_secret_keys' => array(),
 
+    /**
+     * Define a list of worlds for the server
+     */
+    'worlds' => array(
+        array(
+            'value' => '',
+            'label' => ''
+        ),
+        array(
+            'value' => 'world',
+            'label' => 'World'
+        ),
+        array(
+            'value' => 'nether',
+            'label' => 'Nether'
+        ),
+        array(
+            'value' => 'the_end',
+            'label' => 'The End'
+        ),
+    ),
 );

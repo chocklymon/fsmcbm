@@ -54,6 +54,7 @@ class Settings
             'session_duration' => 43200,// 12 hours
             'log_directory' => '.',
             'log_level' => 4,
+            'worlds' => array(array('value' => '', 'label' => '')),
         );
         $this->settings = array_merge($defaults, $settings);
     }

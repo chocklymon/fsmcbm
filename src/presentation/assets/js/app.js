@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright 2014 Curtis Oakley.
+ * Copyright 2014-2016 Curtis Oakley.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,50 +22,6 @@
  * THE SOFTWARE.
  */
 'use strict';
-
-// TODO the worlds should be requested from the ban-manager
-var bm = {};
-bm.worlds = [{
-        value: '',
-        label: ''
-    }, {
-        value: 'world',
-        label: 'Alpha'
-    }, {
-        value: 'world3',
-        label: 'Delta'
-    }, {
-        value: 'world4',
-        label: 'Gamma'
-    }, {
-        value: 'omega',
-        label: 'Omega'
-    }, {
-        value: 'world_nether',
-        label: 'Alpha Nether'
-    }, {
-        value: 'world3_nether',
-        label: 'Delta Nether'
-    }, {
-        value: 'world4_nether',
-        label: 'Gamma Nether'
-    }, {
-        value: 'omega_nether',
-        label: 'Omega Nether'
-    }, {
-        value: 'world_the_end',
-        label: 'The End'
-    }, {
-        value: 'custom',
-        label: 'Custom'
-    }, {
-        value: 'dev',
-        label: 'Dev'
-    }, {
-        value: 'outworld',
-        label: 'Outworld'
-    }
-];
 
 
 /* ======================
@@ -90,13 +46,61 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
     }])
 
     /**
+     * Provides caching for requests to the server. If a response comes from the server it is cached and then the
+     * cached version is returned.
+     */
+    .factory('CachedRequest', ['$q', 'request', function($q, request) {
+        var cache = {};
+
+        return {
+            /**
+             * Get data from the server.
+             * If the data has been requested before a cached version of the data will be returned.
+             * @param {string} endpoint
+             * @param {*} payload
+             * @returns {*}
+             */
+            get: function(endpoint, payload) {
+                if (endpoint in cache) {
+                    return $q.when(cache[endpoint]);
+                } else {
+                    // Not cached, request the user from the server
+                    return request(endpoint, payload).then(function(response) {
+                        if (response && response.data) {
+                            cache[endpoint] = response.data;
+                            return cache[endpoint];
+                        } else {
+                            return $q.reject('Bad response from the server');
+                        }
+                    });
+                }
+            },
+
+            /**
+             * Clears the cache for a given endpoint.
+             * @param {string} endpoint
+             */
+            reset: function(endpoint) {
+                if (endpoint) {
+                    // Delete the given endpoint from the cache, if it exists
+                    if (endpoint in cache) {
+                        delete cache[endpoint];
+                    }
+                } else {
+                    // Reset all
+                    cache = {};
+                }
+            }
+        }
+    }])
+
+    /**
      * Current user factory.
      *
      * Provides a cache for the currently managed user.
      */
-    .factory('Player', ['request', '$q', function(request, $q) {
+    .factory('Player', ['request', 'CachedRequest', function(request, CachedRequest) {
         var cachedPlayer = null,
-            ranks = null,
             getUUID = function() {
                 if (cachedPlayer) {
                     return cachedPlayer.user.uuid;
@@ -136,40 +140,16 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
              * @returns {Promise}
              */
             get: function(uuid, force) {
-                if (!force && matches(uuid)) {
-                    var deferred = $q.defer();
-                    deferred.resolve(cachedPlayer);
-                    return deferred.promise;
-                } else {
-                    // Not cached, request the user from the server
-                    var promise = request('lookup', {'uuid': uuid})
-                        .then(function(response) {
-                            if (response && response.data) {
-                                cachedPlayer = response.data;
-                                return cachedPlayer;
-                            } else {
-                                return $q.reject('Invalid user data');
-                            }
-                        });
-                    return promise;
+                if (force || !matches(uuid)) {
+                    // Reset the cache, different user requested or being forced
+                    CachedRequest.reset('lookup');
                 }
-            },
 
-            getRanks: function() {
-                if (ranks) {
-                    var deferred = $q.defer();
-                    deferred.resolve(ranks);
-                    return deferred.promise;
-                } else {
-                    return request('get_ranks').then(function(response) {
-                        if (response && response.data) {
-                            ranks = response.data;
-                            return ranks;
-                        } else {
-                            return $q.reject('Unable to load ranks');
-                        }
-                    });
-                }
+                return CachedRequest.get('lookup', {'uuid': uuid}).then(function(player) {
+                    // Maintain our own cache of the player for easier access
+                    cachedPlayer = player;
+                    return cachedPlayer;
+                });
             },
 
             /**
@@ -189,6 +169,20 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
                 });
             }
         };
+    }])
+
+    /**
+     * Gets settings from the server.
+     */
+    .factory('Settings', ['CachedRequest', function(CachedRequest) {
+        return {
+            getRanks: function () {
+                return CachedRequest.get('get_ranks');
+            },
+            getWorlds: function () {
+                return CachedRequest.get('get_worlds');
+            }
+        }
     }])
 
     /**
@@ -369,7 +363,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
      * Directives
      * ======================
      */
-    .directive('bmPlayer', ['Player', function(Player) {
+    .directive('bmPlayer', ['$log', 'Settings', 'message', function($log, Settings, message) {
         return {
             scope: {
                 player: '=',
@@ -382,9 +376,15 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
                 if (scope.form) {
                     scope.form = scope.userForm;
                 }
-                Player.getRanks().then(function(ranks) {
-                    scope.ranks = ranks;
-                });
+                Settings.getRanks().then(
+                    function(ranks) {
+                        scope.ranks = ranks;
+                    },
+                    function(err) {
+                        $log.warn('Failed to load ranks', err);
+                        message.errorMsg('Unable to load ranks');
+                    }
+                );
                 var playerImage = '';
                 if (scope.player.uuid) {
                     playerImage = "https://crafatar.com/avatars/" + scope.player.uuid + "?helm=1&size=64";
@@ -393,7 +393,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
             }
         };
     }])
-    .directive('incident', [function() {
+    .directive('incident', ['$log', 'Settings', 'message', function($log, Settings, message) {
         return {
             scope: {
                 incident: '=',
@@ -406,8 +406,15 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
                 if (scope.form) {
                     scope.form = scope.incidentForm;
                 }
-                // TODO worlds
-                scope.worlds = bm.worlds;
+                Settings.getWorlds().then(
+                    function(worlds) {
+                        scope.worlds = worlds;
+                    },
+                    function(err) {
+                        $log.warn('Failed to load worlds', err);
+                        message.errorMsg('Unable to load worlds');
+                    }
+                );
                 scope.selectUser = function($item) {
                     scope.incident.user_id = $item.value;
                 };

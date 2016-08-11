@@ -135,6 +135,13 @@ try {
                 case 'get_watchlist':
                     $actions->getWatchlist();
                     break;
+                case 'get_worlds':
+                    $worlds = $settings->get('worlds');
+                    foreach ($worlds as $world) {
+                        $output->append($world);
+                    }
+                    $output->reply();
+                    break;
                 case 'search':
                     $actions->search($input);
                     break;
