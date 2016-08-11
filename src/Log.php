@@ -1,20 +1,21 @@
 <?php
-
 /**
  * Finally, a light, permissions-checking logging class.
  *
  * Originally written for use with wpSearch
  *
  * Usage:
- * $log = new KLogger('/var/log/', KLogger::INFO);
- * $log->logInfo('Returned a million search results'); //Prints to the log file
- * $log->logFatal('Oh dear.'); //Prints to the log file
- * $log->logDebug('x = 5'); //Prints nothing due to current severity threshhold
+ * Log::initialize($settings)
+ * Log::info('Returned a million search results'); //Prints to the log file
+ * Log::crit('Oh dear.'); //Prints to the log file
+ * Log::debug('x = 5'); //Prints nothing due to current severity threshhold
+ *
+ * Modified heavily for use in this project.
  *
  * @author  Kenny Katzgrau <katzgrau@gmail.com>
  * @since   July 26, 2008 — Last update July 1, 2012
  * @link    http://codefury.net
- * @version 0.2.0
+ * @version 0.2.1-bm
  */
 
 /**
@@ -23,7 +24,7 @@
 class Log
 {
     /**
-     * Error severity, from low to high. From BSD syslog RFC, secion 4.1.1
+     * Error severity, from low to high. From BSD syslog RFC, section 4.1.1
      * @link http://www.faqs.org/rfcs/rfc3164.html
      */
     const EMERG  = 0;  // Emergency: system is unusable
@@ -40,11 +41,6 @@ class Log
      * Log nothing at all
      */
     const OFF    = 8;
-    /**
-     * Alias for CRIT
-     * @deprecated
-     */
-    const FATAL  = 2;
 
     /**
      * Internal status codes
@@ -122,8 +118,7 @@ class Log
      * Partially implements the Singleton pattern. Each $logDirectory gets one
      * instance.
      *
-     * @param string  $logDirectory File path to the logging directory
-     * @param integer $severity     One of the pre-defined severity constants
+     * @param Settings $settings
      * @return Log
      */
     public static function initialize(Settings $settings)
@@ -139,9 +134,8 @@ class Log
     /**
      * Class constructor
      *
-     * @param string  $logDirectory File path to the logging directory
-     * @param integer $severity     One of the pre-defined severity constants
-     * @return void
+     * @param string $logDirectory File path to the logging directory
+     * @param integer $severity One of the pre-defined severity constants
      */
     public function __construct($logDirectory, $severity)
     {
@@ -285,19 +279,6 @@ class Log
     }
 
     /**
-     * Writes a $line to the log with a severity level of FATAL. Generally
-     * corresponds to E_ERROR, E_USER_ERROR, E_CORE_ERROR, or E_COMPILE_ERROR
-     *
-     * @param string $line Information to log
-     * @return void
-     * @deprecated Use logCrit
-     */
-    public static function fatal($line, $args = self::NO_ARGUMENTS)
-    {
-        self::log($line, self::FATAL, $args);
-    }
-
-    /**
      * Writes a $line to the log with a severity level of ALERT.
      *
      * @param string $line Information to log
@@ -388,8 +369,6 @@ class Log
                 return "$time - ALERT -->";
             case self::CRIT:
                 return "$time - CRIT -->";
-            case self::FATAL: # FATAL is an alias of CRIT
-                return "$time - FATAL -->";
             case self::NOTICE:
                 return "$time - NOTICE -->";
             case self::INFO:
