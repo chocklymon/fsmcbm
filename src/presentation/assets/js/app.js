@@ -23,9 +23,8 @@
  */
 'use strict';
 
-// TODO these should be requested from the ban-manager
+// TODO the worlds should be requested from the ban-manager
 var bm = {};
-bm.ranks = [{'value': '1', 'label': 'Everyone'}, {'value': '2', 'label': 'Regular'}, {'value': '3', 'label': 'Donor'}, {'value': '4', 'label': 'Builder'}, {'value': '5', 'label': 'Engineer'}, {'value': '6', 'label': 'Moderator'}, {'value': '7', 'label': 'Admin'}, {'value': '8', 'label': 'Default'}];
 bm.worlds = [{
         value: '',
         label: ''
@@ -97,6 +96,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
      */
     .factory('Player', ['request', '$q', function(request, $q) {
         var cachedPlayer = null,
+            ranks = null,
             getUUID = function() {
                 if (cachedPlayer) {
                     return cachedPlayer.user.uuid;
@@ -146,16 +146,29 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
                         .then(function(response) {
                             if (response && response.data) {
                                 cachedPlayer = response.data;
-                                //angular.forEach(cachedPlayer.incident, function(incident) {
-                                //    //incident.incident_date = Date.parse(incident.incident_date);
-                                //    incident.incident_date = new Date();
-                                //});
                                 return cachedPlayer;
                             } else {
                                 return $q.reject('Invalid user data');
                             }
                         });
                     return promise;
+                }
+            },
+
+            getRanks: function() {
+                if (ranks) {
+                    var deferred = $q.defer();
+                    deferred.resolve(ranks);
+                    return deferred.promise;
+                } else {
+                    return request('get_ranks').then(function(response) {
+                        if (response && response.data) {
+                            ranks = response.data;
+                            return ranks;
+                        } else {
+                            return $q.reject('Unable to load ranks');
+                        }
+                    });
                 }
             },
 
@@ -356,7 +369,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
      * Directives
      * ======================
      */
-    .directive('bmPlayer', [function() {
+    .directive('bmPlayer', ['Player', function(Player) {
         return {
             scope: {
                 player: '=',
@@ -369,8 +382,9 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
                 if (scope.form) {
                     scope.form = scope.userForm;
                 }
-                // TODO ranks
-                scope.ranks = bm.ranks;
+                Player.getRanks().then(function(ranks) {
+                    scope.ranks = ranks;
+                });
                 var playerImage = '';
                 if (scope.player.uuid) {
                     playerImage = "https://crafatar.com/avatars/" + scope.player.uuid + "?helm=1&size=64";

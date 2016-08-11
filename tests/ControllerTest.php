@@ -551,6 +551,17 @@ SQL;
         $controller->upsertUsername(1, $input);
     }
 
+    public function testGetRanks()
+    {
+        $admin_rank = array('rank_id' => 1, 'name' => 'Admin');
+        $db = new MockDatabase(array(array($admin_rank)));
+        $controller = new Controller($db, self::$output);
+
+        $ranks = $controller->getRanks();
+
+        $this->assertEquals(array($admin_rank), $ranks);
+    }
+
     private function runRetrieveUserData(array $input, $dbMockExtra = null, $user_id = 69)
     {
         // Set Up //

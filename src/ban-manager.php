@@ -123,6 +123,15 @@ try {
                 case 'get_bans':
                     $actions->getBans();
                     break;
+                case 'get_ranks':
+                    $ranks = $actions->getRanks();
+                    foreach($ranks as $rank) {
+                        $output->append(
+                            array('value' => $rank['rank_id'], 'label' => $rank['name'])
+                        );
+                    }
+                    $output->reply();
+                    break;
                 case 'get_watchlist':
                     $actions->getWatchlist();
                     break;

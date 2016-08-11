@@ -692,4 +692,15 @@ SQL;
         return date('c', strtotime($date_string));
     }
 
+    /**
+     * Get the ranks from the database.
+     * @return array
+     */
+    public function getRanks()
+    {
+        $sql = 'SELECT * FROM `rank`';
+
+        $rows = $this->db->queryRows($sql);
+        return $rows;
+    }
 }
