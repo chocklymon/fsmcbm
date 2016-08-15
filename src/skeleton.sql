@@ -1,6 +1,6 @@
 -- Ban Manager database tables.
--- v3
--- Last updated 2014-04-08
+-- v4
+-- Last updated 2016-08-15
 
 -- --------------------------------------------------------
 
@@ -82,8 +82,7 @@ CREATE TABLE IF NOT EXISTS `rank` (
 
 CREATE TABLE IF NOT EXISTS `users` (
   `user_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `uuid` BINARY(16) NULL COMMENT 'Store the users universally unique identifier',
-  `username` varchar(20) COLLATE utf8_unicode_ci NOT NULL,
+  `uuid` char(32) COLLATE utf8_unicode_ci NOT NULL COMMENT 'Store the users universally unique identifier',
   `modified_date` datetime NOT NULL,
   `rank` int(10) NOT NULL DEFAULT '1',
   `relations` text COLLATE utf8_unicode_ci,
@@ -92,10 +91,22 @@ CREATE TABLE IF NOT EXISTS `users` (
   `permanent` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`user_id`),
   UNIQUE KEY `uuid` (`uuid`),
-  KEY `username` (`username`),
   KEY `banned` (`banned`),
   KEY `rank` (`rank`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci ;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci ;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `user_aliases`
+--
+
+CREATE TABLE `user_aliases` (
+  `user_id` int(10) unsigned NOT NULL,
+  `username` varchar(20) COLLATE utf8_unicode_ci NOT NULL,
+  `active` tinyint(1) DEFAULT '1',
+  PRIMARY KEY (`user_id`,`username`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -104,8 +115,8 @@ CREATE TABLE IF NOT EXISTS `users` (
 --
 
 CREATE TABLE `passwords` (
-	`user_id` INT(10) unsigned NOT NULL,
-	`password_hash` VARBINARY(64) NOT NULL
+  `user_id` INT(10) unsigned NOT NULL,
+  `password_hash` VARBINARY(64) NOT NULL
 ) COMMENT='Store user passwords for the built in authentication' COLLATE='utf8_unicode_ci' ENGINE=MyISAM ;
 
 -- --------------------------------------------------------
@@ -115,7 +126,7 @@ CREATE TABLE `passwords` (
 --
 
 CREATE TABLE `auth_nonce` (
-	`nonce` BINARY(16) NOT NULL,
-	`timestamp` DATETIME NOT NULL,
+  `nonce` BINARY(16) NOT NULL,
+  `timestamp` DATETIME NOT NULL,
     PRIMARY KEY (`nonce`)
-) COMMENT='Stores used nonce\'s' COLLATE='utf8_unicode_ci' ENGINE=MyISAM ;
+) COMMENT='Stores used nonce''s' COLLATE='utf8_unicode_ci' ENGINE=MyISAM ;

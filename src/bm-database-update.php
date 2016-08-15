@@ -314,7 +314,6 @@ SQL;
  *
  * ************************************************
  */
-try {
 // Create the user aliases table
 if (!$db->tableExists('user_aliases')) {
     // Create the table
@@ -368,7 +367,7 @@ SQL;
     // Add the new UUID column
     $sql = <<<SQL
 ALTER TABLE `users`
-  ADD `uuid` CHAR(32) COLLATE utf8_unicode_ci COMMENT 'Store the users universally unique identifier'
+  ADD `uuid` CHAR(32) NOT NULL COLLATE utf8_unicode_ci COMMENT 'Store the users universally unique identifier'
   AFTER `user_id`
 SQL;
     $db->query($sql);
@@ -380,23 +379,15 @@ UPDATE `users`
 SQL;
     $db->query($sql);
 
+    // Make the UUID column unique
+    $sql = 'ALTER TABLE `users` ADD CONSTRAINT `uuid` UNIQUE (`uuid`)';
+    $db->query($sql);
+
     // Drop the temp table
     $db->query("DROP TABLE `uuid_temp`");
 
 }
 // END change UUID column
-
-} catch (DatabaseException $ex) {
-    $output = new Output($settings);
-    $output->exception(
-        $ex,
-        array(
-            'errno' => $ex->getCode(),
-            'error' => $ex->getErrorMessage(),
-            'query' => $ex->getQuery(),
-        )
-    );
-}
 
 // END Database updates //
 
