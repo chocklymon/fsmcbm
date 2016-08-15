@@ -51,6 +51,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
      */
     .factory('CachedRequest', ['$q', 'request', function($q, request) {
         var cache = {};
+        var ongoingPromises = {};
 
         return {
             /**
@@ -63,16 +64,22 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
             get: function(endpoint, payload) {
                 if (endpoint in cache) {
                     return $q.when(cache[endpoint]);
+                } else if (ongoingPromises[endpoint]) {
+                    return ongoingPromises[endpoint];
                 } else {
                     // Not cached, request the user from the server
-                    return request(endpoint, payload).then(function(response) {
+                    var cachePromise = request(endpoint, payload).then(function(response) {
                         if (response && response.data) {
                             cache[endpoint] = response.data;
                             return cache[endpoint];
                         } else {
                             return $q.reject('Bad response from the server');
                         }
+                    }).finally(function() {
+                        ongoingPromises[endpoint] = null;
                     });
+                    ongoingPromises[endpoint] = cachePromise;
+                    return cachePromise;
                 }
             },
 
