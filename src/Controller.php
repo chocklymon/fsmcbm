@@ -439,6 +439,8 @@ SQL;
         $search = $this->db->sanitize($search);
 
 
+        $this->db->query("SET sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''))");
+
         // Get users matching the search
         $query = <<<SQL
 SELECT u.user_id, u.uuid, ua.username, u.banned, r.name AS rank, u.relations, u.notes
@@ -446,15 +448,16 @@ FROM `users` AS u
 LEFT JOIN
   `rank` AS r ON (u.rank = r.rank_id)
 LEFT JOIN
-  `user_aliases` AS ua ON (u.user_id = ua.user_id)
+  `user_aliases` AS ua ON (u.user_id = ua.user_id AND ua.active = TRUE)
 WHERE
       ua.username LIKE '%$search%'
    OR u.relations LIKE '%$search%'
    OR u.notes LIKE '%$search%'
+GROUP BY u.user_id
 SQL;
         $this->db->queryRowsIntoOutput($query, $this->output, 'users');
 
-        
+
         // Get incidents matching the search
         $query = <<<SQL
 SELECT  u.user_id, u.uuid, ua.username, i.incident_date, i.incident_type, i.action_taken
@@ -462,14 +465,15 @@ FROM `incident` AS i
 LEFT JOIN
   `users` AS u ON (i.user_id = u.user_id)
 LEFT JOIN
-  `user_aliases` AS ua ON (u.user_id = ua.user_id)
+  `user_aliases` AS ua ON (u.user_id = ua.user_id AND ua.active = TRUE)
 WHERE
       i.notes LIKE '%$search%'
    OR i.incident_type LIKE '%$search%'
    OR i.action_taken LIKE '%$search%'
+GROUP BY i.incident_id
 SQL;
         $this->db->queryRowsIntoOutput($query, $this->output, 'incidents');
-        
+
         $this->output->reply();
     }
 
