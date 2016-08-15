@@ -432,7 +432,9 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
         return {
             scope: {
                 onSelect: '&',
-                required: '=?'
+                required: '=?',
+                selected: '=?selectValue',
+                selectFirst: '@?'
             },
             restrict: 'EA',
             templateUrl: 'presentation/templates/lookup.html',

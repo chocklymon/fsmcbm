@@ -1,11 +1,8 @@
 <alert ng-repeat="alert in alerts" type="{{alert.type}}" close="closeAlert($index)">{{alert.msg}}</alert>
 <form class="row" ng-submit="search()">
     <div class="col-md-6 col-md-offset-2">
-        <div class="form-group has-feedback">
-            <lookup on-select="loadUser($item)"></lookup>
-        </div>
-        <div class="input-group sm-row">
-            <input ng-model="search.text" type="text" class="form-control" placeholder="Search..." />
+        <div class="input-group has-feedback">
+            <lookup on-select="loadUser($item)" select-value="search.text" select-first="false"></lookup>
             <span class="input-group-btn">
                 <input type="submit" id="submit" value="Search" class="btn btn-default" />
             </span>
