@@ -126,7 +126,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
     public function testAuthenticateAPIRequest_badHMAC()
     {
         $this->setUpAPIRequest();
-        $this->input->uuid = '489';
+        $this->input->accessor_id = '489';
 
         $authenticated = $this->auth->authenticate();
         $this->assertFalse($authenticated);
@@ -410,7 +410,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
         self::$settings->setSetting('auth_secret_keys', array($accessor => $secret_key));
 
         $this->input->accessor_token = $accessor;
-        $this->input->uuid = 'd9';
+        $this->input->accessor_id = 'd9';
 
         $this->input->keySort();
         $payload = '';

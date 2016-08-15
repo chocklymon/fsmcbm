@@ -107,7 +107,7 @@ class Authentication
         $accessor_key = $this->settings->getAccessorKey($this->input->accessor_token);
         if ($accessor_key !== false && $this->validatePost($accessor_key)) {
             // Use the universally unique identifier to get the user info
-            $uuid = $this->db->sanitize(pack('H*', $this->input->uuid));
+            $uuid = $this->db->sanitize(pack('H*', $this->input->accessor_id));
             $row = $this->db->querySingleRow(
                 "SELECT `users`.`user_id`, `rank`.`name` AS rank
                  FROM `users`
@@ -276,7 +276,7 @@ EOF;
      */
     public function isAPIRequest()
     {
-        return $this->input->exists('accessor_token') && $this->input->exists('hmac') && $this->input->exists('uuid');
+        return $this->input->exists('accessor_token') && $this->input->exists('hmac') && $this->input->exists('accessor_id');
     }
 
     /**
