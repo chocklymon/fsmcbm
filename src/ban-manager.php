@@ -97,6 +97,7 @@ try {
         } elseif ($authenticated === false) {
             // Authentication failed
             Log::debug('ban-manager: Authentication failed');
+            $output->append($authenticated, 'authenticated');
             $output->error("Not logged in.");
         } else {
             // Authentication successful, continue with the request

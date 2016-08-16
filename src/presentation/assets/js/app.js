@@ -152,7 +152,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
     }])
 
     /**
-     * Current selected user factory.
+     * Current selected player factory.
      *
      * Provides a cache for the currently managed user.
      */
@@ -575,8 +575,8 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
                     if (response.data && response.data.error) {
                         // TODO handle errors
                         console.warn(response.data);
-                        if (response.data.error == 'Not logged in.') {
-                            // User is no logged in
+                        if (response.data.authenticated === false) {
+                            // User is not logged in
                             Authentication.setAuthenticated(false);
                         }
                         throw response;
