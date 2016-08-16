@@ -87,7 +87,14 @@ try {
         }
     } else {
         // Authenticate the request
-        if ($auth->authenticate() === false) {
+        $authenticated = $auth->authenticate();
+
+        if ($endpoint === 'authenticated') {
+            // Request to check if the user is logged in
+            $output->append($authenticated, 'authenticated');
+            $output->append($auth->shouldLoadWordpress(), 'use-wordpress');
+            $output->reply();
+        } elseif ($authenticated === false) {
             // Authentication failed
             Log::debug('ban-manager: Authentication failed');
             $output->error("Not logged in.");

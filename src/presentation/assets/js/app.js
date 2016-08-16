@@ -101,8 +101,58 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
         }
     }])
 
+    .factory('Authentication', [function AuthenticationFactory() {
+        var loggedInObj = {
+            loggedIn: false
+        };
+        return {
+            loggedInObj: loggedInObj,
+            getAuthenticated: function() {
+                return loggedInObj.loggedIn;
+            },
+            setAuthenticated: function(loggedIn) {
+                loggedInObj.loggedIn = !!loggedIn;
+            }
+        };
+    }])
+    .factory('AuthHandler', ['$q', 'request', 'Authentication', function AuthHandlerFactory($q, request, Authentication) {
+        var authInfo = null,
+            getAuthResponse = function() {
+                if (authInfo.authenticated === true) {
+                    return true;
+                } else if (authInfo['use-wordpress']) {
+                    return 'use-wordpress';
+                } else {
+                    return false;
+                }
+            };
+        return {
+            login: function(username, password) {
+                return request('login', {
+                    username: username,
+                    password: password
+                }).then(function(response) {
+                    return !!response.data.success;
+                });
+            },
+            isAuthenticated: function() {
+                if (authInfo) {
+                    return $q.when(getAuthResponse());
+                } else {
+                    return request('authenticated').then(
+                        function (response) {
+                            authInfo = response.data;
+                            Authentication.setAuthenticated(authInfo.authenticated);
+                            return getAuthResponse();
+                        }
+                    );
+                }
+            }
+        }
+    }])
+
     /**
-     * Current user factory.
+     * Current selected user factory.
      *
      * Provides a cache for the currently managed user.
      */
@@ -463,31 +513,59 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
      */
     .config(['$routeProvider', '$httpProvider', 'datepickerConfig', function($routeProvider, $httpProvider, datepickerConfig) {
         // Set up the routes
+        var requireLoggedIn = {
+            isLoggedIn: ['$location', '$q', 'AuthHandler', function($location, $q, AuthHandler) {
+                return AuthHandler.isAuthenticated().then(function(authenticated) {
+                    if (authenticated === true) {
+                        return true;
+                    } else if (authenticated === 'use-wordpress') {
+                        $location.url('/wp-login.php');
+                    } else {
+                        $location.path('/login');
+                    }
+                    return $q.reject(false);
+                });
+            }]
+        };
+
         $routeProvider
             .when('/', {
+                controller: 'InitializingController',
+                templateUrl: 'presentation/views/loading.html'
+            })
+            .when('/login', {
+                controller: 'LoginController',
+                templateUrl: 'presentation/views/login.html'
+            })
+            .when('/user', {
                 controller: 'UserController',
-                templateUrl: 'presentation/views/manage-user.html'
+                templateUrl: 'presentation/views/manage-user.html',
+                resolve: requireLoggedIn
             })
             .when('/user/:uuid', {
                 controller: 'UserController',
-                templateUrl: 'presentation/views/manage-user.html'
+                templateUrl: 'presentation/views/manage-user.html',
+                resolve: requireLoggedIn
             })
             .when('/bans', {
                 controller: 'UserListController',
-                templateUrl: 'presentation/views/userlist.html'
+                templateUrl: 'presentation/views/userlist.html',
+                resolve: requireLoggedIn
             })
             .when('/watchlist', {
                 controller: 'UserListController',
-                templateUrl: 'presentation/views/userlist.html'
+                templateUrl: 'presentation/views/userlist.html',
+                resolve: requireLoggedIn
             })
             .when('/search/:term?', {
                 controller: 'SearchController',
-                templateUrl: 'presentation/views/search.html'
+                templateUrl: 'presentation/views/search.html',
+                resolve: requireLoggedIn
             })
             .otherwise({ redirectTo: '/' });
 
         // Set up the http request handler
-        $httpProvider.interceptors.push(function(){
+        $httpProvider.interceptors.push(['Authentication', function(Authentication){
             return {
                 'requestError': function(rejection) {
                     // TODO handle the error
@@ -497,6 +575,10 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
                     if (response.data && response.data.error) {
                         // TODO handle errors
                         console.warn(response.data);
+                        if (response.data.error == 'Not logged in.') {
+                            // User is no logged in
+                            Authentication.setAuthenticated(false);
+                        }
                         throw response;
                     }
                     return response;
@@ -507,7 +589,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
                     return rejection;
                 }
             };
-        });
+        }]);
 
         // Set the defaults for the date picker component
         datepickerConfig.showWeeks = false;
@@ -518,6 +600,23 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
      * Controllers
      * ======================
      */
+    .controller('InitializingController', ['$location', '$log', 'AuthHandler', 'message', function($location, $log, AuthHandler, message) {
+        AuthHandler.isAuthenticated().then(
+            function(authenticated) {
+                if (authenticated === true) {
+                    $location.path('/user');
+                } else if (authenticated === 'use-wordpress') {
+                    $location.url('/wp-login.php');
+                } else {
+                    $location.path('/login');
+                }
+            },
+            function(err) {
+                $log.warn('Error initializing: ', err);
+                message.errorMsg('Problem communication with the server. Please try again later.');
+            }
+        );
+    }])
     .controller('UserController', ['$scope', '$routeParams', 'Player', 'request', 'formatUUID', 'message', function($scope, $routeParams, Player, request, formatUUID, message) {
         // Create a function to set the data in the scope
         var setPlayer = function(player) {
@@ -585,7 +684,37 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
                 });
         }
     }])
-    .controller('NavigationController', ['$scope', '$location', 'request', 'Player', 'CurrentSearch', '$modal', 'formatUUID', function($scope, $location, request, Player, CurrentSearch, $modal, formatUUID) {
+    .controller('LoginController', ['$scope', '$location', 'AuthHandler', function($scope, $location, AuthHandler) {
+        $scope.user = {
+            username: '',
+            password: ''
+        };
+
+        AuthHandler.isAuthenticated().then(
+            function(authenticated) {
+                if (authenticated === true) {
+                    $location.path('/user');
+                } else if (authenticated === 'use-wordpress') {
+                    $location.url('/wp-login.php');
+                }
+            },
+            function(err) {
+                $log.warn('Error initializing: ', err);
+                message.errorMsg('Problem communication with the server. Please try again later.');
+            }
+        );
+
+        $scope.login = function() {
+            // TODO
+            AuthHandler.login(user.username, user.password);
+        }
+    }])
+    .controller('NavigationController',
+        ['$scope', '$location', 'request', 'Player', 'CurrentSearch', '$modal', 'formatUUID', 'Authentication',
+        function($scope, $location, request, Player, CurrentSearch, $modal, formatUUID, Authentication)
+    {
+        $scope.user = Authentication.loggedInObj;
+
         $scope.tabs = [
             {link: 'user', label: 'Manage'},
             {link: 'bans', label: 'Bans'},
@@ -604,7 +733,6 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
             return $scope.tabs[0];
         };
         var search = function() {
-            // TODO also perform a search using the lookup box
             $location.path('search/' + CurrentSearch.get());
         };
 
