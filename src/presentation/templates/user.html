@@ -10,7 +10,8 @@
     </ul>
 </div>
 <form name="userForm" class="form-horizontal col-lg-pull-3" novalidate="novalidate"
-      ng-class="{'col-lg-9': !adding}" ng-submit="submitForm(userForm)">
+      ng-class="{'col-lg-9': !adding}"
+      ng-submit="submitForm(userForm)">
     <div class="form-group" ng-switch="adding">
         <div ng-switch-when="true">
             <label for="username" class="col-sm-2 control-label">Username:</label>
@@ -19,9 +20,9 @@
             </div>
         </div>
         <div ng-switch-when="false">
-            <label for="user_mod_date" class="col-sm-2 control-label">Modified Date:</label>
+            <label class="col-sm-2 control-label">Modified Date:</label>
             <div class="col-sm-4">
-                <input type="text" class="col-sm-2 form-control" id="user_mod_date" ng-model="player.modified_date" readonly="readonly" />
+                <p class="form-control-static">{{player.modified_date | date: 'mediumDate'}}</p>
             </div>
         </div>
     </div>

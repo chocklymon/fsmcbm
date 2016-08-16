@@ -2,7 +2,7 @@
     <div class="form-group" ng-show="!adding">
         <label class="col-sm-2 control-label">Moderator:</label>
         <div class="col-sm-10">
-            <input type="text" readonly="readonly" class="form-control" ng-model="incident.moderator"/>
+            <p class="form-control-static">{{incident.moderator}}</p>
         </div>
     </div>
     <div class="form-group" ng-show="adding" ng-class="{'has-error': incidentForm.$invalid && incidentForm.$dirty}">
@@ -14,11 +14,11 @@
     <div class="form-group" ng-show="!adding">
         <label class="col-sm-2 control-label">Created Date:</label>
         <div class="col-sm-4">
-            <input type="text" readonly="readonly" class="form-control" ng-model="incident.created_date"/>
+            <p class="form-control-static">{{incident.created_date | date: 'mediumDate'}}</p>
         </div>
         <label class="col-sm-2 control-label">Last Modified:</label>
         <div class="col-sm-4">
-            <input type="text" readonly="readonly" class="form-control" ng-model="incident.modified_date"/>
+            <p class="form-control-static">{{incident.modified_date | date: 'mediumDate'}}</p>
         </div>
     </div>
     <div class="form-group">
@@ -39,7 +39,7 @@
     <div class="form-group">
         <label for="notes_{{incident.id}}" class="col-sm-2 control-label">Notes:</label>
         <div class="col-sm-10">
-            <textarea class="form-control" id="notes_{{incident.id}}" ng-model="incident.notes"></textarea>
+            <textarea class="form-control" id="notes_{{incident.id}}" ng-model="incident.notes" rows="4"></textarea>
         </div>
     </div>
     <div class="form-group">
@@ -60,15 +60,15 @@
         </div>
         <label for="coord_x_{{incident.id}}" class="col-sm-2 col-lg-1 control-label">X:</label>
         <div class="col-sm-2 col-lg-1">
-            <input type="text" class="form-control" id="coord_x_{{incident.id}}" class="int" ng-model="incident.coord_x"/>
+            <input type="text" class="form-control" id="coord_x_{{incident.id}}" ng-model="incident.coord_x"/>
         </div>
         <label for="coord_y_{{incident.id}}" class="col-sm-1 control-label">Y:</label>
         <div class="col-sm-2 col-lg-1">
-            <input type="text" class="form-control" id="coord_y_{{incident.id}}" class="int" ng-model="incident.coord_y"/>
+            <input type="text" class="form-control" id="coord_y_{{incident.id}}" ng-model="incident.coord_y"/>
         </div>
-        <label for="coord_y_{{incident.id}}" class="col-sm-1 control-label">Z:</label>
+        <label for="coord_z_{{incident.id}}" class="col-sm-1 control-label">Z:</label>
         <div class="col-sm-2 col-lg-1">
-            <input type="text" class="form-control" id="coord_y_{{incident.id}}" ng-model="incident.coord_z"/>
+            <input type="text" class="form-control" id="coord_z_{{incident.id}}" ng-model="incident.coord_z"/>
         </div>
     </div>
 </form>

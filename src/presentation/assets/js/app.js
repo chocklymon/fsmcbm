@@ -361,7 +361,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
             } else if (!value) {
                 value = false;
             }
-            return value ? '\u2713' : '\u2718';
+            return value ? '\u2713' : '';
         };
     })
 
