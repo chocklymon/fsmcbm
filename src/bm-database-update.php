@@ -249,7 +249,9 @@ SQL;
     $db->query($sql);
 }
 // End ranks table
-
+/* ***************
+ * END v2 Update
+ */
 
 
 /* ************************************************
@@ -305,7 +307,9 @@ SQL;
     $db->query($sql);
 }
 // END users table
-
+/* ***************
+ * END v3 Update
+ */
 
 
 /* ************************************************
@@ -388,6 +392,52 @@ SQL;
 
 }
 // END change UUID column
+/* ***************
+ * END v4 Update
+ */
+
+
+/* ************************************************
+ *
+ * v3 -> v4 updates
+ *
+ * ************************************************
+ */
+// Create the moderators table
+if (!$db->tableExists('moderators')) {
+    $sql = <<<SQL
+CREATE TABLE IF NOT EXISTS `moderators` (
+  `user_id` int(10) unsigned NOT NULL,
+  `username` varchar(20) COLLATE utf8_unicode_ci NOT NULL,
+  `password_hash` varbinary(64) NOT NULL,
+  PRIMARY KEY `user_id` (`user_id`),
+  UNIQUE KEY `username` (`username`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='Store users for the built in authentication'
+SQL;
+
+    try {
+        $db->query($sql);
+    } catch (DatabaseException $ex) {
+        print_r($ex);
+        exit(-1);
+    }
+
+    $sql = <<<SQL
+INSERT INTO `moderators` (`user_id`, `username`, `password_hash`)
+  SELECT `passwords`.`user_id`, `user_aliases`.`username`, `passwords`.`password_hash`
+  FROM `passwords`
+  LEFT JOIN `user_aliases` USING (`user_id`)
+  WHERE `user_aliases`.`active` = '1'
+SQL;
+    $db->query($sql);
+
+    $db->query('DROP TABLE `passwords`');
+}
+// End create moderators table
+/* ***************
+ * END v4 Update
+ */
+
 
 // END Database updates //
 

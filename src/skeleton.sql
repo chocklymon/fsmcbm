@@ -111,13 +111,16 @@ CREATE TABLE `user_aliases` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `passwords`
+-- Table structure for table `moderators`
 --
 
-CREATE TABLE `passwords` (
-  `user_id` INT(10) unsigned NOT NULL,
-  `password_hash` VARBINARY(64) NOT NULL
-) COMMENT='Store user passwords for the built in authentication' COLLATE='utf8_unicode_ci' ENGINE=MyISAM ;
+CREATE TABLE `moderators` (
+  `user_id` int(10) unsigned NOT NULL,
+  `username` varchar(20) COLLATE utf8_unicode_ci NOT NULL,
+  `password_hash` varbinary(64) NOT NULL,
+  PRIMARY KEY `user_id` (`user_id`),
+  UNIQUE KEY `username` (`username`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='Store users for the built in authentication'
 
 -- --------------------------------------------------------
 

@@ -251,21 +251,23 @@ class Authentication
             $password = $this->db->sanitize(hash(self::HASH_ALGO, $this->input->password, true));
 
             $sql = <<<EOF
-SELECT `users`.`user_id`, `rank`.`name` AS rank
+SELECT `moderators`.`user_id`, `moderators`.`username`
 FROM
-`users`
-LEFT JOIN `passwords` ON (`users`.`user_id` = `passwords`.`user_id`)
-LEFT JOIN `rank` ON (`users`.`rank` = `rank`.`rank_id`)
+`moderators`
 WHERE
-     `users`.`username` = '{$username}'
-AND  `passwords`.`password_hash` = '{$password}'
+     `moderators`.`username` = '{$username}'
+ AND `moderators`.`password_hash` = '{$password}'
 EOF;
-            // Query a single row, this will throw an exception if a single row isn't found
-            $result = $this->db->querySingleRow($sql);
+            try {
+                // Find the user
+                $result = $this->db->querySingleRow($sql);
 
-            // User found and password matches, set the login cookie and return true
-            $this->setCookie($result['user_id'], $username);
-            return true;
+                // User found and password matches, set the login cookie and return true
+                $this->setCookie($result['user_id'], $result['username']);
+                return true;
+            } catch (DatabaseException $ex) {
+                Log::info(__LINE__, array('Invalid user login attempt', $ex->getMessage()));
+            }
         }
         return false;
     }
@@ -390,10 +392,12 @@ EOF;
     {
         $cookie_name = $this->settings->getCookieName();
         if (isset($_COOKIE[$cookie_name])) {
-            return explode('|', $_COOKIE[$cookie_name]);
-        } else {
-            return null;
+            $cookie = base64_decode($_COOKIE[$cookie_name], true);
+            if ($cookie) {
+                return explode('|', $cookie);
+            }
         }
+        return null;
     }
 
     /**
@@ -413,7 +417,8 @@ EOF;
 
         $cookie = array($user_id, $username, time());
         $cookie[] = hash_hmac(self::HASH_ALGO, implode("", $cookie), $key);
-        $cookie_value = implode("|", $cookie);
+        $cookie_str = implode('|', $cookie);
+        $cookie_value = base64_encode($cookie_str);
 
         setcookie($this->settings->getCookieName(), $cookie_value, 0, '/', null, false, true);
     }

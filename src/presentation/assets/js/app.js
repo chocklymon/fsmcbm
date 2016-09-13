@@ -685,10 +685,11 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
         }
     }])
     .controller('LoginController', ['$scope', '$location', 'AuthHandler', function($scope, $location, AuthHandler) {
-        $scope.user = {
+        var user = {
             username: '',
             password: ''
         };
+        $scope.user = user;
 
         AuthHandler.isAuthenticated().then(
             function(authenticated) {
