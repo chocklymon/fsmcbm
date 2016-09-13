@@ -190,7 +190,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
      */
     public function testAuthenticateUsingCookie_badCookie()
     {
-        $_COOKIE[self::$settings->getCookieName()] = '1|notch';
+        $_COOKIE[self::$settings->getCookieName()] = base64_encode('1|notch');
         $this->assertFalse($this->auth->authenticate(), "Cookie user should NOT have been authenticated.");
     }
 
@@ -201,7 +201,9 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
     public function testAuthenticateUsingCookie_badHMAC()
     {
         // Set up for testing the cookie
-        $_COOKIE[self::$settings->getCookieName()] = '1|notchy|139656221|8c6e7d97248140d2155f36094d955a8f53339a89';
+        $_COOKIE[self::$settings->getCookieName()] = base64_encode(
+            '1|notchy|139656221|8c6e7d97248140d2155f36094d955a8f53339a89'// Modified username
+        );
         self::$settings->setSetting('cookie_secret', 'secret_key');
         self::$settings->setSetting('session_duration', 1);
 
