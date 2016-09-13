@@ -143,7 +143,9 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
 
     public function testAuthenticateUsingCookie()
     {
-        $_COOKIE[self::$settings->getCookieName()] = '1|notch|139656221|8c6e7d97248140d2155f36094d955a8f53339a89';
+        $_COOKIE[self::$settings->getCookieName()] = base64_encode(
+            '1|notch|139656221|8c6e7d97248140d2155f36094d955a8f53339a89'
+        );
         self::$settings->setSetting('cookie_secret', 'secret_key');
         self::$settings->setSetting('session_duration', 0);
         $this->assertTrue($this->auth->authenticate(), "Cookie user should have been authenticated correctly.");
@@ -156,7 +158,9 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
      */
     public function testAuthenticateUsingCookie_badTimeStamp()
     {
-        $_COOKIE[self::$settings->getCookieName()] = '1|notch|139656221|8c6e7d97248140d2155f36094d955a8f53339a89';// timestamp = 2032-12-12
+        $_COOKIE[self::$settings->getCookieName()] = base64_encode(
+            '1|notch|139656221|8c6e7d97248140d2155f36094d955a8f53339a89'// timestamp = 2032-12-12
+        );
         self::$settings->setSetting('cookie_secret', 'secret_key');
         self::$settings->setSetting('session_duration', 1);
         $this->assertFalse($this->auth->authenticate(), "Cookie user should NOT have been authenticated.");
@@ -167,7 +171,9 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
      */
     public function testAuthenticateUsingCookie_badConfiguration()
     {
-        $_COOKIE[self::$settings->getCookieName()] = '1|notch|139656221|8c6e7d97248140d2155f36094d955a8f53339a89';
+        $_COOKIE[self::$settings->getCookieName()] = base64_encode(
+            '1|notch|139656221|8c6e7d97248140d2155f36094d955a8f53339a89'
+        );
         self::$settings->setSetting('cookie_secret', '');
         $this->assertFalse($this->auth->authenticate(), "Cookie user should NOT have been authenticated.");
     }
@@ -390,7 +396,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
      */
     private function getUserMockDB($rank, $include_nonce)
     {
-        $user = array('user_id'=>self::USER_ID, 'rank'=>$rank);
+        $user = array('user_id' => self::USER_ID, 'rank' => $rank, 'username' => self::USERNAME);
         if ($include_nonce) {
             $mock_db_array = $this->getNonceFreeArray();
             $mock_db_array[] = $user;
