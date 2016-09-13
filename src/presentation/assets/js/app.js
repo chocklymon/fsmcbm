@@ -132,7 +132,12 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
                     username: username,
                     password: password
                 }).then(function(response) {
-                    return !!response.data.success;
+                    var authenticated = !!response.data.success;
+                    if (authInfo) {
+                        authInfo.authenticated = authenticated;
+                        Authentication.setAuthenticated(authenticated);
+                    }
+                    return authenticated;
                 });
             },
             isAuthenticated: function() {
@@ -565,7 +570,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
             .otherwise({ redirectTo: '/' });
 
         // Set up the http request handler
-        $httpProvider.interceptors.push(['Authentication', function(Authentication){
+        $httpProvider.interceptors.push(['$q', 'Authentication', function($q, Authentication){
             return {
                 'requestError': function(rejection) {
                     // TODO handle the error
@@ -579,7 +584,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
                             // User is not logged in
                             Authentication.setAuthenticated(false);
                         }
-                        throw response;
+                        return $q.reject(response);
                     }
                     return response;
                 },
@@ -684,7 +689,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
                 });
         }
     }])
-    .controller('LoginController', ['$scope', '$location', 'AuthHandler', function($scope, $location, AuthHandler) {
+    .controller('LoginController', ['$scope', '$location', 'AuthHandler', 'message', function($scope, $location, AuthHandler, message) {
         var user = {
             username: '',
             password: ''
@@ -706,8 +711,19 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
         );
 
         $scope.login = function() {
-            // TODO
-            AuthHandler.login(user.username, user.password);
+            $scope.loginForm.attempted = true;
+            if($scope.loginForm.$valid) {
+                AuthHandler.login(user.username, user.password).then(function () {
+                        // Logged in
+                        $location.path('/user');
+                    })
+                    .catch(function () {
+                        // Login failed
+                        message.addMessage(message.DANGER, 'Login Failed: Incorrect username or password!', 6000);
+                        user.password = '';
+                        $scope.loginForm.attempted = false;
+                    });
+            }
         }
     }])
     .controller('NavigationController',
