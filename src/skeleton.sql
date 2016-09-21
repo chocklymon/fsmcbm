@@ -117,10 +117,11 @@ CREATE TABLE `user_aliases` (
 CREATE TABLE `moderators` (
   `user_id` int(10) unsigned NOT NULL,
   `username` varchar(20) COLLATE utf8_unicode_ci NOT NULL,
-  `password_hash` varbinary(64) NOT NULL,
-  PRIMARY KEY `user_id` (`user_id`),
+  `email` varchar(250) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
+  `needs_password_change` tinyint(1) NOT NULL DEFAULT '0',
+  `password` varbinary(128) NOT NULL,
   UNIQUE KEY `username` (`username`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='Store users for the built in authentication'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='Store users for the built in authentication';
 
 -- --------------------------------------------------------
 

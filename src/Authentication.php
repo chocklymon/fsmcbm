@@ -31,10 +31,12 @@ class Authentication
 {
     /**
      * The name of the hash algorithm to use when hashing passwords and checking
-     * HMAC's. The database can hold up to 64 bytes for the password hash, so
+     * HMAC's. The database can hold up to 128 bytes for the password hash, so
      * this algorithm should not produce a hash longer than this.
      */
     const HASH_ALGO = "sha1";
+    const PASSWORD_ALGO = PASSWORD_DEFAULT;
+    const MAX_PASSWORD_LENGTH = 72;
 
     /**
      * @var Database
@@ -248,22 +250,29 @@ class Authentication
     {
         if ($this->input->exists('username') && $this->input->exists('password')) {
             $username = $this->db->sanitize($this->input->username);
-            $password = $this->db->sanitize(hash(self::HASH_ALGO, $this->input->password, true));
+            // TODO: https://www.owasp.org/index.php/Password_Storage_Cheat_Sheet
+            // See also: http://php.net/manual/en/function.password-hash.php
 
             $sql = <<<EOF
-SELECT `moderators`.`user_id`, `moderators`.`username`
+SELECT `moderators`.`user_id`, `moderators`.`username`, `moderators`.`needs_password_change`, `moderators`.`password`
 FROM
 `moderators`
 WHERE
      `moderators`.`username` = '{$username}'
- AND `moderators`.`password_hash` = '{$password}'
 EOF;
             try {
                 // Find the user
                 $result = $this->db->querySingleRow($sql);
 
-                // User found and password matches, set the login cookie and return true
-                $this->setCookie($result['user_id'], $result['username']);
+                if ($this->passwordMatches($this->input->password, $result['password'])) {
+
+                    if ($this->passwordNeedsRehash($result['password'])) {
+                        $this->setUserPassword($result['user_id'], $this->input->password);
+                    }
+
+                    // User found and password matches, set the login cookie and return true
+                    $this->setCookie($result['user_id'], $result['username']);
+                }
                 return true;
             } catch (DatabaseException $ex) {
                 Log::info(__LINE__, array('Invalid user login attempt', $ex->getMessage()));
@@ -442,5 +451,59 @@ EOF;
     private function validatePost($hmac_key)
     {
         return $this->isTimestampValid() && $this->isHMACValid($hmac_key) && $this->isNonceValid();
+    }
+
+    /**
+     * Creates a new password hash using a strong one-way hashing algorithm.
+     * This calls the function password_hash().
+     * @param string $password The user's password.
+     * @return bool|string Returns the hashed password, or FALSE on failure.
+     */
+    protected function hashPassword($password)
+    {
+        if (strlen($password) > self::MAX_PASSWORD_LENGTH) {
+            return false;
+        }
+        return password_hash($password, self::PASSWORD_ALGO);
+    }
+
+    /**
+     * Verifies that the given hash matches the given password.
+     * This calls the function password_verify().
+     * @param string $password The user's password.
+     * @param string $hash A hash created by password_hash().
+     * @return bool Returns TRUE if the password and hash match, or FALSE otherwise.
+     */
+    protected function passwordMatches($password, $hash)
+    {
+        return password_verify($password, $hash);
+    }
+
+    /**
+     * This function checks to see if the supplied hash implements the algorithm and options provided. If not, it is
+     * assumed that the hash needs to be rehashed.
+     * This calls the function password_needs_rehash.
+     * @param string $hash A hash created by password_hash().
+     * @return boolean Returns TRUE if the hash should be rehashed, or FALSE otherwise.
+     */
+    protected function passwordNeedsRehash($hash)
+    {
+        return password_needs_rehash($hash, self::PASSWORD_ALGO);
+    }
+
+    /**
+     * @param $user_id
+     * @param $password
+     */
+    private function setUserPassword($user_id, $password)
+    {
+        $hash = $this->hashPassword($password);
+        if ($hash === false) {
+            throw new AuthenticationException('Failed to hash the given password');
+        }
+        $hash = $this->db->sanitize($hash);
+        $user_id = $this->db->sanitize($user_id, true);
+        $query = "UPDATE `moderators` SET `password` = '$hash' WHERE `user_id` = '$user_id'";
+        $this->db->query($query);
     }
 }

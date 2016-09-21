@@ -399,7 +399,7 @@ SQL;
 
 /* ************************************************
  *
- * v3 -> v4 updates
+ * v4 -> v5 updates
  *
  * ************************************************
  */
@@ -409,7 +409,9 @@ if (!$db->tableExists('moderators')) {
 CREATE TABLE IF NOT EXISTS `moderators` (
   `user_id` int(10) unsigned NOT NULL,
   `username` varchar(20) COLLATE utf8_unicode_ci NOT NULL,
-  `password_hash` varbinary(64) NOT NULL,
+  `email` varchar(250) COLLATE utf8_unicode_ci NOT NULL,
+  `needs_password_change` BOOLEAN DEFAULT FALSE,
+  `password` varbinary(128) NOT NULL,
   PRIMARY KEY `user_id` (`user_id`),
   UNIQUE KEY `username` (`username`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='Store users for the built in authentication'
@@ -423,8 +425,8 @@ SQL;
     }
 
     $sql = <<<SQL
-INSERT INTO `moderators` (`user_id`, `username`, `password_hash`)
-  SELECT `passwords`.`user_id`, `user_aliases`.`username`, `passwords`.`password_hash`
+INSERT INTO `moderators` (`user_id`, `username`, `password`)
+  SELECT `passwords`.`user_id`, `user_aliases`.`username`, `passwords`.`password_hash` AS `password`
   FROM `passwords`
   LEFT JOIN `user_aliases` USING (`user_id`)
   WHERE `user_aliases`.`active` = '1'
@@ -435,7 +437,7 @@ SQL;
 }
 // End create moderators table
 /* ***************
- * END v4 Update
+ * END v5Update
  */
 
 
