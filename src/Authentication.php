@@ -30,13 +30,21 @@ require_once('AuthenticationException.php');
 class Authentication
 {
     /**
-     * The name of the hash algorithm to use when hashing passwords and checking
-     * HMAC's. The database can hold up to 128 bytes for the password hash, so
-     * this algorithm should not produce a hash longer than this.
+     * The name of the hash algorithm to use when generating and checking HMAC's.
      */
-    const HASH_ALGO = "sha1";
+    const HMAC_ALGO = "sha1";
+
+    /**
+     * The password algorithm to use for generating and checking password hashes.
+     */
     const PASSWORD_ALGO = PASSWORD_DEFAULT;
+
+    /**
+     * The max allowed length of passwords.
+     */
     const MAX_PASSWORD_LENGTH = 72;
+
+    const NUM_COOKIE_PARTS = 4;
 
     /**
      * @var Database
@@ -109,15 +117,15 @@ class Authentication
         $accessor_key = $this->settings->getAccessorKey($this->input->accessor_token);
         if ($accessor_key !== false && $this->validatePost($accessor_key)) {
             // Use the universally unique identifier to get the user info
-            $uuid = $this->db->sanitize(pack('H*', $this->input->accessor_id));
+            $uuid = $this->db->sanitize($this->input->accessor_id);// TODO handle this the same as all uuids
             $row = $this->db->querySingleRow(
-                "SELECT `users`.`user_id`, `rank`.`name` AS rank
+                "SELECT `moderators`.`user_id`
                  FROM `users`
-                 LEFT JOIN `rank` ON (`users`.`rank` = `rank`.`rank_id`)
-                 WHERE `uuid` = '$uuid'",
+                 LEFT JOIN `moderators` ON (`users`.`user_id` = `moderators`.`user_id`)
+                 WHERE `users`.`uuid` = '$uuid'",
                 'Moderator not found.'
             );
-            if ($row['rank'] == 'Admin' || $row['rank'] == 'Moderator') {
+            if ($row['user_id']) {
                 return $row['user_id'];
             } else {
                 Log::debug('Failed Login Attempt: Bad API user UUID');
@@ -165,7 +173,7 @@ class Authentication
             $moderator_info = $this->getModeratorInfo($moderator_name);
             if ($moderator_info !== false) {
                 // User is logged into wordpress, and is a moderator
-                return $moderator_info['id'];
+                return $moderator_info['user_id'];
             }
         }
         return null;
@@ -207,8 +215,8 @@ class Authentication
     /**
      * Gets the information for the moderator using the ban manager.
      * @param string $moderator_name The name of the moderator to get the information of.
-     * @return mixed boolean <tt>false</tt> if the user is not a moderator/admin,
-     * otherwise it returns and array with the user's information.
+     * @return array|bool The moderator user_id and username in an array, or FALSE if the moderator name or doesn't
+     * exist in the database.
      */
     public function getModeratorInfo($moderator_name)
     {
@@ -216,30 +224,23 @@ class Authentication
             return false;
         }
 
-        $info = false;
-
         // Sanitize the provided user name
         $moderator_name = $this->db->sanitize($moderator_name);
 
-        // Request the user id from the database
-        $row = $this->db->querySingleRow(
-            "SELECT `users`.`user_id`, `rank`.`name` AS rank
-             FROM `users`
-             LEFT JOIN `rank` ON (`users`.`rank` = `rank`.`rank_id`)
-             WHERE `username` = '$moderator_name'",
-            'Moderator not found.'
-        );
-
-        // Only store the information of admins/moderators
-        if ($row['rank'] == 'Admin' || $row['rank'] == 'Moderator') {
-            $info = array(
-                'id'=>$row['user_id'],
-                'rank'=>$row['rank'],
-                'username'=>$moderator_name,
+        try {
+            // Request the user id from the database
+            $row = $this->db->querySingleRow(
+                "SELECT `moderators`.`user_id`, `moderators`.`username`
+                 FROM `moderators`
+                 WHERE `moderators`.`username` = '$moderator_name'",
+                'Moderator not found.'
             );
-        }
 
-        return $info;
+            return $row;
+        } catch (DatabaseException $ex) {
+            Log::debug('Problem querying for moderator', $ex);
+            return false;
+        }
     }
 
     /**
@@ -265,7 +266,6 @@ EOF;
                 $result = $this->db->querySingleRow($sql);
 
                 if ($this->passwordMatches($this->input->password, $result['password'])) {
-
                     if ($this->passwordNeedsRehash($result['password'])) {
                         $this->setUserPassword($result['user_id'], $this->input->password);
                     }
@@ -303,9 +303,13 @@ EOF;
         if (!empty($cookie) && count($cookie) == 4) {
             // Check if the logout time has been reached, if there is one
             $logout_time = $this->settings->getLogoutTime();
-            if (($logout_time > 0) && (time() - $cookie[2] > $logout_time)) {
-                // Max login time has been reached.
-                return false;
+            if ($logout_time > 0) {
+                // Sessions are limited to a given duration
+                $logged_in_time = (int) $cookie[2];
+                if (time() - $logged_in_time > $logout_time) {
+                    // Max login time has been reached.
+                    return false;
+                }
             }
 
             // Check the cookies HMAC
@@ -314,7 +318,8 @@ EOF;
             if (empty($key)) {
                 throw new AuthenticationException('Configuration error.');
             }
-            return hash_hmac(self::HASH_ALGO, $value, $key) == $cookie[3];
+            $expected_hmac = hash_hmac(self::HMAC_ALGO, $value, $key, true);
+            return $this->hashEquals($expected_hmac, $cookie[3]);
         }
         return false;
     }
@@ -338,7 +343,8 @@ EOF;
             }
         }
 
-        $valid_hmac = hash_hmac(self::HASH_ALGO, $msg, $hmac_key) == $hmac;
+        $expected_hmac = hash_hmac(self::HMAC_ALGO, $msg, $hmac_key);
+        $valid_hmac =  $this->hashEquals($expected_hmac, $hmac);
         if (!$valid_hmac) {
             Log::debug('Failed Login Attempt: Bad API HMAC');
         }
@@ -403,7 +409,7 @@ EOF;
         if (isset($_COOKIE[$cookie_name])) {
             $cookie = base64_decode($_COOKIE[$cookie_name], true);
             if ($cookie) {
-                return explode('|', $cookie);
+                return explode('|', $cookie, self::NUM_COOKIE_PARTS);
             }
         }
         return null;
@@ -424,9 +430,10 @@ EOF;
             throw new AuthenticationException('Configuration error.');
         }
 
-        $cookie = array($user_id, $username, time());
-        $cookie[] = hash_hmac(self::HASH_ALGO, implode("", $cookie), $key);
-        $cookie_str = implode('|', $cookie);
+        $timestamp = time();
+        $value = $user_id . $username . $timestamp;
+        $hmac = hash_hmac(self::HMAC_ALGO, $value, $key, true);
+        $cookie_str = "{$user_id}|{$username}|{$timestamp}|${hmac}";
         $cookie_value = base64_encode($cookie_str);
 
         setcookie($this->settings->getCookieName(), $cookie_value, 0, '/', null, false, true);
@@ -505,5 +512,32 @@ EOF;
         $user_id = $this->db->sanitize($user_id, true);
         $query = "UPDATE `moderators` SET `password` = '$hash' WHERE `user_id` = '$user_id'";
         $this->db->query($query);
+    }
+
+    /**
+     * Compares two strings.
+     * If PHP >= 5.6 this calls the builtin function hash_equals(), otherwise it falls back to a timing resistant
+     * comparison algorithm.
+     * @param string $known_string The string of known length to compare against
+     * @param string $user_string The user-supplied string
+     * @return bool Returns TRUE when the two strings are equal, FALSE otherwise.
+     */
+    private function hashEquals($known_string , $user_string)
+    {
+        if (function_exists('hash_equals')) {
+            return hash_equals($known_string, $user_string);
+        } else {
+            // Timing attack resistant hash equals replacement, not perfect but works fairly well.
+            if(strlen($known_string) != strlen($user_string)) {
+                return false;
+            } else {
+                $res = $known_string ^ $user_string;
+                $ret = 0;
+                for($i = strlen($res) - 1; $i >= 0; $i--) {
+                    $ret |= ord($res[$i]);
+                }
+                return $ret === 0;
+            }
+        }
     }
 }

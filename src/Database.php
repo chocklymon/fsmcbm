@@ -126,7 +126,7 @@ class Database
      * @param string $sql The query string.
      * @param string $error_message An optional error message to output if
      * the query fails.
-     * @return mixed For successful SELECT, SHOW, DESCRIBE or EXPLAIN queries
+     * @return mysqli_result|boolean For successful SELECT, SHOW, DESCRIBE or EXPLAIN queries
      * this will return a mysqli_result object. For other successful queries
      * this will return TRUE.
      * @throws DatabaseException If the query fails.

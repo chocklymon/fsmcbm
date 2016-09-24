@@ -108,7 +108,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
     public function testAuthenticateAPIRequest()
     {
         $this->setUpAPIRequest();
-        $auth = new Authentication($this->getModeratorMockDB(true), self::$settings, $this->input);
+        $auth = new Authentication($this->getUserMockDB(true), self::$settings, $this->input);
 
         $authenticated = $auth->authenticate();
         $this->assertTrue($authenticated);
@@ -117,7 +117,11 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
     public function testAuthenticateAPIRequest_nonModerator()
     {
         $this->setUpAPIRequest();
-        $auth = new Authentication($this->getNonModeratorMockDB(true), self::$settings, $this->input);
+        $mock_db_array = $this->getNonceFreeArray();
+        $mock_db_array[] = array('user_id' => null);
+        $mock_db = new MockDatabase($mock_db_array);
+
+        $auth = new Authentication($mock_db, self::$settings, $this->input);
 
         $authenticated = $auth->authenticate();
         $this->assertFalse($authenticated);
@@ -144,7 +148,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
     public function testAuthenticateUsingCookie()
     {
         $_COOKIE[self::$settings->getCookieName()] = base64_encode(
-            '1|notch|139656221|8c6e7d97248140d2155f36094d955a8f53339a89'
+            '1|notch|139656221|' . $this->hexToBin('8c6e7d97248140d2155f36094d955a8f53339a89')
         );
         self::$settings->setSetting('cookie_secret', 'secret_key');
         self::$settings->setSetting('session_duration', 0);
@@ -159,7 +163,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
     public function testAuthenticateUsingCookie_badTimeStamp()
     {
         $_COOKIE[self::$settings->getCookieName()] = base64_encode(
-            '1|notch|139656221|8c6e7d97248140d2155f36094d955a8f53339a89'// timestamp = 2032-12-12
+            '1|notch|139656221|' . $this->hexToBin('8c6e7d97248140d2155f36094d955a8f53339a89')// timestamp = 2032-12-12
         );
         self::$settings->setSetting('cookie_secret', 'secret_key');
         self::$settings->setSetting('session_duration', 1);
@@ -172,7 +176,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
     public function testAuthenticateUsingCookie_badConfiguration()
     {
         $_COOKIE[self::$settings->getCookieName()] = base64_encode(
-            '1|notch|139656221|8c6e7d97248140d2155f36094d955a8f53339a89'
+            '1|notch|139656221|' . $this->hexToBin('8c6e7d97248140d2155f36094d955a8f53339a89')
         );
         self::$settings->setSetting('cookie_secret', '');
         $this->assertFalse($this->auth->authenticate(), "Cookie user should NOT have been authenticated.");
@@ -202,7 +206,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
     {
         // Set up for testing the cookie
         $_COOKIE[self::$settings->getCookieName()] = base64_encode(
-            '1|notchy|139656221|8c6e7d97248140d2155f36094d955a8f53339a89'// Modified username
+            '1|notchy|139656221|' . $this->hexToBin('8c6e7d97248140d2155f36094d955a8f53339a89')// Modified username
         );
         self::$settings->setSetting('cookie_secret', 'secret_key');
         self::$settings->setSetting('session_duration', 1);
@@ -218,7 +222,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
         $wp_user_logged_in = true;
         $wp_current_user = (object) array('user_login'=>self::USERNAME);
         self::$settings->setSetting('use_wp_login', true);
-        $db = $this->getModeratorMockDB();
+        $db = $this->getUserMockDB();
         $auth = new Authentication($db, self::$settings, $this->input);
 
         // Run the test
@@ -246,8 +250,9 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
         $wp_user_logged_in = true;
         $wp_current_user = (object) array('user_login'=>self::USERNAME);
         self::$settings->setSetting('use_wp_login', true);
-        $db = $this->getNonModeratorMockDB();
-        $auth = new Authentication($db, self::$settings, $this->input);
+        $mock_db = new MockDatabase(array(false));
+
+        $auth = new Authentication($mock_db, self::$settings, $this->input);
 
         // Run the test
         $authenticated = $auth->authenticate();
@@ -276,11 +281,11 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
 
     public function testGetModeratorInfo()
     {
-        $db = new MockDatabase(array(array('user_id'=>self::USER_ID, 'rank'=>'Admin')));;
+        $db = new MockDatabase(array(array('user_id' => self::USER_ID, 'username' => self::USERNAME)));;
         $auth = new Authentication($db, self::$settings, $this->input);
         $info = $auth->getModeratorInfo(self::USERNAME);
 
-        $expected = array('id'=>28, 'rank'=>'Admin', 'username'=>self::USERNAME);
+        $expected = array('user_id'=>28, 'username'=>self::USERNAME);
         $this->assertEquals($expected, $info);
     }
 
@@ -292,7 +297,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
 
     public function testGetModeratorInfo_nonAdmin()
     {
-        $db = new MockDatabase(array(array('user_id'=>self::USER_ID, 'rank'=>'Regular')));;
+        $db = new MockDatabase(array(false));;
         $auth = new Authentication($db, self::$settings, $this->input);
         $info = $auth->getModeratorInfo(self::USERNAME);
         $this->assertFalse($info);
@@ -308,7 +313,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
         $this->input->username = self::USERNAME;
         $this->input->password = 'password1';
 
-        $db = $this->getModeratorMockDB();
+        $db = $this->getUserMockDB();
         $auth = new Authentication($db, self::$settings, $this->input);
 
         $this->assertTrue($auth->loginUser());
@@ -324,7 +329,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
         $this->input->username = self::USERNAME;
         $this->input->password = 'password1';
 
-        $db = $this->getModeratorMockDB();
+        $db = $this->getUserMockDB();
         $auth = new Authentication($db, self::$settings, $this->input);
 
         $auth->loginUser();
@@ -367,38 +372,19 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * Gets a MockDatabase instance that will return a user that is not a
-     * moderator.
-     * @param boolean $include_nonce Whether or not the MockDatase should return
-     * a free nonce result first before the user.
-     * @return \MockDatabase
-     */
-    private function getNonModeratorMockDB($include_nonce = false)
-    {
-        return $this->getUserMockDB('Regular', $include_nonce);
-    }
-
-    /**
-     * Gets a MockDatabase instance that will return a user that is a moderator.
-     * @param boolean $include_nonce Whether or not the MockDatase should return
-     * a free nonce result first before the user.
-     * @return \MockDatabase
-     */
-    private function getModeratorMockDB($include_nonce = false)
-    {
-        return $this->getUserMockDB('Admin', $include_nonce);
-    }
-
-    /**
      * Returns a MockDatabase that will return a user with the provided rank.
-     * @param string $rank The user's rank.
      * @param boolean $include_nonce Whether or not the MockDatase should return
      * a free nonce result first before the user.
      * @return \MockDatabase
      */
-    private function getUserMockDB($rank, $include_nonce)
+    private function getUserMockDB($include_nonce = false)
     {
-        $user = array('user_id' => self::USER_ID, 'rank' => $rank, 'username' => self::USERNAME);
+        $user = array(
+            'user_id' => self::USER_ID,
+            'username' => self::USERNAME,
+            'password' => '$2y$10$IvV0j3.oBy8/OKQS8EcHquPhBCi1M7LRZLeI4UjZ9hDmKrrns5/MG',// password1
+            'needs_password_change' => FALSE,
+        );
         if ($include_nonce) {
             $mock_db_array = $this->getNonceFreeArray();
             $mock_db_array[] = $user;
@@ -426,8 +412,18 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
             $payload .= $key . $value;
         }
 
-        $hmac = hash_hmac(Authentication::HASH_ALGO, $payload, $secret_key);
+        $hmac = hash_hmac(Authentication::HMAC_ALGO, $payload, $secret_key);
 
         $this->input->hmac = $hmac;
+    }
+
+    /**
+     * Convert a hex string to binary.
+     * @param $str
+     * @return string
+     */
+    private function hexToBin($str)
+    {
+        return pack('H*', $str);
     }
 }
