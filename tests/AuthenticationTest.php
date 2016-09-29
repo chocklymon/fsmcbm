@@ -404,7 +404,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
         self::$settings->setSetting('auth_secret_keys', array($accessor => $secret_key));
 
         $this->input->accessor_token = $accessor;
-        $this->input->accessor_id = 'd9';
+        $this->input->accessor_id = '00000000-0000-0000-0000-000000000001';
 
         $this->input->keySort();
         $payload = '';
