@@ -26,6 +26,7 @@
 // Import the files
 // TODO replace this with an autoloader
 require_once('src/Log.php');
+require_once('src/Util.php');
 require_once('src/FilteredInput.php');
 require_once('src/Settings.php');
 require_once('src/Output.php');

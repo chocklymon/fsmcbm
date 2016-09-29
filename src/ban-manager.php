@@ -27,6 +27,7 @@
  */
 
 require_once('Log.php');
+require_once('Util.php');
 require_once('FilteredInput.php');
 require_once('Settings.php');
 require_once('Output.php');

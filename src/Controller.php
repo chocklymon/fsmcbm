@@ -645,11 +645,7 @@ SQL;
      */
     private function prepareUUID($uuid, $check_length = true)
     {
-        $uuid = mb_ereg_replace('[^a-fA-F0-9]', '', $uuid);
-        if ($check_length && strlen($uuid) != 32) {
-            throw new InvalidArgumentException("Invalid UUID");
-        }
-        $uuid = strtolower($uuid);
+        $uuid = Util::formatUUID($uuid, $check_length);
         return $this->db->sanitize($uuid);
     }
 

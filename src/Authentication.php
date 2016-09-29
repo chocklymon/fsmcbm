@@ -117,7 +117,8 @@ class Authentication
         $accessor_key = $this->settings->getAccessorKey($this->input->accessor_token);
         if ($accessor_key !== false && $this->validatePost($accessor_key)) {
             // Use the universally unique identifier to get the user info
-            $uuid = $this->db->sanitize($this->input->accessor_id);// TODO handle this the same as all uuids
+            $uuid = Util::formatUUID($this->input->accessor_id);
+            $uuid = $this->db->sanitize($uuid);
             $row = $this->db->querySingleRow(
                 "SELECT `moderators`.`user_id`
                  FROM `users`
@@ -251,8 +252,6 @@ class Authentication
     {
         if ($this->input->exists('username') && $this->input->exists('password')) {
             $username = $this->db->sanitize($this->input->username);
-            // TODO: https://www.owasp.org/index.php/Password_Storage_Cheat_Sheet
-            // See also: http://php.net/manual/en/function.password-hash.php
 
             $sql = <<<EOF
 SELECT `moderators`.`user_id`, `moderators`.`username`, `moderators`.`needs_password_change`, `moderators`.`password`
