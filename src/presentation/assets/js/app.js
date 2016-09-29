@@ -28,7 +28,7 @@
  * Ban Manager Module
  * ======================
  */
-angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadingBar'])
+angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'angular-loading-bar'])
 
 
     /* ======================
@@ -208,6 +208,13 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
                 }
 
                 return CachedRequest.get('lookup', {'uuid': uuid}).then(function(player) {
+                    // Convert data fields into data objects
+                    angular.forEach(player.incident, function(incident) {
+                        incident.created_date = new Date(incident.created_date);
+                        incident.modified_date = new Date(incident.modified_date);
+                        incident.incident_date = new Date(incident.incident_date);
+                    });
+
                     // Maintain our own cache of the player for easier access
                     cachedPlayer = player;
                     return cachedPlayer;
@@ -328,14 +335,14 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
         };
     }])
 
-    .factory('Confirm', ['$rootScope', '$sce', '$modal', function($rootScope, $sce, $modal) {
-        var $modalInstance,
+    .factory('Confirm', ['$rootScope', '$sce', '$uibModal', function($rootScope, $sce, $uibModal) {
+        var $uibModalInstance,
             modalScope = $rootScope.$new();
         var closeModal = function() {
-                $modalInstance.close();
+                $uibModalInstance.close();
             },
             dismissModal = function() {
-                $modalInstance.dismiss();
+                $uibModalInstance.dismiss();
             };
         var defaultButtons = [
             {
@@ -353,7 +360,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
         ];
 
         modalScope.callButtonFunction = function($index) {
-            modalScope.buttons[$index].action.call(modalScope.buttons[$index].action, $modalInstance);
+            modalScope.buttons[$index].action.call(modalScope.buttons[$index].action, $uibModalInstance);
         };
 
         return function(msg) {
@@ -385,13 +392,13 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
             } else {
                 modalScope.buttons = defaultButtons;
             }
-            $modalInstance = $modal.open({
+            $uibModalInstance = $uibModal.open({
                 scope: modalScope,
                 templateUrl: 'presentation/templates/base-modal.html',
                 backdrop: 'static'
             });
 
-            return $modalInstance.result;
+            return $uibModalInstance.result;
         }
     }])
 
@@ -489,7 +496,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
                 onSelect: '&',
                 required: '=?',
                 selected: '=?selectValue',
-                selectFirst: '@?'
+                selectFirst: '=?'
             },
             restrict: 'EA',
             templateUrl: 'presentation/templates/lookup.html',
@@ -516,7 +523,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
      * Configuration
      * ======================
      */
-    .config(['$routeProvider', '$httpProvider', 'datepickerConfig', function($routeProvider, $httpProvider, datepickerConfig) {
+    .config(['$routeProvider', '$httpProvider', 'uibDatepickerConfig', function($routeProvider, $httpProvider, uibDatepickerConfig) {
         // Set up the routes
         var requireLoggedIn = {
             isLoggedIn: ['$location', '$q', 'AuthHandler', function($location, $q, AuthHandler) {
@@ -597,7 +604,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
         }]);
 
         // Set the defaults for the date picker component
-        datepickerConfig.showWeeks = false;
+        uibDatepickerConfig.showWeeks = false;
     }])
 
 
@@ -727,8 +734,8 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
         }
     }])
     .controller('NavigationController',
-        ['$scope', '$location', 'request', 'Player', 'CurrentSearch', '$modal', 'formatUUID', 'Authentication',
-        function($scope, $location, request, Player, CurrentSearch, $modal, formatUUID, Authentication)
+        ['$scope', '$location', 'request', 'Player', 'CurrentSearch', '$uibModal', 'formatUUID', 'Authentication',
+        function($scope, $location, request, Player, CurrentSearch, $uibModal, formatUUID, Authentication)
     {
         $scope.user = Authentication.loggedInObj;
 
@@ -796,14 +803,14 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
 
         // Add user and add incident buttons
         $scope.addUser = function() {
-            $modal.open({
+            $uibModal.open({
                 templateUrl: 'presentation/templates/add-player.html',
                 controller: 'AddUserController',
                 size: 'lg'
             });
         };
         $scope.addIncident = function() {
-            $modal.open({
+            $uibModal.open({
                 templateUrl: 'presentation/templates/add-incident.html',
                 controller: 'AddIncidentController',
                 size: 'lg'
@@ -817,28 +824,19 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
         };
         $scope.search.text = '';
 
-        // Alerts
-        $scope.alerts = [];
-        $scope.closeAlert = function(index) {
-            $scope.alerts.splice(index, 1);
-        };
-        $scope.addAlert = function() {
-            $scope.alerts.push({type: 'danger', msg: 'Another alert!'});
-        };
-
         // Watch for changes on the route
         $scope.$on('$routeChangeSuccess', function() {
             $scope.selectedTab = getSelectedTab();
         });
     }])
-    .controller('AddUserController', ['$scope', 'Player', '$modalInstance', 'message', 'Confirm', function($scope, Player, $modalInstance, message, Confirm){
+    .controller('AddUserController', ['$scope', 'Player', '$uibModalInstance', 'message', 'Confirm', function($scope, Player, $uibModalInstance, message, Confirm){
         // TODO This and the user controller will be very similar, find a way to combine them?
         var addUser = function() {
             $scope.submitting = true;
             Player.add($scope.player.info).then(
                 function(response) {
                     message.successMsg('User added.', 6000);
-                    $modalInstance.close(response);
+                    $uibModalInstance.close(response);
                 },
                 function(err) {
                     var errorMsg = 'Problem adding user. ';
@@ -868,10 +866,10 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
             }
         };
         $scope.cancel = function() {
-            $modalInstance.dismiss('cancel');
+            $uibModalInstance.dismiss('cancel');
         };
     }])
-    .controller('AddIncidentController', ['$scope', 'request', '$modalInstance', 'message', 'Confirm', function($scope, request, $modalInstance, message, Confirm) {
+    .controller('AddIncidentController', ['$scope', 'request', '$uibModalInstance', 'message', 'Confirm', function($scope, request, $uibModalInstance, message, Confirm) {
         $scope.incident = {};
         $scope.incidentForm = {};
 
@@ -884,7 +882,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
             request('add_incident', $scope.incident).then(
                 function(response) {
                     message.successMsg('Incident added.', 6000);
-                    $modalInstance.close(response);
+                    $uibModalInstance.close(response);
                 },
                 function(err) {
                     var errorMsg = 'Problem adding incident. ';
@@ -916,7 +914,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'chieffancypants.loadin
             }
         };
         $scope.cancel = function() {
-            $modalInstance.dismiss('cancel');
+            $uibModalInstance.dismiss('cancel');
         };
     }])
 
