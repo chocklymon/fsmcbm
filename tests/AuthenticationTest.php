@@ -149,83 +149,13 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
         $this->assertFalse($authenticated);
     }
 
-    public function testAuthenticateUsingCookie()
-    {
-        $_COOKIE[self::$settings->getCookieName()] = base64_encode(
-            '1|notch|139656221|' . $this->hexToBin('8c6e7d97248140d2155f36094d955a8f53339a89')
-        );
-        self::$settings->setSetting('cookie_secret', 'secret_key');
-        self::$settings->setSetting('session_duration', 0);
-        $this->assertTrue($this->auth->authenticate(), "Cookie user should have been authenticated correctly.");
-    }
-
-    /**
-     * Run in a separate process since this method sets cookies, and the
-     * headers have already been set by PHPUnit.
-     * @runInSeparateProcess
-     */
-    public function testAuthenticateUsingCookie_badTimeStamp()
-    {
-        $_COOKIE[self::$settings->getCookieName()] = base64_encode(
-            '1|notch|139656221|' . $this->hexToBin('8c6e7d97248140d2155f36094d955a8f53339a89')// timestamp = 2032-12-12
-        );
-        self::$settings->setSetting('cookie_secret', 'secret_key');
-        self::$settings->setSetting('session_duration', 1);
-        $this->assertFalse($this->auth->authenticate(), "Cookie user should NOT have been authenticated.");
-    }
-
-    /**
-     * @expectedException AuthenticationException
-     */
-    public function testAuthenticateUsingCookie_badConfiguration()
-    {
-        $_COOKIE[self::$settings->getCookieName()] = base64_encode(
-            '1|notch|139656221|' . $this->hexToBin('8c6e7d97248140d2155f36094d955a8f53339a89')
-        );
-        self::$settings->setSetting('cookie_secret', '');
-        $this->assertFalse($this->auth->authenticate(), "Cookie user should NOT have been authenticated.");
-    }
-
-    public function testAuthenticateUsingCookie_noCookie()
-    {
-        $_COOKIE = array();
-        $this->assertFalse($this->auth->authenticate(), "Cookie user should NOT have been authenticated.");
-    }
-
-    /**
-     * Run in a separate process since this will try to expire the cookie.
-     * @runInSeparateProcess
-     */
-    public function testAuthenticateUsingCookie_badCookie()
-    {
-        $_COOKIE[self::$settings->getCookieName()] = base64_encode('1|notch');
-        $this->assertFalse($this->auth->authenticate(), "Cookie user should NOT have been authenticated.");
-    }
-
-    /**
-     * Run in a separate process since this will try to expire the cookie.
-     * @runInSeparateProcess
-     */
-    public function testAuthenticateUsingCookie_badHMAC()
-    {
-        // Set up for testing the cookie
-        $_COOKIE[self::$settings->getCookieName()] = base64_encode(
-            '1|notchy|139656221|' . $this->hexToBin('8c6e7d97248140d2155f36094d955a8f53339a89')// Modified username
-        );
-        self::$settings->setSetting('cookie_secret', 'secret_key');
-        self::$settings->setSetting('session_duration', 1);
-
-        // Test that the cookie doesn't authenticate
-        $this->assertFalse($this->auth->authenticate(), "Cookie user should NOT have been authenticated.");
-    }
-
     public function testAuthenticateUsingWP()
     {
         // Set up so the user will be logged in correctly
         global $wp_user_logged_in, $wp_current_user;
         $wp_user_logged_in = true;
         $wp_current_user = (object) array('user_login'=>self::USERNAME);
-        self::$settings->setSetting('use_wp_login', true);
+        self::$settings->setSetting('auth_mode', 'wordpress');
         $db = $this->getUserMockDB();
         $auth = new Authentication($db, self::$settings, $this->input);
 
@@ -240,7 +170,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
         // Set up so the user will not be logged in
         global $wp_user_logged_in;
         $wp_user_logged_in = false;
-        self::$settings->setSetting('use_wp_login', true);
+        self::$settings->setSetting('auth_mode', 'wordpress');
 
         // Run the test
         $authenticated = $this->auth->authenticate();
@@ -253,7 +183,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
         global $wp_user_logged_in, $wp_current_user;
         $wp_user_logged_in = true;
         $wp_current_user = (object) array('user_login'=>self::USERNAME);
-        self::$settings->setSetting('use_wp_login', true);
+        self::$settings->setSetting('auth_mode', 'wordpress');
         $mock_db = new MockDatabase(array(false));
 
         $auth = new Authentication($mock_db, self::$settings, $this->input);
@@ -264,11 +194,12 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException AuthenticationException
+     * @expectedException \Chocklymon\fsmcbm\AuthenticationException
      */
     public function testAuthenticateUsingWP_badConfiguration()
     {
         // Set up  so there will be an authentication exception
+        self::$settings->setSetting('auth_mode', 'wordpress');
         self::$settings->setSetting('wp_load_file', null);
         $this->auth->authenticate();
     }
@@ -307,47 +238,9 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
         $this->assertFalse($info);
     }
 
-    /**
-     * Run in a separate process since this method sets cookies, and the
-     * headers have already been set by PHPUnit.
-     * @runInSeparateProcess
-     */
-    public function testLoginUser()
-    {
-        $this->input->username = self::USERNAME;
-        $this->input->password = 'password1';
-
-        $db = $this->getUserMockDB();
-        $auth = new Authentication($db, self::$settings, $this->input);
-
-        $this->assertTrue($auth->loginUser());
-    }
-
-    /**
-     * @expectedException AuthenticationException
-     */
-    public function testLoginUser_configurationError()
-    {
-        self::$settings->setSetting('cookie_secret', '');
-
-        $this->input->username = self::USERNAME;
-        $this->input->password = 'password1';
-
-        $db = $this->getUserMockDB();
-        $auth = new Authentication($db, self::$settings, $this->input);
-
-        $auth->loginUser();
-    }
-
-    public function testLoginUser_noUsername()
-    {
-        $this->input->password = 'password1';
-        $this->assertFalse($this->auth->loginUser());
-    }
-
     public function testShouldLoadWordpress()
     {
-        self::$settings->setSetting('use_wp_login', false);
+        self::$settings->setSetting('auth_mode', 'none');
         $this->assertFalse($this->auth->shouldLoadWordpress());
     }
 
@@ -368,7 +261,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
 
     /**
      * Get a mock database that will return that the nonce hasn't been used yet.
-     * @return \MockDatabase
+     * @return MockDatabase
      */
     private function getNonceFreeMockDB()
     {
@@ -379,7 +272,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
      * Returns a MockDatabase that will return a user with the provided rank.
      * @param boolean $include_nonce Whether or not the MockDatase should return
      * a free nonce result first before the user.
-     * @return \MockDatabase
+     * @return MockDatabase
      */
     private function getUserMockDB($include_nonce = false)
     {
@@ -419,15 +312,5 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
         $hmac = hash_hmac(Authentication::HMAC_ALGO, $payload, $secret_key);
 
         $this->input->hmac = $hmac;
-    }
-
-    /**
-     * Convert a hex string to binary.
-     * @param $str
-     * @return string
-     */
-    private function hexToBin($str)
-    {
-        return pack('H*', $str);
     }
 }

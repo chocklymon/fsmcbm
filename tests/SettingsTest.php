@@ -48,11 +48,6 @@ class SettingsTest extends PHPUnit_Framework_TestCase
         $this->assertInstanceOf('Settings', $settings);
     }
 
-    public function testGetCookieName()
-    {
-        $this->assertEquals('bm', self::$settings->getCookieName());
-    }
-
     public function testGetAccessorKey()
     {
         $key = self::$settings->getAccessorKey('missing');
@@ -60,7 +55,7 @@ class SettingsTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException PHPUnit_Framework_Error
+     * @expectedException \PHPUnit_Framework_Error
      */
     public function testGetDatabaseHost()
     {
@@ -68,7 +63,7 @@ class SettingsTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException PHPUnit_Framework_Error
+     * @expectedException \PHPUnit_Framework_Error
      */
     public function testGetDatabaseName()
     {
@@ -76,7 +71,7 @@ class SettingsTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException PHPUnit_Framework_Error
+     * @expectedException \PHPUnit_Framework_Error
      */
     public function testGetDatabasePassword()
     {
@@ -84,7 +79,7 @@ class SettingsTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException PHPUnit_Framework_Error
+     * @expectedException \PHPUnit_Framework_Error
      */
     public function testGetDatabaseUsername()
     {

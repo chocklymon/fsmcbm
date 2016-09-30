@@ -401,33 +401,15 @@ SQL;
  *
  * ************************************************
  */
-// Create the moderators table
-if (!$db->tableExists('moderators')) {
+// Create the external user authentication information table
+if ($db->tableExists('passwords')) {
     $sql = <<<SQL
-CREATE TABLE IF NOT EXISTS `moderators` (
+CREATE TABLE IF NOT EXISTS `user_authentication` (
   `user_id` int(10) unsigned NOT NULL,
-  `username` varchar(20) COLLATE utf8_unicode_ci NOT NULL,
-  `email` varchar(250) COLLATE utf8_unicode_ci NOT NULL,
-  `needs_password_change` BOOLEAN DEFAULT FALSE,
-  `password` varbinary(128) NOT NULL,
+  `external_id` varchar(30) COLLATE utf8_unicode_ci NOT NULL COMMENT 'An external authentication system ID',
   PRIMARY KEY `user_id` (`user_id`),
-  UNIQUE KEY `username` (`username`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='Store users for the built in authentication'
-SQL;
-
-    try {
-        $db->query($sql);
-    } catch (DatabaseException $ex) {
-        print_r($ex);
-        exit(-1);
-    }
-
-    $sql = <<<SQL
-INSERT INTO `moderators` (`user_id`, `username`, `password`)
-  SELECT `passwords`.`user_id`, `user_aliases`.`username`, `passwords`.`password_hash` AS `password`
-  FROM `passwords`
-  LEFT JOIN `user_aliases` USING (`user_id`)
-  WHERE `user_aliases`.`active` = '1'
+  UNIQUE KEY `external_id` (`external_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='Store user information for external authentication'
 SQL;
     $db->query($sql);
 

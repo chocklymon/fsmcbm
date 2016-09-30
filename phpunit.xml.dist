@@ -10,6 +10,9 @@
             <!-- Ignore the log file for -->
             <file>src/Log.php</file>
         </blacklist>
+        <whitelist>
+            <directory>src/app</directory>
+        </whitelist>
     </filter>
     <testsuites>
         <testsuite name="all-tests">

@@ -42,11 +42,8 @@ class MockSettings extends Settings
             'db_password' => '',
             'db_database' => 'myapp_test',
 
-            'cookie_name' => 'bm',
-            'cookie_secret' => 'secret_key',
             'debug' => false,
             'wp_load_file' => 'tests/wp-load.php',
-            'use_wp_login' => false,
             'log_level' => 8,// OFF
         );
 

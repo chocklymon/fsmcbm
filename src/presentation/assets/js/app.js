@@ -516,7 +516,29 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'angular-loading-bar', 
         // Set the client ID and domain
         lockProvider.init({
             clientID: AUTH_INFO.clientId,
-            domain: AUTH_INFO.domain
+            domain: AUTH_INFO.domain,
+            options: {
+                additionalSignUpFields: [{
+                    name: 'minecraft_username',
+                    placeholder: 'enter your minecraft username',
+                    icon: '/presentation/assets/img/mc-block-icon_14x14.png',
+                    validator: function(username) {
+                        // See: https://help.mojang.com/customer/en/portal/articles/928638-minecraft-usernames
+                        var regex = /[^a-zA-Z0-9_]/g;
+                        return {
+                            valid: username.length >= 2 && username.length <= 16 && !regex.test(username),
+                            hint: 'Invalid minecraft username'
+                        }
+                    }
+                }],
+                languageDictionary: {
+                    title: 'Ban Manager Log In'
+                },
+                socialButtonStyle: 'small',
+                theme: {
+                    logo: '/presentation/assets/img/mc-block-icon.png'
+                }
+            }
         });
         // Configure the token storage and retrieval
         jwtOptionsProvider.config({

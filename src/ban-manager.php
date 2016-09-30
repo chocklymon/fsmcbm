@@ -73,92 +73,82 @@ try {
         require_once($wp_load_file);
     }
 
-    if ($endpoint === 'login') {
-        // Try to login the user
-        if ($auth->loginUser()) {
-            $output->success();
-        } else {
-            $output->error('Login Failed');
-        }
+    // Authenticate the request
+    $authenticated = $auth->authenticate();
+
+    if ($endpoint === 'authenticated') {
+        // Request to check if the user is logged in
+        $output->append($authenticated, 'authenticated');
+        $output->append($auth->shouldLoadWordpress(), 'use-wordpress');
+        $output->reply();
+    } elseif ($authenticated === false) {
+        // Authentication failed
+        Log::debug('ban-manager: Authentication failed');
+        header('HTTP/1.1 401 UNAUTHORIZED');
+        $output->append($authenticated, 'authenticated');
+        $output->error("Not logged in.");
     } else {
-        // Authenticate the request
-        $authenticated = $auth->authenticate();
+        // Authentication successful, continue with the request
+        $user_id = $auth->getUserId();
 
-        if ($endpoint === 'authenticated') {
-            // Request to check if the user is logged in
-            $output->append($authenticated, 'authenticated');
-            $output->append($auth->shouldLoadWordpress(), 'use-wordpress');
-            $output->reply();
-        } elseif ($authenticated === false) {
-            // Authentication failed
-            Log::debug('ban-manager: Authentication failed');
-            header('HTTP/1.1 401 UNAUTHORIZED');
-            $output->append($authenticated, 'authenticated');
-            $output->error("Not logged in.");
-        } else {
-            // Authentication successful, continue with the request
-            $user_id = $auth->getUserId();
+        /* =============================
+         *      PERFORM ACTIONS
+         * =============================
+         */
 
+        // Get an instance of the controller
+        $actions = new Chocklymon\fsmcbm\Controller($db, $output);
 
-            /* =============================
-             *      PERFORM ACTIONS
-             * =============================
-             */
-
-            // Get an instance of the controller
-            $actions = new Chocklymon\fsmcbm\Controller($db, $output);
-
-            switch ($endpoint) {
-                case 'auto_complete':
-                    $actions->autoComplete($input);
-                    break;
-                case 'lookup':
-                    $actions->retrieveUserData($input);
-                    break;
-                case 'add_user':
-                    $actions->addUser($user_id, $input);
-                    break;
-                case 'add_incident':
-                    $actions->addIncident($user_id, $input);
-                    break;
-                case 'delete_incident':
-                    $actions->deleteIncident($input);
-                    break;
-                case 'get_bans':
-                    $actions->getBans();
-                    break;
-                case 'get_ranks':
-                    $ranks = $actions->getRanks();
-                    foreach($ranks as $rank) {
-                        $output->append(
-                            array('value' => $rank['rank_id'], 'label' => $rank['name'])
-                        );
-                    }
-                    $output->reply();
-                    break;
-                case 'get_watchlist':
-                    $actions->getWatchlist();
-                    break;
-                case 'get_worlds':
-                    $worlds = $settings->get('worlds');
-                    foreach ($worlds as $world) {
-                        $output->append($world);
-                    }
-                    $output->reply();
-                    break;
-                case 'search':
-                    $actions->search($input);
-                    break;
-                case 'upsert_username':
-                    $actions->upsertUsername($user_id, $input);
-                    break;
-                case 'update_user':
-                    $actions->updateUser($user_id, $input);
-                    break;
-                case 'update_incident':
-                    $actions->updateIncident($input);
-                    break;
-            }
+        switch ($endpoint) {
+            case 'auto_complete':
+                $actions->autoComplete($input);
+                break;
+            case 'lookup':
+                $actions->retrieveUserData($input);
+                break;
+            case 'add_user':
+                $actions->addUser($user_id, $input);
+                break;
+            case 'add_incident':
+                $actions->addIncident($user_id, $input);
+                break;
+            case 'delete_incident':
+                $actions->deleteIncident($input);
+                break;
+            case 'get_bans':
+                $actions->getBans();
+                break;
+            case 'get_ranks':
+                $ranks = $actions->getRanks();
+                foreach($ranks as $rank) {
+                    $output->append(
+                        array('value' => $rank['rank_id'], 'label' => $rank['name'])
+                    );
+                }
+                $output->reply();
+                break;
+            case 'get_watchlist':
+                $actions->getWatchlist();
+                break;
+            case 'get_worlds':
+                $worlds = $settings->get('worlds');
+                foreach ($worlds as $world) {
+                    $output->append($world);
+                }
+                $output->reply();
+                break;
+            case 'search':
+                $actions->search($input);
+                break;
+            case 'upsert_username':
+                $actions->upsertUsername($user_id, $input);
+                break;
+            case 'update_user':
+                $actions->updateUser($user_id, $input);
+                break;
+            case 'update_incident':
+                $actions->updateIncident($input);
+                break;
         }
     }
 } catch (Chocklymon\fsmcbm\AuthenticationException $ex) {

@@ -23,6 +23,7 @@
 
 namespace Chocklymon\fsmcbm;
 
+use Exception;
 use PHPUnit_Framework_TestCase;
 
 /**

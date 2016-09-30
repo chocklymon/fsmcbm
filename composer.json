@@ -4,6 +4,7 @@
     "type": "project",
     "license": "MIT",
     "config": {
+        "optimize-autoloader": true,
         "vendor-dir": "src/vendor",
         "bin-dir": "bin"
     },

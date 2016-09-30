@@ -21,7 +21,7 @@
  * THE SOFTWARE.
  */
 
-use Chocklymon\fsmcbm\Database;
+namespace Chocklymon\fsmcbm;
 
 // TODO replace this with PHPUnit mocking
 
@@ -150,6 +150,7 @@ class MockDatabase extends Database
      * @param string $key The array key to use for storing the results.
      * @param string $error_message An optional error message to output if
      * the query fails.
+     * @return mixed|void
      */
     public function queryRowsIntoOutput($sql, Output $output, $key = null, $error_message = 'Nothing found.')
     {
@@ -171,7 +172,7 @@ class MockDatabase extends Database
     /**
      * Runs the provided SQL query and returns the ID of the inserted row.
      * @param string $sql The query string.
-     * @return The value of the AUTO_INCREMENT field that was updated by the
+     * @return mixed|void The value of the AUTO_INCREMENT field that was updated by the
      * query. Returns zero if the query did not update an AUTO_INCREMENT value.
      */
     public function insert($sql)
@@ -234,62 +235,4 @@ class MockDatabase extends Database
         return $this->query($table);
     }
 
-}
-
-/**
- * Fakes a mysqli_result from the database.
- */
-class FakeQueryResult /* extends mysqli_result */
-{
-    private $results;
-    public $current_field;
-    public $num_rows;
-
-    /**
-     * Construct a fake query result.
-     * @param array $results An array of results.
-     */
-    public function __construct($results = array())
-    {
-        $this->results = $results;
-        $this->current_field = 0;
-        $this->num_rows = count($this->results);
-    }
-
-    public function data_seek($offset)
-    {
-        $this->current_field = $offset;
-        return true;
-    }
-
-    public function fetch_all($resulttype = MYSQLI_NUM)
-    {
-        return $this->results;
-    }
-
-    public function fetch_array($resulttype = MYSQLI_BOTH)
-    {
-        if ($this->current_field < count($this->results)) {
-            $value = $this->results[$this->current_field];
-            $this->current_field++;
-        } else {
-            $value = false;
-        }
-        return $value;
-    }
-
-    public function fetch_assoc()
-    {
-        return $this->fetch_array();
-    }
-
-    public function fetch_row()
-    {
-        return $this->fetch_array();
-    }
-
-    public function free()
-    {
-        unset($this->results, $this->current_field, $this->num_rows);
-    }
 }

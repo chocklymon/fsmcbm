@@ -23,6 +23,8 @@
 
 namespace Chocklymon\fsmcbm;
 
+use Auth0\SDK\JWTVerifier;
+
 /**
  * Handles authenticating and permissioning the logged in users.
  * @author Curtis Oakley
@@ -33,18 +35,6 @@ class Authentication
      * The name of the hash algorithm to use when generating and checking HMAC's.
      */
     const HMAC_ALGO = "sha1";
-
-    /**
-     * The password algorithm to use for generating and checking password hashes.
-     */
-    const PASSWORD_ALGO = PASSWORD_DEFAULT;
-
-    /**
-     * The max allowed length of passwords.
-     */
-    const MAX_PASSWORD_LENGTH = 72;
-
-    const NUM_COOKIE_PARTS = 4;
 
     /**
      * @var Database
@@ -88,14 +78,20 @@ class Authentication
         if ($this->isAPIRequest()) {
             // API call
             $user_id = $this->authenticateAPIRequest();
-        } else if ($this->settings->useWPLogin()) {
-            // Authenticate using WordPress
-            $user_id = $this->authenticateUsingWP();
-        } else if ($this->settings->getAuthenticationMode() === 'none') {
-            $user_id = 1;
         } else {
-            // Authenticate using our authentication
-            $user_id = $this->authenticateUser();
+            switch ($this->settings->getAuthenticationMode()) {
+                case 'wordpress':
+                    $user_id = $this->authenticateUsingWP();
+                    break;
+                case 'auth0':
+                    $user_id = $this->authenticateUsingAuth0();
+                    break;
+                case 'none':
+                    $user_id = 1;
+                    break;
+                default:
+                    throw new ConfigurationException('Invalid authentication mode');
+            }
         }
 
         if ($user_id != null) {
@@ -139,7 +135,7 @@ class Authentication
      * Authenticate a user using auth0
      * @return int The user ID or <tt>null</tt> if the user doesn't validate.
      */
-    private function authenticateUser()
+    private function authenticateUsingAuth0()
     {
         // TODO replace apache_request_headers with other method in case the function doesn't exist
         $requestHeaders = apache_request_headers();
@@ -157,14 +153,54 @@ class Authentication
         $client_id = $this->settings->get('auth0_client_id');
         $decoded_token = null;
         try {
-            $decoded_token = \Auth0\SDK\Auth0JWT::decode($token, $client_id, $secret );
+            $verifier = new JWTVerifier([
+                'valid_audiences' => [$client_id],
+                'client_secret' => $secret
+            ]);
+
+            $decoded_token = $verifier->verifyAndDecode($token);
         } catch(\Auth0\SDK\Exception\CoreException $e) {
             header('HTTP/1.0 401 Unauthorized');
             echo "Invalid token";
             exit();
         }
-        // TODO get the user
-        return 1;
+
+        $id = $this->db->sanitize($decoded_token->sub);
+        $result = $this->db->query(
+            "SELECT user_id FROM user_authentication WHERE external_id = '{$id}'"
+        );
+
+        if ($result->num_rows == 0) {
+            $result->free();
+
+            // Get the username from Auth0
+            $auth0Api = new \Auth0\SDK\API\Authentication($this->settings->get('auth0_domain'), $client_id, $secret);
+            $profile = $auth0Api->tokeninfo($token);
+            $username = $this->db->sanitize($profile['user_metadata']['minecraft_username']);
+
+            $result = $this->db->query(
+                "SELECT user_id FROM user_aliases WHERE username = '{$username}'"
+            );
+
+            if ($result->num_rows !== 1) {
+                // TODO - How to handle this?
+                Log::error('Multiple or no username results found!', $username);
+                $user_id = null;
+            } else {
+                $row = $result->fetch_assoc();
+                $user_id = $row['user_id'];
+
+                $this->db->query(
+                    "INSERT INTO user_authentication (user_id, external_id) VALUES ({$user_id}, '{$id}')"
+                );
+            }
+        } else {
+            $row = $result->fetch_assoc();
+            $user_id = $row['user_id'];
+        }
+        $result->free();
+
+        return $user_id;
     }
 
     /**
@@ -212,14 +248,6 @@ class Authentication
     }
 
     /**
-     * Sets the cookie as expired.
-     */
-    private function expireCookie()
-    {
-        setcookie($this->settings->getCookieName(), "", time() - 3600);
-    }
-
-    /**
      * Get the user ID of the authenticated user.
      * @return int
      */
@@ -260,82 +288,12 @@ class Authentication
     }
 
     /**
-     * Logs in the user.
-     * @return boolean true if the user was logged in correctly.
-     */
-    public function loginUser()
-    {
-        if ($this->input->exists('username') && $this->input->exists('password')) {
-            $username = $this->db->sanitize($this->input->username);
-
-            $sql = <<<EOF
-SELECT `moderators`.`user_id`, `moderators`.`username`, `moderators`.`needs_password_change`, `moderators`.`password`
-FROM
-`moderators`
-WHERE
-     `moderators`.`username` = '{$username}'
-EOF;
-            try {
-                // Find the user
-                $result = $this->db->querySingleRow($sql);
-
-                if ($this->passwordMatches($this->input->password, $result['password'])) {
-                    if ($this->passwordNeedsRehash($result['password'])) {
-                        $this->setUserPassword($result['user_id'], $this->input->password);
-                    }
-
-                    // User found and password matches, set the login cookie and return true
-                    $this->setCookie($result['user_id'], $result['username']);
-                }
-                return true;
-            } catch (DatabaseException $ex) {
-                Log::info(__LINE__, array('Invalid user login attempt', $ex->getMessage()));
-            }
-        }
-        return false;
-    }
-
-    /**
      * Returns if the input indicates that it is an API request.
      * @return boolean true if the input data indicates we have an API request.
      */
     public function isAPIRequest()
     {
         return $this->input->exists('accessor_token') && $this->input->exists('hmac') && $this->input->exists('accessor_id');
-    }
-
-    /**
-     * Checks if the provided cookie data is valid.
-     * @param array $cookie The cookie data as an array.
-     * @return boolean true if the cookie is valid
-     * @throws AuthenticationException If the cookie key is not set in the
-     * configuration.
-     */
-    private function isCookieValid($cookie)
-    {
-        // The cookie should have four parts
-        if (!empty($cookie) && count($cookie) == 4) {
-            // Check if the logout time has been reached, if there is one
-            $logout_time = $this->settings->getLogoutTime();
-            if ($logout_time > 0) {
-                // Sessions are limited to a given duration
-                $logged_in_time = (int) $cookie[2];
-                if (time() - $logged_in_time > $logout_time) {
-                    // Max login time has been reached.
-                    return false;
-                }
-            }
-
-            // Check the cookies HMAC
-            $value = $cookie[0] . $cookie[1] . $cookie[2];
-            $key = $this->settings->getCookieKey();
-            if (empty($key)) {
-                throw new AuthenticationException('Configuration error.');
-            }
-            $expected_hmac = hash_hmac(self::HMAC_ALGO, $value, $key, true);
-            return $this->hashEquals($expected_hmac, $cookie[3]);
-        }
-        return false;
     }
 
     /**
@@ -413,53 +371,12 @@ EOF;
     }
 
     /**
-     * Gets the authentication cookie.
-     * @return array The cookie's data as an array, or null if the cookie
-     * doesn't exist.
-     */
-    private function getCookie()
-    {
-        $cookie_name = $this->settings->getCookieName();
-        if (isset($_COOKIE[$cookie_name])) {
-            $cookie = base64_decode($_COOKIE[$cookie_name], true);
-            if ($cookie) {
-                return explode('|', $cookie, self::NUM_COOKIE_PARTS);
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Sets the authentication cookie.
-     * @param int $user_id The ID of the user.
-     * @param string $username The user's name.
-     * @throws AuthenticationException If the cookie key is not set in the
-     * configuration.
-     */
-    private function setCookie($user_id, $username)
-    {
-        // Cookie: id|username|timestamp|hmac
-        $key = $this->settings->getCookieKey();
-        if (empty($key)) {
-            throw new AuthenticationException('Configuration error.');
-        }
-
-        $timestamp = time();
-        $value = $user_id . $username . $timestamp;
-        $hmac = hash_hmac(self::HMAC_ALGO, $value, $key, true);
-        $cookie_str = "{$user_id}|{$username}|{$timestamp}|${hmac}";
-        $cookie_value = base64_encode($cookie_str);
-
-        setcookie($this->settings->getCookieName(), $cookie_value, 0, '/', null, false, true);
-    }
-
-    /**
      * Indicate if wordpress should be loaded for use with authentication.
      * @return boolean true if Wordpress should be loaded
      */
     public function shouldLoadWordpress()
     {
-        return $this->settings->useWPLogin() && !$this->isAPIRequest();
+        return $this->settings->getAuthenticationMode() == 'wordpress' && !$this->isAPIRequest();
     }
 
     /**
@@ -472,60 +389,6 @@ EOF;
     private function validatePost($hmac_key)
     {
         return $this->isTimestampValid() && $this->isHMACValid($hmac_key) && $this->isNonceValid();
-    }
-
-    /**
-     * Creates a new password hash using a strong one-way hashing algorithm.
-     * This calls the function password_hash().
-     * @param string $password The user's password.
-     * @return bool|string Returns the hashed password, or FALSE on failure.
-     */
-    protected function hashPassword($password)
-    {
-        if (strlen($password) > self::MAX_PASSWORD_LENGTH) {
-            return false;
-        }
-        return password_hash($password, self::PASSWORD_ALGO);
-    }
-
-    /**
-     * Verifies that the given hash matches the given password.
-     * This calls the function password_verify().
-     * @param string $password The user's password.
-     * @param string $hash A hash created by password_hash().
-     * @return bool Returns TRUE if the password and hash match, or FALSE otherwise.
-     */
-    protected function passwordMatches($password, $hash)
-    {
-        return password_verify($password, $hash);
-    }
-
-    /**
-     * This function checks to see if the supplied hash implements the algorithm and options provided. If not, it is
-     * assumed that the hash needs to be rehashed.
-     * This calls the function password_needs_rehash.
-     * @param string $hash A hash created by password_hash().
-     * @return boolean Returns TRUE if the hash should be rehashed, or FALSE otherwise.
-     */
-    protected function passwordNeedsRehash($hash)
-    {
-        return password_needs_rehash($hash, self::PASSWORD_ALGO);
-    }
-
-    /**
-     * @param $user_id
-     * @param $password
-     */
-    private function setUserPassword($user_id, $password)
-    {
-        $hash = $this->hashPassword($password);
-        if ($hash === false) {
-            throw new AuthenticationException('Failed to hash the given password');
-        }
-        $hash = $this->db->sanitize($hash);
-        $user_id = $this->db->sanitize($user_id, true);
-        $query = "UPDATE `moderators` SET `password` = '$hash' WHERE `user_id` = '$user_id'";
-        $this->db->query($query);
     }
 
     /**

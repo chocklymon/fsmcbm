@@ -52,10 +52,7 @@ class Settings
         }
 
         $defaults = array(
-            'cookie_name' => 'bm',
             'debug' => false,
-            'use_wp_login' => false,
-            'session_duration' => 43200,// 12 hours
             'log_directory' => '.',
             'log_level' => 4,
             'worlds' => array(array('value' => '', 'label' => '')),
@@ -71,15 +68,6 @@ class Settings
     public function get($key)
     {
         return $this->settings[$key];
-    }
-
-    /**
-     * Get the name of the cookie used to store the login information.
-     * @return string
-     */
-    public function getCookieName()
-    {
-        return $this->settings['cookie_name'];
     }
 
     /**
@@ -141,16 +129,6 @@ class Settings
         }
     }
 
-    public function useWPLogin()
-    {
-        return $this->settings['use_wp_login'];
-    }
-
-    public function getCookieKey()
-    {
-        return $this->settings['cookie_secret'];
-    }
-
     public function getAccessorKey($accessor_name)
     {
         if (isset($this->settings['auth_secret_keys'])) {
@@ -163,10 +141,4 @@ class Settings
         }
         return false;
     }
-
-    public function getLogoutTime()
-    {
-        return $this->settings['session_duration'];
-    }
-
 }

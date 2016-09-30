@@ -43,7 +43,6 @@ GRANT ALL PRIVILEGES ON ban_manager.* TO 'username'@'localhost' IDENTIFIED BY 'p
     1. `cp src/bm-config.sample.php src/bm-config.php`
     2. Edit the `src/bm-config.php` file.
         - Set the `db_username` and `db_password` and setup the username and password entered in step one.
-        - Set the `cookie_secret`.
         - Modify the authentication and other settings as needed. See comments in sample file.
 6. `bower install`
 

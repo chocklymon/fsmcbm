@@ -115,7 +115,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException \InvalidArgumentException
      */
     public function testAddIncident_invalidUserId()
     {
@@ -190,7 +190,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException \InvalidArgumentException
      */
     public function testAddUserNoUUID()
     {
@@ -204,7 +204,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException \InvalidArgumentException
      */
     public function testAddUserUserExists()
     {
@@ -261,7 +261,7 @@ SQL;
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException \InvalidArgumentException
      */
     public function testAutoCompleteInvalidTerm()
     {
@@ -346,7 +346,7 @@ SQL;
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException \InvalidArgumentException
      */
     public function testRetrieveUserDataInvalidId()
     {
@@ -383,7 +383,7 @@ SQL;
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException \InvalidArgumentException
      */
     public function testSearch_invalidSearch()
     {
@@ -456,7 +456,7 @@ SQL;
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException \InvalidArgumentException
      */
     public function testUpdateUser_invalidId()
     {
@@ -485,7 +485,7 @@ SQL;
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException \InvalidArgumentException
      */
     public function testUpdateIncident_invalidId()
     {
@@ -529,7 +529,7 @@ SQL;
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException \InvalidArgumentException
      * @expectedExceptionMessage Invalid UUID
      */
     public function testUpsertUserUUID_badUUID()
@@ -543,7 +543,7 @@ SQL;
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException \InvalidArgumentException
      * @expectedExceptionMessage No UUID provided
      */
     public function testUpsertUserUUID_noUUID()
