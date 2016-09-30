@@ -12,6 +12,10 @@
 .sm-row, .md-row {
     margin-bottom: 15px;
 }
+.pad-row {
+    margin-bottom: 15px;
+    margin-top: 15px;
+}
 
 .form-section {
     padding-bottom: 15px;

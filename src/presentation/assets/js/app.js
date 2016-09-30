@@ -28,7 +28,7 @@
  * Ban Manager Module
  * ======================
  */
-angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'angular-loading-bar'])
+angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'angular-loading-bar', 'auth0.lock', 'angular-jwt'])
 
 
     /* ======================
@@ -96,61 +96,6 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'angular-loading-bar'])
                 } else {
                     // Reset all
                     cache = {};
-                }
-            }
-        }
-    }])
-
-    .factory('Authentication', [function AuthenticationFactory() {
-        var loggedInObj = {
-            loggedIn: false
-        };
-        return {
-            loggedInObj: loggedInObj,
-            getAuthenticated: function() {
-                return loggedInObj.loggedIn;
-            },
-            setAuthenticated: function(loggedIn) {
-                loggedInObj.loggedIn = !!loggedIn;
-            }
-        };
-    }])
-    .factory('AuthHandler', ['$q', 'request', 'Authentication', function AuthHandlerFactory($q, request, Authentication) {
-        var authInfo = null,
-            getAuthResponse = function() {
-                if (authInfo.authenticated === true) {
-                    return true;
-                } else if (authInfo['use-wordpress']) {
-                    return 'use-wordpress';
-                } else {
-                    return false;
-                }
-            };
-        return {
-            login: function(username, password) {
-                return request('login', {
-                    username: username,
-                    password: password
-                }).then(function(response) {
-                    var authenticated = !!response.data.success;
-                    if (authInfo) {
-                        authInfo.authenticated = authenticated;
-                        Authentication.setAuthenticated(authenticated);
-                    }
-                    return authenticated;
-                });
-            },
-            isAuthenticated: function() {
-                if (authInfo) {
-                    return $q.when(getAuthResponse());
-                } else {
-                    return request('authenticated').then(
-                        function (response) {
-                            authInfo = response.data;
-                            Authentication.setAuthenticated(authInfo.authenticated);
-                            return getAuthResponse();
-                        }
-                    );
                 }
             }
         }
@@ -402,6 +347,48 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'angular-loading-bar'])
         }
     }])
 
+    .service('authService', ['$rootScope', 'lock', 'authManager', function authService($rootScope, lock, authManager) {
+        var userProfile = JSON.parse(localStorage.getItem('profile')) || {};
+
+        function login() {
+            lock.show();
+        }
+
+        // Logging out just requires removing the user's
+        // id_token and profile
+        function logout() {
+            localStorage.removeItem('id_token');
+            localStorage.removeItem('profile');
+            authManager.unauthenticate();
+            userProfile = {};
+        }
+
+        // Set up the logic for when a user authenticates
+        // This method is called from app.run.js
+        function registerAuthenticationListener() {
+            lock.on('authenticated', function(authResult) {
+                localStorage.setItem('id_token', authResult.idToken);
+                authManager.authenticate();
+
+                lock.getProfile(authResult.idToken, function(error, profile) {
+                    if (error) {
+                        console.log(error);
+                    }
+
+                    localStorage.setItem('profile', JSON.stringify(profile));
+                    $rootScope.$broadcast('userProfileSet', profile);
+                });
+            });
+        }
+
+        return {
+            userProfile: userProfile,
+            login: login,
+            logout: logout,
+            registerAuthenticationListener: registerAuthenticationListener
+        }
+    }])
+
 
     /* ======================
      * Filters
@@ -523,22 +510,22 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'angular-loading-bar'])
      * Configuration
      * ======================
      */
-    .config(['$routeProvider', '$httpProvider', 'uibDatepickerConfig', function($routeProvider, $httpProvider, uibDatepickerConfig) {
-        // Set up the routes
-        var requireLoggedIn = {
-            isLoggedIn: ['$location', '$q', 'AuthHandler', function($location, $q, AuthHandler) {
-                return AuthHandler.isAuthenticated().then(function(authenticated) {
-                    if (authenticated === true) {
-                        return true;
-                    } else if (authenticated === 'use-wordpress') {
-                        $location.url('/wp-login.php');
-                    } else {
-                        $location.path('/login');
-                    }
-                    return $q.reject(false);
-                });
-            }]
-        };
+    .config(['$routeProvider', '$httpProvider', 'uibDatepickerConfig', 'lockProvider', 'jwtOptionsProvider',
+        function($routeProvider, $httpProvider, uibDatepickerConfig, lockProvider, jwtOptionsProvider) {
+        // Auth0 Configuration
+        // Set the client ID and domain
+        lockProvider.init({
+            clientID: AUTH_INFO.clientId,
+            domain: AUTH_INFO.domain
+        });
+        // Configure the token storage and retrieval
+        jwtOptionsProvider.config({
+            tokenGetter: function() {
+                return localStorage.getItem('id_token');
+            }
+        });
+        // Add the jwtInterceptor so that the jwt token is added to all requests
+        $httpProvider.interceptors.push('jwtInterceptor');
 
         $routeProvider
             .when('/', {
@@ -551,33 +538,27 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'angular-loading-bar'])
             })
             .when('/user', {
                 controller: 'UserController',
-                templateUrl: 'presentation/views/manage-user.html',
-                resolve: requireLoggedIn
+                templateUrl: 'presentation/views/manage-user.html'
             })
             .when('/user/:uuid', {
                 controller: 'UserController',
-                templateUrl: 'presentation/views/manage-user.html',
-                resolve: requireLoggedIn
+                templateUrl: 'presentation/views/manage-user.html'
             })
             .when('/bans', {
                 controller: 'UserListController',
-                templateUrl: 'presentation/views/userlist.html',
-                resolve: requireLoggedIn
+                templateUrl: 'presentation/views/userlist.html'
             })
             .when('/watchlist', {
                 controller: 'UserListController',
-                templateUrl: 'presentation/views/userlist.html',
-                resolve: requireLoggedIn
+                templateUrl: 'presentation/views/userlist.html'
             })
             .when('/search/:term?', {
                 controller: 'SearchController',
-                templateUrl: 'presentation/views/search.html',
-                resolve: requireLoggedIn
-            })
-            .otherwise({ redirectTo: '/' });
+                templateUrl: 'presentation/views/search.html'
+            });
 
         // Set up the http request handler
-        $httpProvider.interceptors.push(['$q', 'Authentication', function($q, Authentication){
+        $httpProvider.interceptors.push(['$q', function($q){
             return {
                 'requestError': function(rejection) {
                     // TODO handle the error
@@ -587,10 +568,6 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'angular-loading-bar'])
                     if (response.data && response.data.error) {
                         // TODO handle errors
                         console.warn(response.data);
-                        if (response.data.authenticated === false) {
-                            // User is not logged in
-                            Authentication.setAuthenticated(false);
-                        }
                         return $q.reject(response);
                     }
                     return response;
@@ -612,22 +589,8 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'angular-loading-bar'])
      * Controllers
      * ======================
      */
-    .controller('InitializingController', ['$location', '$log', 'AuthHandler', 'message', function($location, $log, AuthHandler, message) {
-        AuthHandler.isAuthenticated().then(
-            function(authenticated) {
-                if (authenticated === true) {
-                    $location.path('/user');
-                } else if (authenticated === 'use-wordpress') {
-                    $location.url('/wp-login.php');
-                } else {
-                    $location.path('/login');
-                }
-            },
-            function(err) {
-                $log.warn('Error initializing: ', err);
-                message.errorMsg('Problem communication with the server. Please try again later.');
-            }
-        );
+    .controller('InitializingController', ['$location', '$log', 'message', 'authService', function($location, $log, message, authService) {
+        // TODO
     }])
     .controller('UserController', ['$scope', '$routeParams', 'Player', 'request', 'formatUUID', 'message', function($scope, $routeParams, Player, request, formatUUID, message) {
         // Create a function to set the data in the scope
@@ -696,48 +659,14 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'angular-loading-bar'])
                 });
         }
     }])
-    .controller('LoginController', ['$scope', '$location', 'AuthHandler', 'message', function($scope, $location, AuthHandler, message) {
-        var user = {
-            username: '',
-            password: ''
-        };
-        $scope.user = user;
-
-        AuthHandler.isAuthenticated().then(
-            function(authenticated) {
-                if (authenticated === true) {
-                    $location.path('/user');
-                } else if (authenticated === 'use-wordpress') {
-                    $location.url('/wp-login.php');
-                }
-            },
-            function(err) {
-                $log.warn('Error initializing: ', err);
-                message.errorMsg('Problem communication with the server. Please try again later.');
-            }
-        );
-
-        $scope.login = function() {
-            $scope.loginForm.attempted = true;
-            if($scope.loginForm.$valid) {
-                AuthHandler.login(user.username, user.password).then(function () {
-                        // Logged in
-                        $location.path('/user');
-                    })
-                    .catch(function () {
-                        // Login failed
-                        message.addMessage(message.DANGER, 'Login Failed: Incorrect username or password!', 6000);
-                        user.password = '';
-                        $scope.loginForm.attempted = false;
-                    });
-            }
-        }
+    .controller('LoginController', ['authService', function(authService) {
+        authService.login();
     }])
     .controller('NavigationController',
-        ['$scope', '$location', 'request', 'Player', 'CurrentSearch', '$uibModal', 'formatUUID', 'Authentication',
-        function($scope, $location, request, Player, CurrentSearch, $uibModal, formatUUID, Authentication)
+        ['$scope', '$location', 'request', 'Player', 'CurrentSearch', '$uibModal', 'formatUUID', 'authService',
+        function($scope, $location, request, Player, CurrentSearch, $uibModal, formatUUID, authService)
     {
-        $scope.user = Authentication.loggedInObj;
+        $scope.authService = authService;
 
         $scope.tabs = [
             {link: 'user', label: 'Manage'},
@@ -923,4 +852,17 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'angular-loading-bar'])
         $scope.closeAlert = function(index) {
             message.removeMessage(index);
         };
+    }])
+
+    .run(['authService', 'authManager', function(authService, authManager) {
+        authService.registerAuthenticationListener();
+
+        // Use the authManager from angular-jwt to check for
+        // the user's authentication state when the page is
+        // refreshed and maintain authentication
+        authManager.checkAuthOnRefresh();
+
+        // Listen for 401 unauthorized requests and redirect
+        // the user to the login page
+        authManager.redirectWhenUnauthenticated();
     }]);

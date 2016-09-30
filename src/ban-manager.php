@@ -98,6 +98,7 @@ try {
         } elseif ($authenticated === false) {
             // Authentication failed
             Log::debug('ban-manager: Authentication failed');
+            header('HTTP/1.1 401 UNAUTHORIZED');
             $output->append($authenticated, 'authenticated');
             $output->error("Not logged in.");
         } else {

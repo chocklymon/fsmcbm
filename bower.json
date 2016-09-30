@@ -26,6 +26,9 @@
     "angular-route": "~1.5",
     "angular-loading-bar": "~0.9",
     "angular-bootstrap": "~2.1",
-    "bootstrap": "~3.3"
+    "bootstrap": "~3.3",
+    "auth0-lock": "^10.4.0",
+    "angular-lock": "^1.0.2",
+    "angular-jwt": "^0.1.3"
   }
 }

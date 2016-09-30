@@ -6,6 +6,7 @@ src/presentation/assets/vendor/
 bm-config.php
 phpunit.xml
 test.ini
+auth0.js
 
 # IDE Files
 nbproject/
