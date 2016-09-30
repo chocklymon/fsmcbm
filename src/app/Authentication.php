@@ -1,5 +1,5 @@
 <?php
-/* Copyright (c) 2014 Curtis Oakley
+/* Copyright (c) 2014-2016 Curtis Oakley
  * http://chockly.org/
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,7 +21,7 @@
  * THE SOFTWARE.
  */
 
-require_once('AuthenticationException.php');
+namespace Chocklymon\fsmcbm;
 
 /**
  * Handles authenticating and permissioning the logged in users.
@@ -136,20 +136,35 @@ class Authentication
     }
 
     /**
-     * Authenticate a user using the ban manager cookie.
+     * Authenticate a user using auth0
      * @return int The user ID or <tt>null</tt> if the user doesn't validate.
      */
     private function authenticateUser()
     {
-        $cookie = $this->getCookie();
-        if ($this->isCookieValid($cookie)) {
-            // Cookie valid, return the ID from the cookie
-            return (int) $cookie[0];
-        } else if (!empty($cookie)) {
-            // Cookie provided, but invalid. Expire it now
-            $this->expireCookie();
+        // TODO replace apache_request_headers with other method in case the function doesn't exist
+        $requestHeaders = apache_request_headers();
+        $authorizationHeader = $requestHeaders['Authorization'];
+
+        if ($authorizationHeader == null) {
+            header('HTTP/1.0 401 Unauthorized');
+            echo "No authorization header sent";
+            exit();
         }
-        return null;
+
+        // validate the token
+        $token = str_replace('Bearer ', '', $authorizationHeader);
+        $secret = $this->settings->get('auth0_client_secret');
+        $client_id = $this->settings->get('auth0_client_id');
+        $decoded_token = null;
+        try {
+            $decoded_token = \Auth0\SDK\Auth0JWT::decode($token, $client_id, $secret );
+        } catch(\Auth0\SDK\Exception\CoreException $e) {
+            header('HTTP/1.0 401 Unauthorized');
+            echo "Invalid token";
+            exit();
+        }
+        // TODO get the user
+        return 1;
     }
 
     /**

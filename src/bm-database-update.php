@@ -35,9 +35,7 @@
  */
 
 // Set up for running the database update
-require_once 'Settings.php';
-require_once 'Database.php';
-require_once 'Output.php';
+require_once('vendor/autoload.php');
 
 $settings = new Settings();
 $db = new Database($settings);

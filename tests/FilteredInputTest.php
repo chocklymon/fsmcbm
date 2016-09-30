@@ -1,8 +1,6 @@
 <?php
-/*
- * The MIT License
- *
- * Copyright 2014 Curtis Oakley.
+/* Copyright (c) 2014-2016 Curtis Oakley
+ * http://chockly.org/
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,6 +20,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
+namespace Chocklymon\fsmcbm;
+
+use PHPUnit_Framework_TestCase;
 
 /**
  * Tests the filtered input class.

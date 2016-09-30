@@ -1,5 +1,5 @@
 <?php
-/* Copyright (c) 2014 Curtis Oakley
+/* Copyright (c) 2014-2016 Curtis Oakley
  * http://chockly.org/
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,20 +21,14 @@
  * THE SOFTWARE.
  */
 
+use Chocklymon\fsmcbm\Log;
+
 /* =============================
  *           IMPORTS
  * =============================
  */
-
-require_once('Log.php');
-require_once('Util.php');
-require_once('FilteredInput.php');
-require_once('Settings.php');
-require_once('Output.php');
-require_once('Database.php');
-require_once('Authentication.php');
-require_once('Controller.php');
-
+// We just need the composer autoloader
+require_once('vendor/autoload.php');
 
 
 /* =============================
@@ -46,9 +40,9 @@ require_once('Controller.php');
 mb_internal_encoding("UTF-8");
 
 // Get an instance of the various needed classes
-$input = new FilteredInput();
-$settings = new Settings();
-$output = new Output($settings);
+$input = new Chocklymon\fsmcbm\FilteredInput();
+$settings = new Chocklymon\fsmcbm\Settings();
+$output = new Chocklymon\fsmcbm\Output($settings);
 
 // Initialize the logger
 Log::initialize($settings);
@@ -62,8 +56,8 @@ try {
         exit();
     }
 
-    $db = new Database($settings);
-    $auth = new Authentication($db, $settings, $input);
+    $db = new Chocklymon\fsmcbm\Database($settings);
+    $auth = new Chocklymon\fsmcbm\Authentication($db, $settings, $input);
 
 
     // If we are using wordpress load it now
@@ -112,7 +106,7 @@ try {
              */
 
             // Get an instance of the controller
-            $actions = new Controller($db, $output);
+            $actions = new Chocklymon\fsmcbm\Controller($db, $output);
 
             switch ($endpoint) {
                 case 'auto_complete':
@@ -167,10 +161,10 @@ try {
             }
         }
     }
-} catch (AuthenticationException $ex) {
+} catch (Chocklymon\fsmcbm\AuthenticationException $ex) {
     Log::error("ban-manager: Authentication exception", $ex);
     $output->exception($ex);
-} catch (DatabaseException $ex) {
+} catch (Chocklymon\fsmcbm\DatabaseException $ex) {
     Log::error("ban-manager: Database exception", $ex);
     $output->exception(
         $ex,

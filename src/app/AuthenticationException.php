@@ -1,5 +1,5 @@
 <?php
-/* Copyright (c) 2014 Curtis Oakley
+/* Copyright (c) 2014-2016 Curtis Oakley
  * http://chockly.org/
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,13 +21,15 @@
  * THE SOFTWARE.
  */
 
+namespace Chocklymon\fsmcbm;
+
 /**
  * Authentication Exception. Used to indicate that an error occured while
  * attempting to authenticate a user.
  *
  * @author Curtis Oakley
  */
-class AuthenticationException extends RuntimeException
+class AuthenticationException extends \RuntimeException
 {
 
 }

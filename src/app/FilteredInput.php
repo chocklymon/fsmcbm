@@ -1,8 +1,6 @@
 <?php
-/*
- * The MIT License
- *
- * Copyright 2014 Curtis Oakley.
+/* Copyright (c) 2014-2016 Curtis Oakley
+ * http://chockly.org/
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,13 +21,15 @@
  * THE SOFTWARE.
  */
 
+namespace Chocklymon\fsmcbm;
+
 /**
  * Handles loading and filtering post data. This can handle the standard form
  * post data, or a JSON encoded payload.
  *
  * @author Curtis Oakley
  */
-class FilteredInput implements Iterator
+class FilteredInput implements \Iterator
 {
     /*
      * @var array

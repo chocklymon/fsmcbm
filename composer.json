@@ -1,0 +1,21 @@
+{
+    "name": "Chocklymon/fsmcbm",
+    "description": "Ban manager for FinalScoreMC.com",
+    "type": "project",
+    "license": "MIT",
+    "config": {
+        "vendor-dir": "src/vendor",
+        "bin-dir": "bin"
+    },
+    "require": {
+        "auth0/auth0-php": "~4.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "~5.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "Chocklymon\\fsmcbm\\": ["src/app/", "tests/"]
+        }
+    }
+}

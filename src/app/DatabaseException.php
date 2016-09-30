@@ -1,5 +1,5 @@
 <?php
-/* Copyright (c) 2014 Curtis Oakley
+/* Copyright (c) 2014-2016 Curtis Oakley
  * http://chockly.org/
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,12 +21,16 @@
  * THE SOFTWARE.
  */
 
+namespace Chocklymon\fsmcbm;
+
+use Exception;
+
 /**
  * Database exception.
  *
  * @author Curtis Oakley
  */
-class DatabaseException extends RuntimeException
+class DatabaseException extends \RuntimeException
 {
     /**
      * @var string

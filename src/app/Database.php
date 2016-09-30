@@ -1,5 +1,5 @@
 <?php
-/* Copyright (c) 2014 Curtis Oakley
+/* Copyright (c) 2014-2016 Curtis Oakley
  * http://chockly.org/
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,7 +21,10 @@
  * THE SOFTWARE.
  */
 
-require_once('DatabaseException.php');
+namespace Chocklymon\fsmcbm;
+
+use mysqli;
+use mysqli_result;
 
 /**
  * Acts as a wrapper around an SQL database connection.
@@ -216,7 +219,7 @@ class Database
     /**
      * Runs the provided SQL query and returns the ID of the inserted row.
      * @param string $sql The query string.
-     * @return The value of the AUTO_INCREMENT field that was updated by the
+     * @return mixed The value of the AUTO_INCREMENT field that was updated by the
      * query. Returns zero if the query did not update an AUTO_INCREMENT value.
      * @throws DatabaseException If the query fails.
      */

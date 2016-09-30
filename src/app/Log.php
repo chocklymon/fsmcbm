@@ -18,6 +18,8 @@
  * @version 0.2.1-bm
  */
 
+namespace Chocklymon\fsmcbm;
+
 /**
  * Class documentation
  */
@@ -124,6 +126,7 @@ class Log
     public static function initialize(Settings $settings)
     {
         self::$instance = new Log($settings->get('log_directory'), $settings->get('log_level'));
+        return self::$instance;
     }
 
     public static function getInstance()

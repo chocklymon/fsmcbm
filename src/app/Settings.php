@@ -1,5 +1,5 @@
 <?php
-/* Copyright (c) 2014 Curtis Oakley
+/* Copyright (c) 2014-2016 Curtis Oakley
  * http://chockly.org/
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,6 +21,8 @@
  * THE SOFTWARE.
  */
 
+namespace Chocklymon\fsmcbm;
+
 /**
  * Used to access the configurations settings.
  * @author Curtis Oakley
@@ -39,10 +41,12 @@ class Settings
      */
     public function __construct()
     {
-        if (file_exists('bm-config.php')) {
-            require_once('bm-config.php');
-        } else if (file_exists('../bm-config.php')) {
-            require_once('../bm-config.php');
+        if (file_exists(__DIR__ . '/../bm-config.php')) {
+            require_once(__DIR__ . '/../bm-config.php');
+
+        // Check for the file possibly being at the root of the project
+        } else if (file_exists(__DIR__ . '/../../bm-config.php')) {
+            require_once(__DIR__ . '/../../bm-config.php');
         } else {
             $settings = array();
         }

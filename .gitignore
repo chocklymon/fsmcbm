@@ -1,5 +1,7 @@
 # Build and dependency management
+bin/
 node_modules/
+src/vendor/
 src/presentation/assets/vendor/
 
 # Configuration files
