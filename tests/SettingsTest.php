@@ -45,7 +45,7 @@ class SettingsTest extends PHPUnit_Framework_TestCase
     public function testConstructor()
     {
         $settings = new Settings();
-        $this->assertInstanceOf('Settings', $settings);
+        $this->assertInstanceOf('\Chocklymon\fsmcbm\Settings', $settings);
     }
 
     public function testGetAccessorKey()

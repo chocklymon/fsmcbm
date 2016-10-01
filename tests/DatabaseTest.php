@@ -98,7 +98,7 @@ EOF;
     }
 
     /* Not working
-     * @expectedException DatabaseException
+     * @expectedException \Chocklymon\fsmcbm\DatabaseException
      * /
     public function testConnect_error()
     {
@@ -171,7 +171,7 @@ EOF;
     }
 
     /**
-     * @expectedException DatabaseException
+     * @expectedException \Chocklymon\fsmcbm\DatabaseException
      */
     public function testQuerySingleRow_error()
     {
@@ -180,7 +180,7 @@ EOF;
     }
 
     /**
-     * @expectedException DatabaseException
+     * @expectedException \Chocklymon\fsmcbm\DatabaseException
      */
     public function testQuery_error()
     {
