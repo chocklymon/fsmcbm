@@ -1,35 +1,33 @@
-<div ng-show="isAuthenticated">
-    <div class="row pad-row">
-        <div class="col-xs-12 text-right">
-            <span class="glyphicon glyphicon-user"></span>
-            <span>{{authService.userProfile.nickname}}</span>
-            <span> &mdash; </span>
-            <a href="#" ng-click="authService.logout()">Logout</a>
+<div class="row pad-row">
+    <div class="col-xs-12 text-right">
+        <span class="glyphicon glyphicon-user"></span>
+        <span>{{authService.userProfile.nickname}}</span>
+        <span> &mdash; </span>
+        <a href="#" ng-click="authService.logout()">Logout</a>
+    </div>
+</div>
+<form class="row" ng-submit="search()">
+    <div class="col-md-8 sm-row">
+        <div class="input-group has-feedback">
+            <lookup on-select="loadUser($item)" select-value="search.text" select-first="false"></lookup>
+            <span class="input-group-btn">
+                <input type="submit" id="submit" value="Search" class="btn btn-default" />
+            </span>
         </div>
     </div>
-    <form class="row" ng-submit="search()">
-        <div class="col-md-8 sm-row">
-            <div class="input-group has-feedback">
-                <lookup on-select="loadUser($item)" select-value="search.text" select-first="false"></lookup>
-                <span class="input-group-btn">
-                    <input type="submit" id="submit" value="Search" class="btn btn-default" />
-                </span>
-            </div>
+    <div class="col-xs-6 col-md-2 text-center">
+        <div class="form-group">
+            <input type="button" class="btn btn-primary" ng-click="addUser()" value="Add User" />
         </div>
-        <div class="col-xs-6 col-md-2 text-center">
-            <div class="form-group">
-                <input type="button" class="btn btn-primary" ng-click="addUser()" value="Add User" />
-            </div>
+    </div>
+    <div class="col-xs-6 col-md-2 text-center">
+        <div class="form-group">
+            <input type="button" class="btn btn-primary" ng-click="addIncident()" value="Add Incident" />
         </div>
-        <div class="col-xs-6 col-md-2 text-center">
-            <div class="form-group">
-                <input type="button" class="btn btn-primary" ng-click="addIncident()" value="Add Incident" />
-            </div>
-        </div>
-    </form>
-    <ul class="nav nav-tabs nav-justified">
-        <li ng-class="tabClass(tab)" ng-repeat="tab in tabs">
-            <a href="" ng-click="selectTab(tab)">{{tab.label}}</a>
-        </li>
-    </ul>
-</div>
+    </div>
+</form>
+<ul class="nav nav-tabs nav-justified">
+    <li ng-class="tabClass(tab)" ng-repeat="tab in tabs">
+        <a href="" ng-click="selectTab(tab)">{{tab.label}}</a>
+    </li>
+</ul>

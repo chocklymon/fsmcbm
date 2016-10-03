@@ -28,7 +28,7 @@
  * Ban Manager Module
  * ======================
  */
-angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'angular-loading-bar', 'auth0.lock', 'angular-jwt'])
+angular.module('banManager', ['ngAnimate', 'ngRoute', 'ui.bootstrap', 'angular-loading-bar', 'auth0.lock', 'angular-jwt'])
 
 
     /* ======================
@@ -99,6 +99,36 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'angular-loading-bar', 
                 }
             }
         }
+    }])
+
+    /**
+     * Provides a wrapper around the localStorage window object.
+     */
+    .factory('localStore', [function() {
+        var storage = window.localStorage;
+        return {
+            clear: function() {
+                storage.clear();
+            },
+            getItem: function(key) {
+                storage.getItem(key);
+            },
+            getJson: function(key) {
+                return JSON.parse(storage.getItem(key));
+            },
+            key: function(index) {
+                storage.key(index);
+            },
+            setItem: function(key, item) {
+                storage.setItem(key, item);
+            },
+            setJson: function(key, item) {
+                storage.setItem(key, JSON.stringify(item));
+            },
+            removeItem: function(key) {
+                storage.removeItem(key);
+            }
+        };
     }])
 
     /**
@@ -347,8 +377,8 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'angular-loading-bar', 
         }
     }])
 
-    .service('authService', ['$rootScope', 'lock', 'authManager', function authService($rootScope, lock, authManager) {
-        var userProfile = JSON.parse(localStorage.getItem('profile')) || {};
+    .service('authService', ['$rootScope', 'lock', 'authManager', 'localStore', function authService($rootScope, lock, authManager, localStore) {
+        var userProfile = localStore.getJson('profile') || {};
 
         function login() {
             lock.show();
@@ -357,8 +387,8 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'angular-loading-bar', 
         // Logging out just requires removing the user's
         // id_token and profile
         function logout() {
-            localStorage.removeItem('id_token');
-            localStorage.removeItem('profile');
+            localStore.removeItem('id_token');
+            localStore.removeItem('profile');
             authManager.unauthenticate();
             userProfile = {};
         }
@@ -367,15 +397,16 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'angular-loading-bar', 
         // This method is called from app.run.js
         function initialize() {
             lock.on('authenticated', function(authResult) {
-                localStorage.setItem('id_token', authResult.idToken);
+                localStore.setItem('id_token', authResult.idToken);
                 authManager.authenticate();
+                $rootScope.$broadcast('authComplete');
 
                 lock.getProfile(authResult.idToken, function(error, profile) {
                     if (error) {
                         console.log(error);
                     }
 
-                    localStorage.setItem('profile', JSON.stringify(profile));
+                    localStore.setJson('profile', profile);
                     $rootScope.$broadcast('userProfileSet', profile);
 
                     angular.forEach(profile, function(value, key) {
@@ -392,10 +423,6 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'angular-loading-bar', 
             // the user's authentication state when the page is
             // refreshed and maintain authentication
             authManager.checkAuthOnRefresh();
-
-            // Listen for 401 unauthorized requests and redirect
-            // the user to the login page
-            authManager.redirectWhenUnauthenticated();
         }
 
         return {
@@ -521,6 +548,19 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'angular-loading-bar', 
             }
         };
     }])
+    .directive('bmAlerts', ['message', function(message) {
+        return {
+            scope: false,
+            restrict: 'AE',
+            templateUrl: 'presentation/templates/alerts.html',
+            controller: ['$scope', function($scope) {
+                $scope.alerts = message.getMessages();
+                $scope.closeAlert = function(index) {
+                    message.removeMessage(index);
+                };
+            }]
+        };
+    }])
 
 
     /* ======================
@@ -548,6 +588,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'angular-loading-bar', 
                         }
                     }
                 }],
+                closable: false,
                 languageDictionary: {
                     title: 'Ban Manager Log In'
                 },
@@ -568,14 +609,6 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'angular-loading-bar', 
         $httpProvider.interceptors.push('jwtInterceptor');
 
         $routeProvider
-            .when('/', {
-                controller: 'InitializingController',
-                templateUrl: 'presentation/views/loading.html'
-            })
-            .when('/login', {
-                controller: 'LoginController',
-                templateUrl: 'presentation/views/login.html'
-            })
             .when('/user', {
                 controller: 'UserController',
                 templateUrl: 'presentation/views/manage-user.html'
@@ -629,8 +662,64 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'angular-loading-bar', 
      * Controllers
      * ======================
      */
-    .controller('InitializingController', ['$location', '$log', 'message', 'authService', function($location, $log, message, authService) {
-        // TODO
+    .controller('InitializingController', ['$scope', '$timeout', '$location', '$route', 'authService', 'localStore',
+        function($scope, $timeout, $location, $route, authService, localStore) {
+        $scope.showLoading = true;
+        $scope.initialized = false;
+
+        var redirectUrl = localStore.getJson('redirectUrl');
+        var currentTime = new Date().getTime();
+
+        // Save the current url if there isn't one, or the current one is older then twenty minutes
+        if (!redirectUrl || redirectUrl.timestamp <= currentTime - (20 * 60 * 1000)) {
+            redirectUrl = {
+                timestamp: currentTime,
+                url: $location.url()
+            };
+            localStore.setJson('redirectUrl', redirectUrl);
+        }
+
+        function routeMatches(on, route) {
+            if (!route.regexp) {
+                return false;
+            }
+
+            return route.regexp.test(on);
+        }
+
+        function finishInitalize() {
+            // Mark that we are ready to authenticate
+            $scope.initialized = true;
+
+            // Find where to go
+            var goTo;
+            angular.forEach($route.routes, function(route) {
+                if (!goTo && routeMatches(redirectUrl.url, route)) {
+                    goTo = redirectUrl.url;
+                }
+            });
+            // Fallback to /user route if we didn't find a valid route
+            if (!goTo) {
+                goTo = '/user';
+            }
+
+            // Clear the redirect URL and go to the route
+            localStore.removeItem('redirectUrl');
+            $location.url(goTo);
+        }
+
+        var authCheckTimeout = $timeout(function() {
+            if ($scope.isAuthenticated) {
+                finishInitalize();
+            } else {
+                authService.login();
+            }
+        }, 100);
+
+        $scope.$on('authComplete', function() {
+            $timeout.cancel(authCheckTimeout);
+            finishInitalize();
+        });
     }])
     .controller('UserController', ['$scope', '$routeParams', 'Player', 'request', 'formatUUID', 'message', function($scope, $routeParams, Player, request, formatUUID, message) {
         // Create a function to set the data in the scope
@@ -698,9 +787,6 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'angular-loading-bar', 
                     }
                 });
         }
-    }])
-    .controller('LoginController', ['authService', function(authService) {
-        authService.login();
     }])
     .controller('NavigationController',
         ['$scope', '$location', 'request', 'Player', 'CurrentSearch', '$uibModal', 'formatUUID', 'authService',
@@ -884,13 +970,6 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'angular-loading-bar', 
         };
         $scope.cancel = function() {
             $uibModalInstance.dismiss('cancel');
-        };
-    }])
-
-    .controller('MessageController', ['$scope', 'message', function($scope, message) {
-        $scope.alerts = message.getMessages();
-        $scope.closeAlert = function(index) {
-            message.removeMessage(index);
         };
     }])
 

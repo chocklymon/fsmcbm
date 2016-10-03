@@ -1,0 +1,9 @@
+<div class="bm-alert-box">
+    <div ng-repeat="alert in alerts"
+         uib-alert
+         ng-class="'alert-' + (alert.type || 'warning')"
+         close="closeAlert($index)"
+         dismiss-on-timeout="{{alert.timeout}}">
+        {{alert.msg}}
+    </div>
+</div>

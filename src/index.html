@@ -1,26 +1,29 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Final Score MC Ban Manager</title>
-        <link rel="stylesheet" href="presentation/assets/vendor/bootstrap/dist/css/bootstrap.min.css" />
-        <link rel="stylesheet" href="presentation/assets/vendor/angular-loading-bar/build/loading-bar.min.css" />
-        <link rel="stylesheet" href="presentation/assets/css/base.css" />
-    </head>
-    <body>
-        <div class="container" data-ng-app="banManager">
-            <div class="bm-alert-box" data-ng-controller="MessageController">
-                <div ng-repeat="alert in alerts"
-                     uib-alert
-                     ng-class="'alert-' + (alert.type || 'warning')"
-                     close="closeAlert($index)" dismiss-on-timeout="{{alert.timeout}}">
-                    {{alert.msg}}
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Final Score MC Ban Manager</title>
+    <link rel="stylesheet" href="presentation/assets/vendor/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="presentation/assets/vendor/angular-loading-bar/build/loading-bar.min.css" />
+    <link rel="stylesheet" href="presentation/assets/css/base.css" />
+</head>
+<body>
+    <div data-ng-app="banManager">
+        <div class="loading-overlay animate-fade" data-ng-controller="InitializingController" data-ng-hide="initialized">
+            <div class="loader">
+                <div data-ng-show="showLoading">
+                    <h2>Loading</h2>
+                    <div class="loader-spinner"></div>
                 </div>
+                <p data-ng-bind="errorMsg"></p>
             </div>
-            <div data-ng-include="src='presentation/views/navigation.html'" data-ng-controller="NavigationController"></div>
-            <div data-ng-view class="tabarea">
-                Loading...
+        </div>
+        <div class="container">
+            <div data-bm-alerts></div>
+            <div data-ng-include="src='presentation/views/navigation.html'" data-ng-controller="NavigationController">
+            </div>
+            <div data-ng-view class="tabarea toggle">
             </div>
             <div class="row pad-row">
                 <div class="col-xs-12">
@@ -30,14 +33,16 @@
                 </div>
             </div>
         </div>
-        <script type="text/javascript" src="auth0.js"></script>
-        <script type="text/javascript" src="presentation/assets/vendor/angular/angular.min.js"></script>
-        <script type="text/javascript" src="presentation/assets/vendor/angular-route/angular-route.min.js"></script>
-        <script type="text/javascript" src="presentation/assets/vendor/auth0-lock/build/lock.min.js"></script>
-        <script type="text/javascript" src="presentation/assets/vendor/angular-lock/dist/angular-lock.min.js"></script>
-        <script type="text/javascript" src="presentation/assets/vendor/angular-jwt/dist/angular-jwt.min.js"></script>
-        <script type="text/javascript" src="presentation/assets/vendor/angular-bootstrap/ui-bootstrap-tpls.min.js"></script>
-        <script type="text/javascript" src="presentation/assets/vendor/angular-loading-bar/build/loading-bar.min.js"></script>
-        <script type="text/javascript" src="presentation/assets/js/app.js"></script>
-    </body>
+    </div>
+    <script type="text/javascript" src="auth0.js"></script>
+    <script type="text/javascript" src="presentation/assets/vendor/angular/angular.min.js"></script>
+    <script type="text/javascript" src="presentation/assets/vendor/angular-animate/angular-animate.min.js"></script>
+    <script type="text/javascript" src="presentation/assets/vendor/angular-route/angular-route.min.js"></script>
+    <script type="text/javascript" src="presentation/assets/vendor/auth0-lock/build/lock.min.js"></script>
+    <script type="text/javascript" src="presentation/assets/vendor/angular-lock/dist/angular-lock.min.js"></script>
+    <script type="text/javascript" src="presentation/assets/vendor/angular-jwt/dist/angular-jwt.min.js"></script>
+    <script type="text/javascript" src="presentation/assets/vendor/angular-bootstrap/ui-bootstrap-tpls.min.js"></script>
+    <script type="text/javascript" src="presentation/assets/vendor/angular-loading-bar/build/loading-bar.min.js"></script>
+    <script type="text/javascript" src="presentation/assets/js/app.js"></script>
+</body>
 </html>
