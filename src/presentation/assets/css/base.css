@@ -2,6 +2,11 @@
  * Base CSS file the ban manager.
  */
 
+/* Simple ng-cloak for before angular is loaded */
+.ng-cloak {
+    display: none;
+}
+
 .tabarea {
     border-radius: 4px;
     border: 1px solid #ddd;

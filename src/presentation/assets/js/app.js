@@ -384,13 +384,15 @@ angular.module('banManager', ['ngAnimate', 'ngRoute', 'ui.bootstrap', 'angular-l
             lock.show();
         }
 
-        // Logging out just requires removing the user's
-        // id_token and profile
+        // Logging out just requires removing the user's id_token and profile
         function logout() {
             localStore.removeItem('id_token');
             localStore.removeItem('profile');
             authManager.unauthenticate();
-            userProfile = {};
+            angular.forEach(userProfile, function(v, key) {
+                delete userProfile[key];
+            });
+            $rootScope.$broadcast('loggedout');
         }
 
         // Set up the logic for when a user authenticates
@@ -415,8 +417,7 @@ angular.module('banManager', ['ngAnimate', 'ngRoute', 'ui.bootstrap', 'angular-l
                 });
             });
             $rootScope.$on('unauthenticated', function() {
-                // TODO
-                console.log('Unathenticated!');
+                logout();
             });
 
             // Use the authManager from angular-jwt to check for
@@ -635,7 +636,7 @@ angular.module('banManager', ['ngAnimate', 'ngRoute', 'ui.bootstrap', 'angular-l
             return {
                 'requestError': function(rejection) {
                     // TODO handle the error
-                    return rejection;
+                    return $q.reject(rejection);
                 },
                 'response': function(response) {
                     if (response.data && response.data.error) {
@@ -648,7 +649,7 @@ angular.module('banManager', ['ngAnimate', 'ngRoute', 'ui.bootstrap', 'angular-l
                 'responseError': function(rejection) {
                     // TODO handle errors
                     console.warn(rejection);
-                    return rejection;
+                    return $q.reject(rejection);
                 }
             };
         }]);
@@ -662,13 +663,24 @@ angular.module('banManager', ['ngAnimate', 'ngRoute', 'ui.bootstrap', 'angular-l
      * Controllers
      * ======================
      */
-    .controller('InitializingController', ['$scope', '$timeout', '$location', '$route', 'authService', 'localStore',
-        function($scope, $timeout, $location, $route, authService, localStore) {
+    .controller('InitializingController', ['$scope', '$timeout', '$location', '$route', 'authService', 'localStore', 'message',
+        function($scope, $timeout, $location, $route, authService, localStore, message) {
+        $scope.authService = authService;
         $scope.showLoading = true;
-        $scope.initialized = false;
+        $scope.hidden = false;
+        $scope.showLoginBtn = false;
 
         var redirectUrl = localStore.getJson('redirectUrl');
         var currentTime = new Date().getTime();
+
+        var showLoginTimeout;
+        var authCheckTimeout = $timeout(function() {
+            if ($scope.isAuthenticated) {
+                finishInitalize();
+            } else {
+                authService.login();
+            }
+        }, 100);
 
         // Save the current url if there isn't one, or the current one is older then twenty minutes
         if (!redirectUrl || redirectUrl.timestamp <= currentTime - (20 * 60 * 1000)) {
@@ -688,10 +700,11 @@ angular.module('banManager', ['ngAnimate', 'ngRoute', 'ui.bootstrap', 'angular-l
         }
 
         function finishInitalize() {
-            // Mark that we are ready to authenticate
-            $scope.initialized = true;
+            // Hide the overlay
+            $scope.hidden = true;
 
             // Find where to go
+            // This code modified from ngRoute
             var goTo;
             angular.forEach($route.routes, function(route) {
                 if (!goTo && routeMatches(redirectUrl.url, route)) {
@@ -708,17 +721,30 @@ angular.module('banManager', ['ngAnimate', 'ngRoute', 'ui.bootstrap', 'angular-l
             $location.url(goTo);
         }
 
-        var authCheckTimeout = $timeout(function() {
-            if ($scope.isAuthenticated) {
-                finishInitalize();
-            } else {
-                authService.login();
-            }
-        }, 100);
+        function displayLogin(msg, subMsg, timeout) {
+            $scope.hidden = false;
+            $scope.showLoading = false;
+            $scope.showLoginBtn = true;
+            $scope.msg = msg;
+            $scope.subMsg = subMsg;
+            showLoginTimeout = $timeout(authService.login, timeout);
+        }
 
+        $scope.showLogin = function() {
+            $timeout.cancel(showLoginTimeout);
+            authService.login();
+        };
+
+        // Listen for authentication events
         $scope.$on('authComplete', function() {
             $timeout.cancel(authCheckTimeout);
             finishInitalize();
+        });
+        $scope.$on('unauthenticated', function() {
+            displayLogin('Your session has expired', 'Please log in again', 30000);
+        });
+        $scope.$on('loggedout', function() {
+            displayLogin('Logout Successful', '', 20000);
         });
     }])
     .controller('UserController', ['$scope', '$routeParams', 'Player', 'request', 'formatUUID', 'message', function($scope, $routeParams, Player, request, formatUUID, message) {

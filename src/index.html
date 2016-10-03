@@ -10,13 +10,18 @@
 </head>
 <body>
     <div data-ng-app="banManager">
-        <div class="loading-overlay animate-fade" data-ng-controller="InitializingController" data-ng-hide="initialized">
+        <div class="loading-overlay animate-fade" data-ng-controller="InitializingController" data-ng-hide="hidden">
             <div class="loader">
                 <div data-ng-show="showLoading">
                     <h2>Loading</h2>
                     <div class="loader-spinner"></div>
                 </div>
-                <p data-ng-bind="errorMsg"></p>
+                <div>
+                    <h2 data-ng-bind="msg"></h2>
+                    <p data-ng-bind="subMsg"></p>
+                    <button type="button" class="btn btn-primary ng-cloak"
+                            data-ng-click="showLogin()" data-ng-show="showLoginBtn">Login</button>
+                </div>
             </div>
         </div>
         <div class="container">
