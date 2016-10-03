@@ -365,7 +365,7 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'angular-loading-bar', 
 
         // Set up the logic for when a user authenticates
         // This method is called from app.run.js
-        function registerAuthenticationListener() {
+        function initialize() {
             lock.on('authenticated', function(authResult) {
                 localStorage.setItem('id_token', authResult.idToken);
                 authManager.authenticate();
@@ -377,15 +377,32 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'angular-loading-bar', 
 
                     localStorage.setItem('profile', JSON.stringify(profile));
                     $rootScope.$broadcast('userProfileSet', profile);
+
+                    angular.forEach(profile, function(value, key) {
+                        userProfile[key] = value;
+                    });
                 });
             });
+            $rootScope.$on('unauthenticated', function() {
+                // TODO
+                console.log('Unathenticated!');
+            });
+
+            // Use the authManager from angular-jwt to check for
+            // the user's authentication state when the page is
+            // refreshed and maintain authentication
+            authManager.checkAuthOnRefresh();
+
+            // Listen for 401 unauthorized requests and redirect
+            // the user to the login page
+            authManager.redirectWhenUnauthenticated();
         }
 
         return {
             userProfile: userProfile,
             login: login,
             logout: logout,
-            registerAuthenticationListener: registerAuthenticationListener
+            initialize: initialize
         }
     }])
 
@@ -536,7 +553,8 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'angular-loading-bar', 
                 },
                 socialButtonStyle: 'small',
                 theme: {
-                    logo: '/presentation/assets/img/mc-block-icon.png'
+                    logo: '/presentation/assets/img/mc-block-icon.png',
+                    primaryColor: '#649325'
                 }
             }
         });
@@ -876,15 +894,6 @@ angular.module('banManager', ['ngRoute', 'ui.bootstrap', 'angular-loading-bar', 
         };
     }])
 
-    .run(['authService', 'authManager', function(authService, authManager) {
-        authService.registerAuthenticationListener();
-
-        // Use the authManager from angular-jwt to check for
-        // the user's authentication state when the page is
-        // refreshed and maintain authentication
-        authManager.checkAuthOnRefresh();
-
-        // Listen for 401 unauthorized requests and redirect
-        // the user to the login page
-        authManager.redirectWhenUnauthenticated();
+    .run(['authService', function(authService) {
+        authService.initialize();
     }]);

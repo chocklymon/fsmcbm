@@ -37,8 +37,8 @@
 // Set up for running the database update
 require_once('vendor/autoload.php');
 
-$settings = new Settings();
-$db = new Database($settings);
+$settings = new \Chocklymon\fsmcbm\Settings();
+$db = new \Chocklymon\fsmcbm\Database($settings);
 
 
 // Begin database update code //
