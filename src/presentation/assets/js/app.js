@@ -40,9 +40,15 @@ angular.module('banManager', ['ngAnimate', 'ngRoute', 'ui.bootstrap', 'angular-l
      * Perform a request to the ban-manager API.
      */
     .factory('request', ['$http', function($http) {
-        return function(endpoint, payload) {
-            return $http.post('ban-manager.php?action=' + endpoint, payload);
+        var baseUrl = 'ban-manager.php?action=';
+        function request(endpoint, payload) {
+            return $http.post(baseUrl + endpoint, payload);
+        }
+        request.get = function(endpoint) {
+            return $http.get(baseUrl + endpoint);
         };
+
+        return request;
     }])
 
     /**
@@ -276,6 +282,15 @@ angular.module('banManager', ['ngAnimate', 'ngRoute', 'ui.bootstrap', 'angular-l
             }
         };
     })
+
+    /**
+     * Goes to the user page.
+     */
+    .factory('goToUser', ['$location', 'formatUUID', function($location, formatUUID) {
+        return function(uuid) {
+            $location.path('/user/' + formatUUID(uuid));
+        };
+    }])
 
     /**
      * Contains messages and notifications.
@@ -663,8 +678,8 @@ angular.module('banManager', ['ngAnimate', 'ngRoute', 'ui.bootstrap', 'angular-l
      * Controllers
      * ======================
      */
-    .controller('InitializingController', ['$scope', '$timeout', '$location', '$route', 'authService', 'localStore', 'message',
-        function($scope, $timeout, $location, $route, authService, localStore, message) {
+    .controller('InitializingController', ['$scope', '$timeout', '$location', '$route', 'authService', 'localStore',
+        function($scope, $timeout, $location, $route, authService, localStore) {
         $scope.authService = authService;
         $scope.showLoading = true;
         $scope.hidden = false;
@@ -676,7 +691,7 @@ angular.module('banManager', ['ngAnimate', 'ngRoute', 'ui.bootstrap', 'angular-l
         var showLoginTimeout;
         var authCheckTimeout = $timeout(function() {
             if ($scope.isAuthenticated) {
-                finishInitalize();
+                finishInitialize();
             } else {
                 authService.login();
             }
@@ -699,7 +714,7 @@ angular.module('banManager', ['ngAnimate', 'ngRoute', 'ui.bootstrap', 'angular-l
             return route.regexp.test(on);
         }
 
-        function finishInitalize() {
+        function finishInitialize() {
             // Hide the overlay
             $scope.hidden = true;
 
@@ -738,7 +753,7 @@ angular.module('banManager', ['ngAnimate', 'ngRoute', 'ui.bootstrap', 'angular-l
         // Listen for authentication events
         $scope.$on('authComplete', function() {
             $timeout.cancel(authCheckTimeout);
-            finishInitalize();
+            finishInitialize();
         });
         $scope.$on('unauthenticated', function() {
             displayLogin('Your session has expired', 'Please log in again', 30000);
@@ -777,26 +792,19 @@ angular.module('banManager', ['ngAnimate', 'ngRoute', 'ui.bootstrap', 'angular-l
 
         // If we have a UUID in the router parameters, load up the user
         if ($routeParams.uuid) {
-            // See if this user is cached
             Player.get($routeParams.uuid).then(setPlayer);
         }
     }])
-    .controller('UserListController', ['$scope', '$location', '$http', 'formatUUID', function($scope, $location, $http, formatUUID) {
+    .controller('UserListController', ['$scope', '$location', 'request', 'goToUser', function($scope, $location, request, goToUser) {
+        $scope.lookupUser = goToUser;
+
         var endpoint = $location.path() === '/bans' ? 'get_bans' : 'get_watchlist';
-        $scope.lookupUser = function(uuid) {
-            $location.path('/user/' + formatUUID(uuid));
-        };
-        // TODO use request
-        $http.get('ban-manager.php?action=' + endpoint)
-            .success(function(data) {
-                $scope.users = data;
-            });
+        request.get(endpoint).then(function(response) {
+            $scope.users = response.data;
+        });
     }])
-    .controller('SearchController', ['$scope', '$routeParams', '$location', 'request', 'formatUUID', function($scope, $routeParams, $location, request, formatUUID) {
-        // TODO remove this duplication of lookup user from the userlist
-        $scope.lookupUser = function(uuid) {
-            $location.path('/user/' + formatUUID(uuid));
-        };
+    .controller('SearchController', ['$scope', '$routeParams', 'request', 'goToUser', function($scope, $routeParams, request, goToUser) {
+        $scope.lookupUser = goToUser;
 
         if ($routeParams.term) {
             request('search', {search: $routeParams.term})
@@ -815,8 +823,8 @@ angular.module('banManager', ['ngAnimate', 'ngRoute', 'ui.bootstrap', 'angular-l
         }
     }])
     .controller('NavigationController',
-        ['$scope', '$location', 'request', 'Player', 'CurrentSearch', '$uibModal', 'formatUUID', 'authService',
-        function($scope, $location, request, Player, CurrentSearch, $uibModal, formatUUID, authService)
+        ['$scope', '$location', 'Player', 'CurrentSearch', '$uibModal', 'authService', 'goToUser',
+        function($scope, $location, Player, CurrentSearch, $uibModal, authService, goToUser)
     {
         $scope.authService = authService;
 
@@ -879,7 +887,7 @@ angular.module('banManager', ['ngAnimate', 'ngRoute', 'ui.bootstrap', 'angular-l
             if (typeof uuid === 'object' && uuid.uuid) {
                 uuid = uuid.uuid;
             }
-            $location.path('/user/' + formatUUID(uuid));
+            goToUser(uuid);
         };
 
         // Add user and add incident buttons
@@ -911,7 +919,6 @@ angular.module('banManager', ['ngAnimate', 'ngRoute', 'ui.bootstrap', 'angular-l
         });
     }])
     .controller('AddUserController', ['$scope', 'Player', '$uibModalInstance', 'message', 'Confirm', function($scope, Player, $uibModalInstance, message, Confirm){
-        // TODO This and the user controller will be very similar, find a way to combine them?
         var addUser = function() {
             $scope.submitting = true;
             Player.add($scope.player.info).then(
@@ -977,7 +984,6 @@ angular.module('banManager', ['ngAnimate', 'ngRoute', 'ui.bootstrap', 'angular-l
         };
 
         $scope.save = function() {
-
             // Validate that the incident is correctly set up
             if ($scope.incidentForm.$invalid) {
                 if (!$scope.incidentForm.$dirty) {
