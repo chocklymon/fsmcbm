@@ -6,11 +6,15 @@
   "directories": {
     "test": "tests"
   },
-  "dependencies": {
-    "bower": "^1.3.12"
-  },
+  "dependencies": {},
   "devDependencies": {
-    "eslint": "^0.15.1"
+    "bower": "^1.7.9",
+    "grunt": "^1.0.1",
+    "grunt-angular-templates": "^1.1.0",
+    "grunt-contrib-concat": "^1.0.1",
+    "grunt-contrib-uglify": "^2.0.0",
+    "grunt-contrib-watch": "^1.0.0",
+    "grunt-eslint": "^19.0.0"
   },
   "scripts": {},
   "repository": {

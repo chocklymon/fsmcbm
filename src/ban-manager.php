@@ -55,6 +55,20 @@ try {
         Log::debug('ban-manager: Invalid endpoint', $endpoint);
         exit();
     }
+    if ($endpoint === 'get_config.js') {
+        // Return the javascript configuration
+        $config = array(
+            'authMode' => $settings->getAuthenticationMode(),
+        );
+        if ($config['authMode'] == 'auth0') {
+            $config['clientId'] = $settings->get('auth0_client_id');
+            $config['domain'] = $settings->get('auth0_domain');
+        }
+
+        header('Content-Type: application/javascript');
+        echo '(function() {window.bmConfig = ' . json_encode($config) . ';})();';
+        exit();
+    }
 
     $db = new Chocklymon\fsmcbm\Database($settings);
     $auth = new Chocklymon\fsmcbm\Authentication($db, $settings, $input);
@@ -81,18 +95,6 @@ try {
         $output->append($authenticated, 'authenticated');
         $output->append($auth->shouldLoadWordpress(), 'use-wordpress');
         $output->reply();
-    } else if ($endpoint === 'get_config.js') {
-        // Return the javascript configuration
-        $config = array(
-            'authMode' => $settings->getAuthenticationMode(),
-        );
-        if ($config['authMode'] == 'auth0') {
-            $config['clientId'] = $settings->get('auth0_client_id');
-            $config['domain'] = $settings->get('auth0_domain');
-        }
-
-        header('Content-Type: application/javascript');
-        echo '(function() {window.bmConfig = ' . json_encode($config) . ';})();';
     } else if ($authenticated === false) {
         // Authentication failed
         Log::debug('ban-manager: Authentication failed');

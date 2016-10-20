@@ -3,6 +3,7 @@ bin/
 node_modules/
 src/vendor/
 src/presentation/assets/vendor/
+src/presentation/dist/
 
 # Configuration files
 bm-config.php
