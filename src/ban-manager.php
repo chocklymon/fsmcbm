@@ -81,7 +81,19 @@ try {
         $output->append($authenticated, 'authenticated');
         $output->append($auth->shouldLoadWordpress(), 'use-wordpress');
         $output->reply();
-    } elseif ($authenticated === false) {
+    } else if ($endpoint === 'get_config.js') {
+        // Return the javascript configuration
+        $config = array(
+            'authMode' => $settings->getAuthenticationMode(),
+        );
+        if ($config['authMode'] == 'auth0') {
+            $config['clientId'] = $settings->get('auth0_client_id');
+            $config['domain'] = $settings->get('auth0_domain');
+        }
+
+        header('Content-Type: application/javascript');
+        echo '(function() {window.bmConfig = ' . json_encode($config) . ';})();';
+    } else if ($authenticated === false) {
         // Authentication failed
         Log::debug('ban-manager: Authentication failed');
         header('HTTP/1.1 401 UNAUTHORIZED');

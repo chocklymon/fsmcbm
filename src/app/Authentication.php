@@ -142,9 +142,7 @@ class Authentication
         $authorizationHeader = $requestHeaders['Authorization'];
 
         if ($authorizationHeader == null) {
-            header('HTTP/1.0 401 Unauthorized');
-            echo "No authorization header sent";
-            exit();
+            return null;
         }
 
         // validate the token
@@ -160,9 +158,7 @@ class Authentication
 
             $decoded_token = $verifier->verifyAndDecode($token);
         } catch(\Auth0\SDK\Exception\CoreException $e) {
-            header('HTTP/1.0 401 Unauthorized');
-            echo "Invalid token";
-            exit();
+            return null;
         }
 
         $id = $this->db->sanitize($decoded_token->sub);

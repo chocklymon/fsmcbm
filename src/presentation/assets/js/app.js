@@ -449,6 +449,25 @@ angular.module('banManager', ['ngAnimate', 'ngRoute', 'ui.bootstrap', 'angular-l
         }
     }])
 
+    .provider('bmConfig', function() {
+        var config = window.bmConfig || {};
+
+        this.get = getConfig;
+        this.set = function(key, value) {
+            config[key] = value;
+        };
+
+        this.$get = [function() {
+            return {
+                get: getConfig
+            }
+        }];
+
+        function getConfig(key) {
+            return config[key];
+        }
+    })
+
 
     /* ======================
      * Filters
@@ -583,13 +602,13 @@ angular.module('banManager', ['ngAnimate', 'ngRoute', 'ui.bootstrap', 'angular-l
      * Configuration
      * ======================
      */
-    .config(['$routeProvider', '$httpProvider', 'uibDatepickerConfig', 'lockProvider', 'jwtOptionsProvider',
-        function($routeProvider, $httpProvider, uibDatepickerConfig, lockProvider, jwtOptionsProvider) {
+    .config(['$routeProvider', '$httpProvider', 'uibDatepickerConfig', 'lockProvider', 'jwtOptionsProvider', 'bmConfigProvider',
+        function($routeProvider, $httpProvider, uibDatepickerConfig, lockProvider, jwtOptionsProvider, bmConfigProvider) {
         // Auth0 Configuration
         // Set the client ID and domain
         lockProvider.init({
-            clientID: AUTH_INFO.clientId,
-            domain: AUTH_INFO.domain,
+            clientID: bmConfigProvider.get('clientId'),
+            domain: bmConfigProvider.get('domain'),
             options: {
                 additionalSignUpFields: [{
                     name: 'minecraft_username',
