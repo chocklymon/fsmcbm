@@ -167,25 +167,13 @@ class Authentication
         );
 
         if ($result->num_rows == 0) {
-            $result->free();
-
             // Get the username from Auth0
             $auth0Api = new \Auth0\SDK\API\Authentication($this->settings->get('auth0_domain'), $client_id, $secret);
             $profile = $auth0Api->tokeninfo($token);
-            $username = $this->db->sanitize($profile['user_metadata']['minecraft_username']);
 
-            $result = $this->db->query(
-                "SELECT user_id FROM user_aliases WHERE username = '{$username}'"
-            );
+            $user_id = $this->getUserIdFromName($profile['user_metadata']['minecraft_username']);
 
-            if ($result->num_rows !== 1) {
-                // TODO - How to handle this?
-                Log::error('Multiple or no username results found!', $username);
-                $user_id = null;
-            } else {
-                $row = $result->fetch_assoc();
-                $user_id = $row['user_id'];
-
+            if ($user_id !== false) {
                 $this->db->query(
                     "INSERT INTO user_authentication (user_id, external_id) VALUES ({$user_id}, '{$id}')"
                 );
@@ -216,12 +204,17 @@ class Authentication
 
         if (is_user_logged_in()) {// Wordpress function
             $wp_current_user = wp_get_current_user();// Wordpress function
-            $moderator_name = $wp_current_user->user_login;
 
-            $moderator_info = $this->getModeratorInfo($moderator_name);
-            if ($moderator_info !== false) {
-                // User is logged into wordpress, and is a moderator
-                return $moderator_info['user_id'];
+            $needs_level = 'level_' . $this->settings->get('wp_minimum_user_level');
+            if ($wp_current_user->allcaps[$needs_level]) {
+                $moderator_name = $wp_current_user->user_login;
+
+                $user_id = $this->getUserIdFromName($moderator_name);
+
+                if ($user_id !== false) {
+                    // User is logged into wordpress, and is a moderator
+                    return $user_id;
+                }
             }
         }
         return null;
@@ -258,29 +251,27 @@ class Authentication
      * @return array|bool The moderator user_id and username in an array, or FALSE if the moderator name or doesn't
      * exist in the database.
      */
-    public function getModeratorInfo($moderator_name)
+    public function getUserIdFromName($moderator_name)
     {
         if (empty($moderator_name)) {
             return false;
         }
 
-        // Sanitize the provided user name
-        $moderator_name = $this->db->sanitize($moderator_name);
+        $username = $this->db->sanitize($moderator_name);
+        $result = $this->db->query(
+            "SELECT user_id FROM user_aliases WHERE username = '{$username}'"
+        );
 
-        try {
-            // Request the user id from the database
-            $row = $this->db->querySingleRow(
-                "SELECT `moderators`.`user_id`, `moderators`.`username`
-                 FROM `moderators`
-                 WHERE `moderators`.`username` = '$moderator_name'",
-                'Moderator not found.'
-            );
-
-            return $row;
-        } catch (DatabaseException $ex) {
-            Log::debug('Problem querying for moderator', $ex);
-            return false;
+        if ($result->num_rows !== 1) {
+            // TODO - How to handle this?
+            Log::error('Multiple or no username results found!', $username);
+            $user_id = false;
+        } else {
+            $row = $result->fetch_assoc();
+            $user_id = $row['user_id'];
         }
+        $result->free();
+        return $user_id;
     }
 
     /**

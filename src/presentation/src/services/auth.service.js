@@ -99,10 +99,6 @@
     function WPAuthService($rootScope, request) {
         $rootScope.isAuthenticated = false;
 
-        request.get('authenticated').then(function() {
-            // console.log(arguments);
-        });
-
         return {
             userProfile: {},
             login: login,
@@ -110,13 +106,19 @@
             initialize: initialize
         };
 
-        function login() {}
+        function login() {
+            $rootScope.$broadcast('authComplete');
+        }
         function logout() {
             $rootScope.$broadcast('loggedout');
         }
 
         function initialize() {
-
+            request.get('authenticated').then(function(response) {
+                if (response.data && response.data.authenticated) {
+                    login();
+                }
+            });
         }
     }
 })();

@@ -56,6 +56,7 @@ class Settings
             'log_directory' => '.',
             'log_level' => 4,
             'worlds' => array(array('value' => '', 'label' => '')),
+            'wp_minimum_user_level' => 8,
         );
         $this->settings = array_merge($defaults, $settings);
     }

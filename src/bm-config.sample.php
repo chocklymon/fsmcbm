@@ -39,6 +39,14 @@ $settings = array(
     'wp_load_file' => 'wp-load.php',
 
     /**
+     * Set the lowest user level that a wordpress user must have in order to be able to use the ban manager.
+     * See: https://codex.wordpress.org/Roles_and_Capabilities#User_Levels
+     * Note: This is a temporary solution until role based access is implemented.
+     * Defaults to 8.
+     */
+    'wp_minimum_user_level' => 8,
+
+    /**
      * Set the auth0 authentication information.
      */
     'auth0_client_secret' => 'secret',

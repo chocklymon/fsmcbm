@@ -218,7 +218,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
     {
         $db = new MockDatabase(array(array('user_id' => self::USER_ID, 'username' => self::USERNAME)));;
         $auth = new Authentication($db, self::$settings, $this->input);
-        $info = $auth->getModeratorInfo(self::USERNAME);
+        $info = $auth->getUserIdFromName(self::USERNAME);
 
         $expected = array('user_id'=>28, 'username'=>self::USERNAME);
         $this->assertEquals($expected, $info);
@@ -226,7 +226,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
 
     public function testGetModeratorInfo_false()
     {
-        $info = $this->auth->getModeratorInfo("");
+        $info = $this->auth->getUserIdFromName("");
         $this->assertFalse($info);
     }
 
@@ -234,7 +234,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
     {
         $db = new MockDatabase(array(false));;
         $auth = new Authentication($db, self::$settings, $this->input);
-        $info = $auth->getModeratorInfo(self::USERNAME);
+        $info = $auth->getUserIdFromName(self::USERNAME);
         $this->assertFalse($info);
     }
 
