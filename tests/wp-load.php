@@ -41,3 +41,15 @@ function wp_get_current_user()
     global $wp_current_user;
     return $wp_current_user;
 }
+
+function wp_login_url()
+{
+    global $wp_login_url;
+    return $wp_login_url;
+}
+
+function wp_logout_url()
+{
+    global $wp_logout_url;
+    return $wp_logout_url;
+}

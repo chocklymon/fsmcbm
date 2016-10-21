@@ -55,12 +55,31 @@
             localStore.setJson('redirectUrl', redirectUrl);
         }
 
-        function routeMatches(on, route) {
-            if (!route.regexp) {
-                return false;
-            }
+        $scope.showLogin = function() {
+            $timeout.cancel(showLoginTimeout);
+            authService.login();
+        };
 
-            return route.regexp.test(on);
+        // Listen for authentication events
+        $scope.$on('authComplete', function() {
+            $timeout.cancel(authCheckTimeout);
+            finishInitialize();
+        });
+        $scope.$on('unauthenticated', function() {
+            displayLogin('Your session has expired', 'Please log in again', 30000);
+        });
+        $scope.$on('loggedout', function() {
+            displayLogin('Logout Successful', '', 20000);
+        });
+
+
+        function displayLogin(msg, subMsg, timeout) {
+            $scope.hidden = false;
+            $scope.showLoading = false;
+            $scope.showLoginBtn = true;
+            $scope.msg = msg;
+            $scope.subMsg = subMsg;
+            showLoginTimeout = $timeout(authService.login, timeout);
         }
 
         function finishInitialize() {
@@ -85,30 +104,12 @@
             $location.url(goTo);
         }
 
-        function displayLogin(msg, subMsg, timeout) {
-            $scope.hidden = false;
-            $scope.showLoading = false;
-            $scope.showLoginBtn = true;
-            $scope.msg = msg;
-            $scope.subMsg = subMsg;
-            showLoginTimeout = $timeout(authService.login, timeout);
+        function routeMatches(on, route) {
+            if (!route.regexp) {
+                return false;
+            }
+
+            return route.regexp.test(on);
         }
-
-        $scope.showLogin = function() {
-            $timeout.cancel(showLoginTimeout);
-            authService.login();
-        };
-
-        // Listen for authentication events
-        $scope.$on('authComplete', function() {
-            $timeout.cancel(authCheckTimeout);
-            finishInitialize();
-        });
-        $scope.$on('unauthenticated', function() {
-            displayLogin('Your session has expired', 'Please log in again', 30000);
-        });
-        $scope.$on('loggedout', function() {
-            displayLogin('Logout Successful', '', 20000);
-        });
     }
 })();

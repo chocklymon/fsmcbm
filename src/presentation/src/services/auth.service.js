@@ -29,16 +29,10 @@
 
     AuthServiceProvider.$inject = ['bmConfigProvider'];
     function AuthServiceProvider(bmConfigProvider) {
-        var $get = ['$rootScope'];
-        if (bmConfigProvider.useAuth0()) {
-            $get.push('$log', 'localStore', 'lock', 'authManager', Auth0Service);
-        } else {
-            $get.push('request', WPAuthService);
-        }
-
-        this.$get = $get;
+        this.$get = (bmConfigProvider.useAuth0()) ? Auth0Service : WPAuthService;
     }
 
+    Auth0Service.$inject = ['$rootScope', '$log', 'localStore', 'lock', 'authManager'];
     function Auth0Service($rootScope, $log, localStore, lock, authManager) {
         var userProfile = localStore.getJson('profile') || {};
 
@@ -46,7 +40,8 @@
             userProfile: userProfile,
             login: login,
             logout: logout,
-            initialize: initialize
+            initialize: initialize,
+            showLogout: true
         };
 
         function login() {
@@ -96,27 +91,36 @@
         }
     }
 
-    function WPAuthService($rootScope, request) {
+    WPAuthService.$inject = ['$rootScope', '$window', '$location', 'bmConfig', 'request'];
+    function WPAuthService($rootScope, $window, $location, bmConfig, request) {
         $rootScope.isAuthenticated = false;
 
         return {
             userProfile: {},
             login: login,
             logout: logout,
-            initialize: initialize
+            initialize: initialize,
+            showLogout: false
         };
 
         function login() {
-            $rootScope.$broadcast('authComplete');
+            var redirect = '?redirect_to=' + encodeURIComponent($location.absUrl());
+            $window.location.href = bmConfig.get('loginURL') + redirect;
         }
         function logout() {
-            $rootScope.$broadcast('loggedout');
+            // The wordpress logout URL may contain an html encoded ampersand, replace this with a normal ampersand.
+            var logoutUrl = bmConfig.get('logoutURL');
+            logoutUrl = logoutUrl.replace('&amp;', '&');
+            $window.location.href = logoutUrl;
         }
 
         function initialize() {
             request.get('authenticated').then(function(response) {
                 if (response.data && response.data.authenticated) {
-                    login();
+                    $rootScope.isAuthenticated = true;
+                    $rootScope.$broadcast('authComplete');
+                } else {
+                    $rootScope.$broadcast('unauthenticated');
                 }
             });
         }

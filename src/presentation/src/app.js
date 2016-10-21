@@ -34,18 +34,21 @@
         this.set = function(key, value) {
             config[key] = value;
         };
-        this.useAuth0 = function() {
-            return getConfig('authMode') == 'auth0';
-        };
+        this.useAuth0 = useAuth0;
 
         this.$get = [function() {
             return {
-                get: getConfig
+                get: getConfig,
+                useAuth0: useAuth0
             }
         }];
 
         function getConfig(key) {
             return config[key];
+        }
+
+        function useAuth0() {
+            return getConfig('authMode') == 'auth0';
         }
     }();
 
@@ -78,7 +81,9 @@
     if (banManagerConfiguration.useAuth0()) {
         ModuleConfig.$inject.push('lockProvider', 'jwtOptionsProvider');
     }
-    function ModuleConfig($routeProvider, $httpProvider, uibDatepickerConfig, bmConfigProvider, lockProvider, jwtOptionsProvider) {
+    function ModuleConfig(
+        $routeProvider, $httpProvider, uibDatepickerConfig, bmConfigProvider, lockProvider, jwtOptionsProvider
+    ) {
         if (bmConfigProvider.useAuth0()) {
             // Auth0 Configuration
             // Set the client ID and domain
@@ -143,27 +148,7 @@
             });
 
         // Set up the http request handler
-        $httpProvider.interceptors.push(['$q', '$log', function($q, $log) {
-            return {
-                'requestError': function(rejection) {
-                    // TODO handle the error
-                    return $q.reject(rejection);
-                },
-                'response': function(response) {
-                    if (response.data && response.data.error) {
-                        // TODO handle errors
-                        $log.warn(response.data);
-                        return $q.reject(response);
-                    }
-                    return response;
-                },
-                'responseError': function(rejection) {
-                    // TODO handle errors
-                    $log.warn(rejection);
-                    return $q.reject(rejection);
-                }
-            };
-        }]);
+        $httpProvider.interceptors.push('bmInterceptor');
 
         // Set the defaults for the date picker component
         uibDatepickerConfig.showWeeks = false;
