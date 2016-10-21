@@ -45,6 +45,7 @@ class MockSettings extends Settings
             'debug' => false,
             'wp_load_file' => 'tests/wp-load.php',
             'log_level' => 8,// OFF
+            'wp_minimum_user_level' => 8,
         );
 
         // Allow the settings to be overriden by a test.ini file

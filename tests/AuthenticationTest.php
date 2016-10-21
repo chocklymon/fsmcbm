@@ -154,7 +154,10 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
         // Set up so the user will be logged in correctly
         global $wp_user_logged_in, $wp_current_user;
         $wp_user_logged_in = true;
-        $wp_current_user = (object) array('user_login'=>self::USERNAME);
+        $wp_current_user = (object) array(
+            'user_login' => self::USERNAME,
+            'allcaps' => ['level_8' => true],
+        );
         self::$settings->setSetting('auth_mode', 'wordpress');
         $db = $this->getUserMockDB();
         $auth = new Authentication($db, self::$settings, $this->input);
@@ -182,7 +185,10 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
         // Set up so the user will be logged in correctly
         global $wp_user_logged_in, $wp_current_user;
         $wp_user_logged_in = true;
-        $wp_current_user = (object) array('user_login'=>self::USERNAME);
+        $wp_current_user = (object) array(
+            'user_login' => self::USERNAME,
+            'allcaps' => ['level_8' => false],
+        );
         self::$settings->setSetting('auth_mode', 'wordpress');
         $mock_db = new MockDatabase(array(false));
 
@@ -211,31 +217,34 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
         $auth->cleanUpNonce(1);
         // TODO assert
         $this->assertEquals(1, $db->getQueryCount());
-        $this->assertEquals(0, strpos($db->getLastQuery(), 'DELETE FROM `auth_nonce'));
+        $this->assertEquals(0, strpos($db->getLastQuery(), 'DELETE FROM `auth_nonce`'));
     }
 
-    public function testGetModeratorInfo()
+    public function testGetUserIdFromName()
     {
-        $db = new MockDatabase(array(array('user_id' => self::USER_ID, 'username' => self::USERNAME)));;
+        $db = new MockDatabase([
+            new FakeQueryResult([['user_id' => self::USER_ID, 'username' => self::USERNAME]]),
+        ]);
         $auth = new Authentication($db, self::$settings, $this->input);
-        $info = $auth->getUserIdFromName(self::USERNAME);
+        $user_id = $auth->getUserIdFromName(self::USERNAME);
 
-        $expected = array('user_id'=>28, 'username'=>self::USERNAME);
-        $this->assertEquals($expected, $info);
+        $this->assertEquals(self::USER_ID, $user_id);
     }
 
-    public function testGetModeratorInfo_false()
+    public function testUserIdFromName_emptyName()
     {
-        $info = $this->auth->getUserIdFromName("");
-        $this->assertFalse($info);
+        $user_id = $this->auth->getUserIdFromName("");
+        $this->assertFalse($user_id);
     }
 
-    public function testGetModeratorInfo_nonAdmin()
+    public function testUserIdFromName_noResult()
     {
-        $db = new MockDatabase(array(false));;
+        $db = new MockDatabase([
+            new FakeQueryResult(),
+        ]);
         $auth = new Authentication($db, self::$settings, $this->input);
-        $info = $auth->getUserIdFromName(self::USERNAME);
-        $this->assertFalse($info);
+        $user_id = $auth->getUserIdFromName(self::USERNAME);
+        $this->assertFalse($user_id);
     }
 
     public function testShouldLoadWordpress()
@@ -287,7 +296,9 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
             $mock_db_array[] = $user;
             return new MockDatabase($mock_db_array);
         } else {
-            return new MockDatabase(array($user));
+            return new MockDatabase([
+                new FakeQueryResult([$user]),
+            ]);
         }
     }
 
