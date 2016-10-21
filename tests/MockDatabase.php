@@ -197,32 +197,32 @@ class MockDatabase extends Database
      */
     public function sanitize($input, $integer = false)
     {
-       if (isset($input) && $input !== null) {
-           if ($integer) {
-               // Sanitize as a number
-               $num = preg_replace('/[^0-9\-]/', '', $input);
-               if (strlen($num) == 0) {
-                   // The input string contained no numbers, return 0
-                   return 0;
-               } else {
-                   return (int) $num;
-               }
-           } else {
-               // Remove magic quote escaping if needed
-               if (get_magic_quotes_gpc()) {
-                   $input = stripslashes($input);
-               }
+        if (isset($input) && $input !== null) {
+            if ($integer) {
+                // Sanitize as a number
+                $num = preg_replace('/[^0-9\-]/', '', $input);
+                if (strlen($num) == 0) {
+                    // The input string contained no numbers, return 0
+                    return 0;
+                } else {
+                    return (int) $num;
+                }
+            } else {
+                // Remove magic quote escaping if needed
+                if (get_magic_quotes_gpc()) {
+                    $input = stripslashes($input);
+                }
 
-               // Sanitize as a string
-               // Use add slashes since it escapes many of the characters that
-               // mysqli_real_escape_string does.
-               return addslashes($input);
-           }
-       } else if ($integer) {
-           return 0;
-       } else {
-           return null;
-       }
+                // Sanitize as a string
+                // Use add slashes since it escapes many of the characters that
+                // mysqli_real_escape_string does.
+                return addslashes($input);
+            }
+        } elseif ($integer) {
+            return 0;
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -234,5 +234,4 @@ class MockDatabase extends Database
     {
         return $this->query($table);
     }
-
 }

@@ -45,7 +45,7 @@ class Settings
             require_once(__DIR__ . '/../bm-config.php');
 
         // Check for the file possibly being at the root of the project
-        } else if (file_exists(__DIR__ . '/../../bm-config.php')) {
+        } elseif (file_exists(__DIR__ . '/../../bm-config.php')) {
             require_once(__DIR__ . '/../../bm-config.php');
         } else {
             $settings = array();
@@ -136,7 +136,7 @@ class Settings
             $keys = $this->settings['auth_secret_keys'];
             if (!is_array($keys)) {
                 return $keys;
-            } else if (isset($keys[$accessor_name])) {
+            } elseif (isset($keys[$accessor_name])) {
                 return $keys[$accessor_name];
             }
         }

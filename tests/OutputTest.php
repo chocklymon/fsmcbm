@@ -64,7 +64,7 @@ class OutputTest extends PHPUnit_Framework_TestCase
      * See: http://stackoverflow.com/questions/9745080/test-php-headers-with-phpunit
      * @runInSeparateProcess
      */
-    public function testReply_headers()
+    public function testReplyHeaders()
     {
         ob_start();
         $this->output->reply();
@@ -89,7 +89,7 @@ class OutputTest extends PHPUnit_Framework_TestCase
         $this->output->reply();
     }
 
-    public function testAppend_subkey()
+    public function testAppendSubkey()
     {
         $expected = '{"hello":"world","cheese":["cheddar","colby"]}';
         $this->expectOutputString($expected);
@@ -100,7 +100,7 @@ class OutputTest extends PHPUnit_Framework_TestCase
         $this->output->reply();
     }
 
-    public function testAppend_subarray()
+    public function testAppendSubarray()
     {
         $expected = '{"cheese":["cheddar","colby"]}';
         $this->expectOutputString($expected);
@@ -135,7 +135,7 @@ class OutputTest extends PHPUnit_Framework_TestCase
         $this->output->reply();
     }
 
-    public function testError_debugOn()
+    public function testErrorDebugOn()
     {
         self::$settings->setDebugMode(true);
         $output = new Output(self::$settings);
@@ -159,7 +159,7 @@ class OutputTest extends PHPUnit_Framework_TestCase
         $this->output->exception($ex);
     }
 
-    public function testException_debugOn()
+    public function testExceptionDebugOn()
     {
         self::$settings->setDebugMode(true);
         $output = new Output(self::$settings);
@@ -192,7 +192,7 @@ class OutputTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($expected, $actual);
     }
 
-    public function testPrepareHTML_truncate()
+    public function testPrepareHTMLTruncate()
     {
         $string   = 'I <i>like</i> cheese & pickles. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis in nisl sem. Donec quis imperdiet nibh.';
         $expected = 'I &lt;i&gt;like&lt;/i&gt; cheese &amp; pickles. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis in nisl sem. Donec quis…';
@@ -202,7 +202,7 @@ class OutputTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($expected, $actual);
     }
 
-    public function testGetTruncated_invalidMax()
+    public function testGetTruncatedInvalidMax()
     {
         $string   = 'Micheal is Green';
         $expected = 'Mic…';
@@ -211,5 +211,4 @@ class OutputTest extends PHPUnit_Framework_TestCase
 
         $this->assertEquals($expected, $actual);
     }
-
 }

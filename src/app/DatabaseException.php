@@ -54,11 +54,11 @@ class DatabaseException extends \RuntimeException
      * @param Exception $previous The previous exception used for the exception chaining.
      */
     public function __construct(
-            $message = "",
-            $errorno = 0,
-            $error_msg = "",
-            $query = "",
-            Exception $previous = null
+        $message = "",
+        $errorno = 0,
+        $error_msg = "",
+        $query = "",
+        Exception $previous = null
     ) {
         parent::__construct($message, $errorno, $previous);
         $this->error_msg = $error_msg;
@@ -85,5 +85,4 @@ class DatabaseException extends \RuntimeException
     {
         return $this->error_msg;
     }
-
 }

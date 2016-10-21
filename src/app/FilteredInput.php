@@ -108,7 +108,7 @@ class FilteredInput implements \Iterator
         $value = $this->__get($name);
         if ($value == 'true' || $value == 'on') {
             return 1;
-        } else if ($value == 'false' || $value == 'off'){
+        } elseif ($value == 'false' || $value == 'off') {
             return 0;
         } else {
             return $value ? 1 : 0;
@@ -144,12 +144,15 @@ class FilteredInput implements \Iterator
      */
     public function loadPost()
     {
-        $starts_with = function($haystack, $needle) {
+        $starts_with = function ($haystack, $needle) {
             return $needle === "" || strpos($haystack, $needle) === 0;
         };
         
         // See if the post data is actually a JSON encoded payload
-        if (empty($_POST) && isset($_SERVER['CONTENT_TYPE']) && $starts_with($_SERVER['CONTENT_TYPE'], 'application/json')) {
+        if (empty($_POST)
+            && isset($_SERVER['CONTENT_TYPE'])
+            && $starts_with($_SERVER['CONTENT_TYPE'], 'application/json')
+        ) {
             $json_variables = json_decode(file_get_contents('php://input'), true);
             $this->variables = (array) $json_variables + $this->variables;
         } else {

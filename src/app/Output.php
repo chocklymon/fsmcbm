@@ -96,7 +96,7 @@ class Output
     {
         if ($key == null) {
             $this->response[] = $message;
-        } else if($subarray) {
+        } elseif ($subarray) {
             $this->response[$key][] = $message;
         } else {
             $this->response[$key] = $message;
@@ -177,5 +177,4 @@ class Output
         }
         $this->error($exception->getMessage(), $extra, true);
     }
-
 }

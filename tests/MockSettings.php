@@ -76,5 +76,4 @@ class MockSettings extends Settings
     {
         $this->settings[$setting_name] = $value;
     }
-
 }

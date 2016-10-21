@@ -133,7 +133,7 @@ EOF;
         $this->assertEquals($date, $this->db->getDate($timestamp));
     }
 
-    public function testGetDate_currentTime()
+    public function testGetDateCurrentTime()
     {
         $date = date('Y-m-d H:i:s');
         $this->assertEquals($date, $this->db->getDate());
@@ -166,49 +166,53 @@ EOF;
 
     public function testQuerySingleRow()
     {
-        $row = $this->db->querySingleRow("SELECT * FROM `" . self::TABLE_NAME . "` WHERE id=" . self::$default_row['id']);
+        $row = $this->db->querySingleRow(
+            "SELECT * FROM `" . self::TABLE_NAME . "` WHERE id=" . self::$default_row['id']
+        );
         $this->assertEquals(self::$default_row, $row);
     }
 
     /**
      * @expectedException \Chocklymon\fsmcbm\DatabaseException
      */
-    public function testQuerySingleRow_error()
+    public function testQuerySingleRowError()
     {
-        $row = $this->db->querySingleRow("SELECT * FROM `" . self::TABLE_NAME . "` WHERE id=100000 AND msg='non-existant-msg'");
+        $row = $this->db->querySingleRow(
+            "SELECT * FROM `" . self::TABLE_NAME . "` WHERE id=100000 AND msg='non-existant-msg'"
+        );
         $this->assertEquals(self::$default_row, $row);
     }
 
     /**
      * @expectedException \Chocklymon\fsmcbm\DatabaseException
      */
-    public function testQuery_error()
+    public function testQueryError()
     {
         $sql = "SELECT * FROM `non_existant_table` WHERE `bad_column` = 5";
         $this->db->query($sql);
     }
 
-    public function testSanitize_int()
+    public function testSanitizeInt()
     {
         $test_int = "48hi";
         $sanitized = $this->db->sanitize($test_int, true);
         $this->assertEquals(48, $sanitized);
     }
 
-    public function testSanitize_badInt()
+    public function testSanitizeBadInt()
     {
         $test_int = "hi";
         $sanitized = $this->db->sanitize($test_int, true);
         $this->assertEquals(0, $sanitized);
     }
 
-    public function testSanitize_empty()
+    public function testSanitizeEmpty()
     {
         $sanitized = $this->db->sanitize("");
         $this->assertNull($sanitized);
     }
 
-    public function testSanitize_emptyInt()
+    public function testSanitizeEmptyInt()
     {
         $sanitized = $this->db->sanitize(null, true);
         $this->assertEquals(0, $sanitized);

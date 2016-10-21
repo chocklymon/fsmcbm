@@ -45,5 +45,4 @@ class DatabaseExceptionTest extends PHPUnit_Framework_TestCase
         $exception = new DatabaseException("test", 0, $expected);
         $this->assertEquals($expected, $exception->getErrorMessage());
     }
-
 }

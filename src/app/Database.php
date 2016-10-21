@@ -244,30 +244,30 @@ class Database
      */
     public function sanitize($input, $integer = false)
     {
-       if (!empty($input)) {
-           if ($integer) {
-               // Sanitize as a number
-               $num = preg_replace('/[^0-9\-]/', '', $input);
-               if (strlen($num) == 0) {
-                   // The input string contained no numbers, return 0
-                   return 0;
-               } else {
-                   return (int) $num;
-               }
-           } else {
-               // Remove magic quote escaping if needed
-               if (get_magic_quotes_gpc()) {
-                   $input = stripslashes($input);
-               }
+        if (!empty($input)) {
+            if ($integer) {
+                // Sanitize as a number
+                $num = preg_replace('/[^0-9\-]/', '', $input);
+                if (strlen($num) == 0) {
+                    // The input string contained no numbers, return 0
+                    return 0;
+                } else {
+                    return (int) $num;
+                }
+            } else {
+                // Remove magic quote escaping if needed
+                if (get_magic_quotes_gpc()) {
+                    $input = stripslashes($input);
+                }
 
-               // Sanitize as a string
-               return $this->conn->real_escape_string($input);
-           }
-       } else if ($integer) {
-           return 0;
-       } else {
-           return null;
-       }
+                // Sanitize as a string
+                return $this->conn->real_escape_string($input);
+            }
+        } elseif ($integer) {
+            return 0;
+        } else {
+            return null;
+        }
     }
 
     /**

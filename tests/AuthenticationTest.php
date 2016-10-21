@@ -81,7 +81,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
         self::$settings->setSetting('wp_load_file', self::$wp_load_file);
     }
 
-    public function testAuthenticate_badTimestamp()
+    public function testAuthenticateBadTimestamp()
     {
         $this->setUpAPIRequest();
         $this->input->timestamp = time() - 8000;
@@ -90,7 +90,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
         $this->assertFalse($authenticated);
     }
 
-    public function testAuthenticate_noTimestamp()
+    public function testAuthenticateNoTimestamp()
     {
         $this->setUpAPIRequest();
         $this->input->timestamp = null;
@@ -99,7 +99,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
         $this->assertFalse($authenticated);
     }
 
-    public function testAuthenticate_nonceUsed()
+    public function testAuthenticateNonceUsed()
     {
         $this->setUpAPIRequest();
         $db = new MockDatabase(array(array('count'=>1)));
@@ -118,7 +118,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
         $this->assertTrue($authenticated);
     }
 
-    public function testAuthenticateAPIRequest_nonModerator()
+    public function testAuthenticateAPIRequestNonModerator()
     {
         $this->setUpAPIRequest();
         $mock_db_array = $this->getNonceFreeArray();
@@ -131,7 +131,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
         $this->assertFalse($authenticated);
     }
 
-    public function testAuthenticateAPIRequest_badHMAC()
+    public function testAuthenticateAPIRequestBadHMAC()
     {
         $this->setUpAPIRequest();
         $this->input->accessor_id = '489';
@@ -140,7 +140,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
         $this->assertFalse($authenticated);
     }
 
-    public function testAuthenticateAPIRequest_noAccessor()
+    public function testAuthenticateAPIRequestNoAccessor()
     {
         $this->setUpAPIRequest();
         $this->input->accessor_token = 'invalid';
@@ -168,7 +168,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
         $this->assertEquals(self::USER_ID, $auth->getUserId());
     }
 
-    public function testAuthenticateUsingWP_notLoggedIn()
+    public function testAuthenticateUsingWPNotLoggedIn()
     {
         // Set up so the user will not be logged in
         global $wp_user_logged_in;
@@ -180,7 +180,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
         $this->assertFalse($authenticated);
     }
 
-    public function testAuthenticateUsingWP_nonModerator()
+    public function testAuthenticateUsingWPNonModerator()
     {
         // Set up so the user will be logged in correctly
         global $wp_user_logged_in, $wp_current_user;
@@ -202,7 +202,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
     /**
      * @expectedException \Chocklymon\fsmcbm\AuthenticationException
      */
-    public function testAuthenticateUsingWP_badConfiguration()
+    public function testAuthenticateUsingWPBadConfiguration()
     {
         // Set up  so there will be an authentication exception
         self::$settings->setSetting('auth_mode', 'wordpress');
@@ -231,13 +231,13 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
         $this->assertEquals(self::USER_ID, $user_id);
     }
 
-    public function testUserIdFromName_emptyName()
+    public function testUserIdFromNameEmptyName()
     {
         $user_id = $this->auth->getUserIdFromName("");
         $this->assertFalse($user_id);
     }
 
-    public function testUserIdFromName_noResult()
+    public function testUserIdFromNameNoResult()
     {
         $db = new MockDatabase([
             new FakeQueryResult(),
@@ -289,7 +289,7 @@ class AuthenticationTest extends PHPUnit_Framework_TestCase
             'user_id' => self::USER_ID,
             'username' => self::USERNAME,
             'password' => '$2y$10$IvV0j3.oBy8/OKQS8EcHquPhBCi1M7LRZLeI4UjZ9hDmKrrns5/MG',// password1
-            'needs_password_change' => FALSE,
+            'needs_password_change' => false,
         );
         if ($include_nonce) {
             $mock_db_array = $this->getNonceFreeArray();

@@ -105,8 +105,12 @@ SQL;
             throw new InvalidArgumentException("Please provide a user for this incident.");
         }
 
-        $query = "INSERT INTO `incident` (`user_id`, `moderator_id`, `created_date`, `modified_date`, `incident_date`, `incident_type`, `notes`, `action_taken`, `world`, `coord_x`, `coord_y`, `coord_z`)
-            VALUES ('$user_id', '$moderator_id', '$today', '$today', '$incident_date', '$incident_type', '$notes', '$action_taken', '$world', '$coord_x', '$coord_y', '$coord_z')";
+        $query = <<<SQL
+INSERT INTO `incident`
+ (`user_id`, `moderator_id`, `created_date`, `modified_date`, `incident_date`, `incident_type`, `notes`, `action_taken`, `world`, `coord_x`, `coord_y`, `coord_z`)
+VALUES
+ ('$user_id', '$moderator_id', '$today', '$today', '$incident_date', '$incident_type', '$notes', '$action_taken', '$world', '$coord_x', '$coord_y', '$coord_z')
+SQL;
 
         $incident_id = $this->db->insert($query);
 
@@ -345,7 +349,7 @@ SQL;
     public function retrieveUserData(FilteredInput $input)
     {
         $user_id = 0;
-        if($input->existsAndNotEmpty('uuid')) {
+        if ($input->existsAndNotEmpty('uuid')) {
             $user_id = $this->getUserIdByUUID($input->uuid);
         } elseif ($input->existsAndNotEmpty('user_id')) {
             $user_id = $this->db->sanitize($input->user_id, true);
@@ -353,7 +357,7 @@ SQL;
             $user_id = $this->getUserIdByUsername($input->username);
         }
 
-        if($user_id <= 0) {
+        if ($user_id <= 0) {
             // Invalid lookup
             throw new InvalidArgumentException("Invalid user ID");
         }
@@ -367,7 +371,7 @@ SQL;
 
         // Get the known usernames
         $aliases = $this->db->queryRows("SELECT username, active FROM user_aliases WHERE user_id = '{$user_id}'");
-        foreach($aliases as $alias) {
+        foreach ($aliases as $alias) {
             $user_info['usernames'][] = array('username' => $alias['username'], 'active' => (bool) $alias['active']);
         }
 
@@ -496,7 +500,7 @@ SQL;
         $player_id = $this->db->sanitize($input->user_id, true);
 
         // Verify that we have a valid user id
-        if($player_id <= 0) {
+        if ($player_id <= 0) {
             throw new InvalidArgumentException("Invalid user ID");
         }
 
@@ -516,7 +520,7 @@ SQL;
         $query = "SELECT `banned`, `permanent` FROM `users` WHERE `users`.`user_id` = {$player_id}";
         $row = $this->db->querySingleRow($query, 'Failed to retrieve incident');
 
-        if($row['banned'] != $banned || $row['permanent'] != $permanent) {
+        if ($row['banned'] != $banned || $row['permanent'] != $permanent) {
             $this->updateBanHistory($player_id, $user_id, $banned, $permanent);
         }
 
@@ -570,7 +574,7 @@ SQL;
         $id = $this->db->sanitize($input->incident_id, true);
 
         // Verify that we have an incident id
-        if($id <= 0) {
+        if ($id <= 0) {
             throw new InvalidArgumentException("Invalid incident ID");
         }
 
@@ -637,7 +641,6 @@ SQL;
             // No UUID provided
             throw new InvalidArgumentException("No UUID provided");
         }
-
     }
 
     /**
@@ -682,7 +685,13 @@ SQL;
             $this->db->query($sql);
         }
 
-        $sql = "INSERT INTO `user_aliases` (`user_id`, `username`, `active`) VALUES ({$player_id}, '{$username}', {$active})";
+        $sql = <<<SQL
+INSERT INTO `user_aliases`
+ (`user_id`, `username`, `active`)
+VALUES
+ ({$player_id}, '{$username}', {$active})
+SQL;
+
         $this->db->query($sql);
     }
 

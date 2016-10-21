@@ -108,8 +108,13 @@ class ControllerTest extends PHPUnit_Framework_TestCase
 
 
         // Test that the query was constructed correctly //
-        $expected = "INSERT INTO `incident` (`user_id`, `moderator_id`, `created_date`, `modified_date`, `incident_date`, `incident_type`, `notes`, `action_taken`, `world`, `coord_x`, `coord_y`, `coord_z`)
-            VALUES ('5', '1', '$now', '$now', '" . mb_substr($now, 0, 10) . "', 'Hi', 'Don\'t worry, just have some cheese.', 'Banned', 'world', '150', '250', '-25')";
+        $date = mb_substr($now, 0, 10);
+        $expected = <<<SQL
+INSERT INTO `incident`
+ (`user_id`, `moderator_id`, `created_date`, `modified_date`, `incident_date`, `incident_type`, `notes`, `action_taken`, `world`, `coord_x`, `coord_y`, `coord_z`)
+VALUES
+ ('5', '1', '$now', '$now', '{$date}', 'Hi', 'Don\'t worry, just have some cheese.', 'Banned', 'world', '150', '250', '-25')
+SQL;
 
         $this->assertEquals($expected, $db->getLastQuery());
     }
@@ -117,7 +122,7 @@ class ControllerTest extends PHPUnit_Framework_TestCase
     /**
      * @expectedException \InvalidArgumentException
      */
-    public function testAddIncident_invalidUserId()
+    public function testAddIncidentInvalidUserId()
     {
         // Set Up //
         // The user id needs to be a positive number greater than zero.
@@ -287,7 +292,7 @@ SQL;
         $this->assertEquals("DELETE FROM `incident` WHERE `incident_id` = $incident_id", $db->getLastQuery());
     }
 
-    public function testDeleteIncident_invalidId()
+    public function testDeleteIncidentInvalidId()
     {
         $this->expectOutputString('{"error":"Invalid Incident ID"}');
 
@@ -385,7 +390,7 @@ SQL;
     /**
      * @expectedException \InvalidArgumentException
      */
-    public function testSearch_invalidSearch()
+    public function testSearchInvalidSearch()
     {
         // Set Up //
         $input = new FilteredInput(false, array('search'=>'b'));
@@ -458,7 +463,7 @@ SQL;
     /**
      * @expectedException \InvalidArgumentException
      */
-    public function testUpdateUser_invalidId()
+    public function testUpdateUserInvalidId()
     {
         // Set Up //
         $input = new FilteredInput(false, array('id'=>'bad'));
@@ -487,7 +492,7 @@ SQL;
     /**
      * @expectedException \InvalidArgumentException
      */
-    public function testUpdateIncident_invalidId()
+    public function testUpdateIncidentInvalidId()
     {
         // Set Up //
         $input = new FilteredInput(false, array('id'=>'bad'));
@@ -500,7 +505,7 @@ SQL;
         $controller->updateIncident($input);
     }
 
-    public function testUpsertUserUUID_newUser()
+    public function testUpsertUserUUIDNewUser()
     {
         $new_user_id = 29;
         $this->expectOutputString('{"user_id":'.$new_user_id.'}');
@@ -514,7 +519,7 @@ SQL;
         $controller->upsertUsername(1, $this->input);
     }
 
-    public function testUpsertUserUUID_updateUser()
+    public function testUpsertUserUUIDUpdateUser()
     {
         $expectedOutput = '{"success":true}';
         $this->expectOutputString($expectedOutput);
@@ -532,7 +537,7 @@ SQL;
      * @expectedException \InvalidArgumentException
      * @expectedExceptionMessage Invalid UUID
      */
-    public function testUpsertUserUUID_badUUID()
+    public function testUpsertUserUUIDBadUUID()
     {
         // Set up the controller and input
         $this->input->uuid = '';
@@ -546,7 +551,7 @@ SQL;
      * @expectedException \InvalidArgumentException
      * @expectedExceptionMessage No UUID provided
      */
-    public function testUpsertUserUUID_noUUID()
+    public function testUpsertUserUUIDNoUUID()
     {
         $db = new MockDatabase(array(new FakeQueryResult(array(1))));
         $input = new FilteredInput(false);
@@ -571,7 +576,9 @@ SQL;
         // Set Up //
         $queryIndex = 0;
         $input = new FilteredInput(false, $input);
-        $expectedOutput = '{"user":{"uuid":"a","modified_date":"2016-07-19T14:39:59+00:00","banned":true,"permanent":true,"usernames":[{"username":"' . self::USERNAME . '","active":true}]},"incident":[],"history":[]}';
+        $expectedOutput = '{"user":{"uuid":"a","modified_date":"2016-07-19T14:39:59+00:00","banned":true,"permanent":true,"usernames":[{"username":"'
+            . self::USERNAME
+            . '","active":true}]},"incident":[],"history":[]}';
         $this->expectOutputString($expectedOutput);
 
         // Construct the database
@@ -600,5 +607,4 @@ SQL;
         $queries = $db->getQueries();
         $this->assertEquals($expected_user, $queries[$queryIndex]);
     }
-
 }

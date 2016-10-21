@@ -157,7 +157,7 @@ class Authentication
             ]);
 
             $decoded_token = $verifier->verifyAndDecode($token);
-        } catch(\Auth0\SDK\Exception\CoreException $e) {
+        } catch (\Auth0\SDK\Exception\CoreException $e) {
             return null;
         }
 
@@ -280,7 +280,9 @@ class Authentication
      */
     public function isAPIRequest()
     {
-        return $this->input->exists('accessor_token') && $this->input->exists('hmac') && $this->input->exists('accessor_id');
+        return $this->input->exists('accessor_token')
+                && $this->input->exists('hmac')
+                && $this->input->exists('accessor_id');
     }
 
     /**
@@ -386,18 +388,18 @@ class Authentication
      * @param string $user_string The user-supplied string
      * @return bool Returns TRUE when the two strings are equal, FALSE otherwise.
      */
-    private function hashEquals($known_string , $user_string)
+    private function hashEquals($known_string, $user_string)
     {
         if (function_exists('hash_equals')) {
             return hash_equals($known_string, $user_string);
         } else {
             // Timing attack resistant hash equals replacement, not perfect but works fairly well.
-            if(strlen($known_string) != strlen($user_string)) {
+            if (strlen($known_string) != strlen($user_string)) {
                 return false;
             } else {
                 $res = $known_string ^ $user_string;
                 $ret = 0;
-                for($i = strlen($res) - 1; $i >= 0; $i--) {
+                for ($i = strlen($res) - 1; $i >= 0; $i--) {
                     $ret |= ord($res[$i]);
                 }
                 return $ret === 0;

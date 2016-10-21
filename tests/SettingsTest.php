@@ -39,7 +39,8 @@ class SettingsTest extends PHPUnit_Framework_TestCase
 
     public static function setUpBeforeClass()
     {
-        self::$settings = new Settings();// TODO be able to specify a settings file, this will remove the need for a mock settings
+        // TODO be able to specify a settings file, this will remove the need for a mock settings
+        self::$settings = new Settings();
     }
 
     public function testConstructor()
@@ -90,5 +91,4 @@ class SettingsTest extends PHPUnit_Framework_TestCase
     {
         $this->assertFalse(self::$settings->debugMode());
     }
-
 }
