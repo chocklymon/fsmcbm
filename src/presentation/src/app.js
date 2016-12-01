@@ -126,6 +126,10 @@
         }
 
         $routeProvider
+            .when('/configuration', {
+                controller: 'ConfigurationController',
+                templateUrl: 'presentation/views/configuration.html'
+            })
             .when('/user', {
                 controller: 'UserController',
                 templateUrl: 'presentation/views/manage-user.html'

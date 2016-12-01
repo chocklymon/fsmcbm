@@ -1,9 +1,14 @@
 <div class="row pad-row">
-    <div class="col-xs-12 text-right" ng-show="authService.showLogout">
+    <div class="col-xs-12 col-sm-9 col-md-10 text-right"
+         ng-show="authService.showLogout" ng-class="{'col-sm-offset-3 col-md-offset-2': !authService.isAdmin}">
         <span class="glyphicon glyphicon-user"></span>
         <span>{{authService.userProfile.nickname}}</span>
         <span> &mdash; </span>
         <a href="#" ng-click="authService.logout()">Logout</a>
+    </div>
+    <div class="col-xs-12 col-sm-3 col-md-2 text-right" ng-show="authService.isAdmin">
+        <a href="#/configuration"
+           uib-tooltip="Manage Configuration" tooltip-placement="left">Configuration <span class="glyphicon glyphicon-cog"></span></a>
     </div>
 </div>
 <form class="row" ng-submit="search()">
