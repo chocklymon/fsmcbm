@@ -1,5 +1,5 @@
 <?php
-/* Copyright (c) 2014-2016 Curtis Oakley
+/* Copyright (c) 2014-2017 Curtis Oakley
  * http://chockly.org/
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -166,6 +166,14 @@ try {
                 break;
             case 'update_incident':
                 $actions->updateIncident($input);
+                break;
+            case 'users':
+                // TODO
+                $output->append(1, 'pages');
+                $output->append(array(
+                    array('username' => 'Bob', 'user_id' => 0)
+                ), 'users');
+                $output->reply();
                 break;
         }
     }

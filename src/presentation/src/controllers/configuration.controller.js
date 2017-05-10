@@ -1,7 +1,7 @@
 /**
  * The MIT License
  *
- * Copyright 2016 Curtis Oakley.
+ * Copyright 2016-2017 Curtis Oakley.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -27,8 +27,22 @@
 
     angular.module('banManager').controller('ConfigurationController', ConfigurationController);
 
-    ConfigurationController.$inject = ['$scope'];
-    function ConfigurationController($scope) {
-        $scope.msg = 'TODO';
+    ConfigurationController.$inject = ['$scope', '$log', 'request'];
+    function ConfigurationController($scope, $log, request) {
+        // TODO
+        $scope.pagination = {
+            numPages: 1,
+            currentPage: 0
+        };
+        request.get('users')
+            .then(function(response) {
+                $log.log(response.data);
+                $scope.users = response.data.users;
+                $scope.pagination.numPages = response.data.pages;
+            })
+            .catch(function(err) {
+                // TODO
+                $log.log(err);
+            });
     }
 })();
