@@ -1,8 +1,8 @@
-<div ng-switch="!user">
-    <p ng-switch-when="true">Select a user to manage.</p>
+<div ng-switch="!player">
+    <p ng-switch-when="true">Select a player to manage.</p>
     <div ng-switch-default="">
         <div class="form-section">
-            <bm-player player="user.player" adding="false"></bm-player>
+            <bm-player player="player.user" adding="false"></bm-player>
             <div class="row">
                 <div class="col-xs-12 text-right">
                     <button class="btn btn-default" ng-click="saveUser()">Save</button>
@@ -10,7 +10,7 @@
             </div>
         </div>
         <div>
-            <div ng-repeat="incident in user.incidents" class="form-section">
+            <div ng-repeat="incident in player.incidents" class="form-section">
                 <incident incident="incident" adding="false"></incident>
                 <div class="row">
                     <div class="col-xs-12 text-right">
@@ -26,7 +26,7 @@
                     <tr><th>Moderator</th><th>Date</th><th>Banned</th><th>Permanent</th></tr>
                 </thead>
                 <tbody>
-                    <tr ng-repeat="ban in user.history">
+                    <tr ng-repeat="ban in player.history">
                         <td>{{ban.moderator}}</td>
                         <td>{{ban.date | date: 'mediumDate'}}</td>
                         <td>{{ban.banned|checkmark}}</td>

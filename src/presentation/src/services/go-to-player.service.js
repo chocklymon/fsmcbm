@@ -25,15 +25,15 @@
 (function() {
     'use strict';
 
-    angular.module('banManager').controller('UserListController', UserListController);
+    /**
+     * Provides a services to quickly navigate to the player management page.
+     */
+    angular.module('banManager').factory('goToPlayer', GoToPlayer);
 
-    UserListController.$inject = ['$scope', '$location', 'request', 'goToUser'];
-    function UserListController($scope, $location, request, goToUser) {
-        $scope.lookupUser = goToUser;
-
-        var endpoint = $location.path() === '/bans' ? 'get_bans' : 'get_watchlist';
-        request.get(endpoint).then(function(response) {
-            $scope.users = response.data;
-        });
+    GoToPlayer.$inject = ['$location', 'formatUUID'];
+    function GoToPlayer($location, formatUUID) {
+        return function(uuid) {
+            $location.path('/player/' + formatUUID(uuid));
+        };
     }
 })();

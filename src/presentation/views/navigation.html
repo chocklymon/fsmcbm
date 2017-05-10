@@ -14,7 +14,7 @@
 <form class="row" ng-submit="search()">
     <div class="col-md-8 sm-row">
         <div class="input-group has-feedback">
-            <lookup on-select="loadUser($item)" select-value="search.text" select-first="false"></lookup>
+            <lookup on-select="loadPlayer($item)" select-value="search.text" select-first="false"></lookup>
             <span class="input-group-btn">
                 <input type="submit" id="submit" value="Search" class="btn btn-default" />
             </span>
@@ -22,7 +22,7 @@
     </div>
     <div class="col-xs-6 col-md-2 text-center">
         <div class="form-group">
-            <input type="button" class="btn btn-primary" ng-click="addUser()" value="Add User" />
+            <input type="button" class="btn btn-primary" ng-click="addPlayer()" value="Add Player" />
         </div>
     </div>
     <div class="col-xs-6 col-md-2 text-center">

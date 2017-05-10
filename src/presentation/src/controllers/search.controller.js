@@ -27,17 +27,17 @@
 
     angular.module('banManager').controller('SearchController', SearchController);
 
-    SearchController.$inject = ['$scope', '$routeParams', 'request', 'goToUser'];
-    function SearchController($scope, $routeParams, request, goToUser) {
-        $scope.lookupUser = goToUser;
+    SearchController.$inject = ['$scope', '$routeParams', 'request', 'goToPlayer'];
+    function SearchController($scope, $routeParams, request, goToPlayer) {
+        $scope.lookupPlayer = goToPlayer;
 
         if ($routeParams.term) {
             request('search', { search: $routeParams.term })
                 .success(function(data) {
                     if (data.users) {
-                        $scope.users = data.users;
+                        $scope.players = data.users;
                     } else {
-                        $scope.users = [];
+                        $scope.players = [];
                     }
                     if (data.incidents) {
                         $scope.incidents = data.incidents;

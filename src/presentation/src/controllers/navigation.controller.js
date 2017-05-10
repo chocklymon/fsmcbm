@@ -28,13 +28,13 @@
     angular.module('banManager').controller('NavigationController', NavigationController);
 
     NavigationController.$inject = [
-        '$scope', '$location', 'Player', 'CurrentSearch', '$uibModal', 'authService', 'goToUser'
+        '$scope', '$location', 'Player', 'CurrentSearch', '$uibModal', 'authService', 'goToPlayer'
     ];
-    function NavigationController($scope, $location, Player, CurrentSearch, $uibModal, authService, goToUser) {
+    function NavigationController($scope, $location, Player, CurrentSearch, $uibModal, authService, goToPlayer) {
         $scope.authService = authService;
 
         $scope.tabs = [
-            { link: 'user', label: 'Manage' },
+            { link: 'player', label: 'Manage' },
             { link: 'bans', label: 'Bans' },
             { link: 'watchlist', label: 'Watchlist' },
             { link: 'search', label: 'Search' }
@@ -59,8 +59,8 @@
         // Change what tab is selected
         $scope.selectTab = function(tab) {
             if (tab === $scope.tabs[0] && Player.getUUID()) {
-                // User tab, load the current user
-                $scope.loadUser(Player.getUUID());
+                // Player tab, load the current player
+                $scope.loadPlayer(Player.getUUID());
             } else if (tab === $scope.tabs[3]) {
                 // Search tab, load the current search term
                 if (CurrentSearch.get()) {
@@ -86,20 +86,20 @@
             }
         };
 
-        // Loads a selected user
-        $scope.loadUser = function(uuid) {
-            // If we are passed a user or lookup object, extract the UUID from it
+        // Loads a selected player
+        $scope.loadPlayer = function(uuid) {
+            // If we are passed a player or lookup object, extract the UUID from it
             if (typeof uuid === 'object' && uuid.uuid) {
                 uuid = uuid.uuid;
             }
-            goToUser(uuid);
+            goToPlayer(uuid);
         };
 
-        // Add user and add incident buttons
-        $scope.addUser = function() {
+        // Add player and add incident buttons
+        $scope.addPlayer = function() {
             $uibModal.open({
                 templateUrl: 'presentation/src/player/add-player.html',
-                controller: 'AddUserController',
+                controller: 'AddPlayerController',
                 size: 'lg'
             });
         };

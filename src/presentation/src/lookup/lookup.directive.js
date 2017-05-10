@@ -40,12 +40,12 @@
             templateUrl: 'presentation/src/lookup/template.html',
             link: function(scope) {
                 // Calls the on select function with the currently selected item
-                scope.selectUser = function($item) {
+                scope.selectPlayer = function($item) {
                     scope.onSelect({ '$item': $item });
                 };
 
                 // Loads the type-ahead terms via AJAX
-                scope.getPossibleUsers = function(val) {
+                scope.getPossiblePlayers = function(val) {
                     return request('auto_complete', {
                         term: val
                     }).then(function(res) {

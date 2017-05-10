@@ -25,19 +25,19 @@
 (function() {
     'use strict';
 
-    angular.module('banManager').controller('AddUserController', AddUserController);
+    angular.module('banManager').controller('AddPlayerController', AddPlayerController);
 
-    AddUserController.$inject = ['$scope', 'Player', '$uibModalInstance', 'message', 'Confirm'];
-    function AddUserController($scope, Player, $uibModalInstance, message, Confirm) {
-        var addUser = function() {
+    AddPlayerController.$inject = ['$scope', 'Player', '$uibModalInstance', 'message', 'Confirm'];
+    function AddPlayerController($scope, Player, $uibModalInstance, message, Confirm) {
+        var addPlayer = function() {
             $scope.submitting = true;
             Player.add($scope.player.info).then(
                 function(response) {
-                    message.successMsg('User added.', 6000);
+                    message.successMsg('Player added.', 6000);
                     $uibModalInstance.close(response);
                 },
                 function(err) {
-                    var errorMsg = 'Problem adding user. ';
+                    var errorMsg = 'Problem adding player. ';
                     if (err.data && err.data.error) {
                         errorMsg += err.data.error;
                     }
@@ -57,12 +57,12 @@
                 message.addMessage(message.WARNING, 'Please fill out all required fields!', 10000);
             } else if (!$scope.player.info.username) {
                 Confirm(
-                    'Are you sure that you wish to add a user without a username?<br><br>' +
-                    'Press Ok to add the user.<br>' +
+                    'Are you sure that you wish to add a player without a username?<br><br>' +
+                    'Press Ok to add the player.<br>' +
                     'Press Cancel to close this dialog and add a username.'
-                ).then(addUser);
+                ).then(addPlayer);
             } else {
-                addUser();
+                addPlayer();
             }
         };
         $scope.cancel = function() {

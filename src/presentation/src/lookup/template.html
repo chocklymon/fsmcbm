@@ -1,9 +1,9 @@
 <input type="text"
        ng-model="selected"
        ng-required="required"
-       placeholder="Find user by name or uuid..."
-       uib-typeahead="user.username for user in getPossibleUsers($viewValue)"
+       placeholder="Find player by name or uuid..."
+       uib-typeahead="player.username for player in getPossiblePlayers($viewValue)"
        typeahead-min-length="2"
-       typeahead-on-select="selectUser($item)"
+       typeahead-on-select="selectPlayer($item)"
        typeahead-focus-first="selectFirst"
        class="form-control" />

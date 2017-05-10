@@ -94,9 +94,9 @@
                     goTo = redirectUrl.url;
                 }
             });
-            // Fallback to /user route if we didn't find a valid route
+            // Fallback to /player route if we didn't find a valid route
             if (!goTo) {
-                goTo = '/user';
+                goTo = '/player';
             }
 
             // Clear the redirect URL and go to the route

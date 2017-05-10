@@ -13,7 +13,7 @@ Setup
 
 1. Create a database for the ban manager.
 2. Run skeleton.sql in the database to set up the tables.
-3. Add the user ranks into the rank table.
+3. Add the player ranks into the rank table.
     * The ranks of Admin and Moderator will have access to use the ban manager.
 4. Add your user into the users table with the rank of admin or moderator.
 5. Modify bm-config.php with your MySQL database login information.
@@ -33,7 +33,7 @@ CREATE DATABASE IF NOT EXISTS ban_manager;
 GRANT ALL PRIVILEGES ON ban_manager.* TO 'username'@'localhost' IDENTIFIED BY 'password';
 ```
 2. `mysql -uroot < src/skeleton.sql`
-3. Setup the user ranks:
+3. Setup the player ranks:
     1. `mysql -uroot`
     2. `use ban_manager`
     3. `INSERT INTO rank ('name') VALUES ('Admin'), ('Moderator');`

@@ -32,7 +32,7 @@
         $scope.incident = {};
         $scope.incidentForm = {};
 
-        $scope.incident.selectUser = function($item) {
+        $scope.incident.selectPlayer = function($item) {
             $scope.incident.user_id = $item.user_id;
         };
 
@@ -62,7 +62,7 @@
                 }
                 message.addMessage(message.WARNING, 'Please fill out all required fields!', 10000);
             } else if (!$scope.incident.user_id) {
-                message.addMessage(message.WARNING, 'Please select a user!', 10000);
+                message.addMessage(message.WARNING, 'Please select a player!', 10000);
             } else if (!$scope.incident.notes) {
                 Confirm(
                     'Are you sure that you wish to add an incident without any notes?<br><br>' +

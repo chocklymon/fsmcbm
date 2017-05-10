@@ -28,7 +28,7 @@
     /**
      * Current selected player factory.
      *
-     * Provides a cache for the currently managed user.
+     * Provides a cache for the currently managed player.
      */
     angular.module('banManager').factory('Player', Player);
 
@@ -58,14 +58,15 @@
         }
 
         /**
-         * Return a promise that returns the requested user.
+         * Return a promise that resolves with the requested player.
          * @param uuid The player UUID
-         * @param force If the player should be force loaded from the server.
+         * @param force If the player should be force loaded from the server. This prevents the cached version from
+         * being used.
          * @returns {Promise}
          */
         function getPlayer(uuid, force) {
             if (force || !matches(uuid)) {
-                // Reset the cache, different user requested or being forced
+                // Reset the cache, different player requested or being forced
                 CachedRequest.reset('lookup');
             }
 
@@ -85,8 +86,8 @@
         }
 
         /**
-         * Get the current user's universally unique identifier.
-         * @returns {object} The current user's UUID, or null.
+         * Get the current player's universally unique identifier.
+         * @returns {object} The current players's UUID, or null.
          */
         function getUUID() {
             if (cachedPlayer) {
@@ -97,7 +98,7 @@
         }
 
         /**
-         * Get if the provided UUID matches the cached user.
+         * Get if the provided UUID matches the cached player.
          * @param uuid The UUID to check against.
          * @returns {boolean} True if the UUID matches.
          */
@@ -106,7 +107,7 @@
         }
 
         /**
-         * Saves the user to the database.
+         * Saves the player to the database.
          * @returns {Promise}
          */
         function saveCurrentPlayer() {

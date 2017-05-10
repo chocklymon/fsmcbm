@@ -50,7 +50,7 @@
                         message.errorMsg('Unable to load worlds');
                     }
                 );
-                scope.selectUser = function($item) {
+                scope.selectPlayer = function($item) {
                     scope.incident.user_id = $item.value;
                 };
             }

@@ -25,15 +25,15 @@
 (function() {
     'use strict';
 
-    /**
-     * Goes to the user page.
-     */
-    angular.module('banManager').factory('goToUser', GoToUser);
+    angular.module('banManager').controller('PlayerListController', PlayerListController);
 
-    GoToUser.$inject = ['$location', 'formatUUID'];
-    function GoToUser($location, formatUUID) {
-        return function(uuid) {
-            $location.path('/user/' + formatUUID(uuid));
-        };
+    PlayerListController.$inject = ['$scope', '$location', 'request', 'goToPlayer'];
+    function PlayerListController($scope, $location, request, goToPlayer) {
+        $scope.lookupPlayer = goToPlayer;
+
+        var endpoint = $location.path() === '/bans' ? 'get_bans' : 'get_watchlist';
+        request.get(endpoint).then(function(response) {
+            $scope.players = response.data;
+        });
     }
 })();

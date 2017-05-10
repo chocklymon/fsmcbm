@@ -29,6 +29,6 @@
 
     ConfigurationController.$inject = ['$scope'];
     function ConfigurationController($scope) {
-
+        $scope.msg = 'TODO';
     }
 })();

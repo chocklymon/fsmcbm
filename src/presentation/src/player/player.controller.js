@@ -25,19 +25,19 @@
 (function() {
     'use strict';
 
-    angular.module('banManager').controller('UserController', UserController);
+    angular.module('banManager').controller('PlayerController', PlayerController);
 
-    UserController.$inject = ['$scope', '$routeParams', 'Player', 'request', 'formatUUID', 'message'];
-    function UserController($scope, $routeParams, Player, request, formatUUID, message) {
+    PlayerController.$inject = ['$scope', '$routeParams', 'Player', 'request', 'formatUUID', 'message'];
+    function PlayerController($scope, $routeParams, Player, request, formatUUID, message) {
         // Create a function to set the data in the scope
         var setPlayer = function(player) {
             // Set the player data into the scope
-            $scope.user = {
-                player: player.user,
+            $scope.player = {
+                user: player.user,
                 incidents: player.incident,
                 history: player.history
             };
-            $scope.user.player.uuid = formatUUID(player.user.uuid);
+            $scope.player.user.uuid = formatUUID(player.user.uuid);
         };
 
         // Button functions
@@ -52,11 +52,11 @@
         };
         $scope.saveUser = function() {
             Player.save().then(function() {
-                message.successMsg('User updated.', 6000);
+                message.successMsg('Player updated.', 6000);
             });
         };
 
-        // If we have a UUID in the router parameters, load up the user
+        // If we have a UUID in the router parameters, load up the player
         if ($routeParams.uuid) {
             Player.get($routeParams.uuid).then(setPlayer);
         }

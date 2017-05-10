@@ -36,7 +36,7 @@
                 form: '=?'
             },
             restrict: 'E',
-            templateUrl: 'presentation/src/player/user.html',
+            templateUrl: 'presentation/src/player/player.html',
             link: function(scope) {
                 if (scope.form) {
                     scope.form = scope.userForm;

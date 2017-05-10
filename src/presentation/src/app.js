@@ -130,21 +130,21 @@
                 controller: 'ConfigurationController',
                 templateUrl: 'presentation/views/configuration.html'
             })
-            .when('/user', {
-                controller: 'UserController',
-                templateUrl: 'presentation/views/manage-user.html'
+            .when('/player', {
+                controller: 'PlayerController',
+                templateUrl: 'presentation/views/manage-player.html'
             })
-            .when('/user/:uuid', {
-                controller: 'UserController',
-                templateUrl: 'presentation/views/manage-user.html'
+            .when('/player/:uuid', {
+                controller: 'PlayerController',
+                templateUrl: 'presentation/views/manage-player.html'
             })
             .when('/bans', {
-                controller: 'UserListController',
-                templateUrl: 'presentation/views/userlist.html'
+                controller: 'PlayerListController',
+                templateUrl: 'presentation/views/player-list.html'
             })
             .when('/watchlist', {
-                controller: 'UserListController',
-                templateUrl: 'presentation/views/userlist.html'
+                controller: 'PlayerListController',
+                templateUrl: 'presentation/views/player-list.html'
             })
             .when('/search/:term?', {
                 controller: 'SearchController',
